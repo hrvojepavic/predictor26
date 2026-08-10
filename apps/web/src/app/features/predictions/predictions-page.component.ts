@@ -63,9 +63,7 @@ export class PredictionsPageComponent {
   protected readonly postponedNoticeMatchId = signal<number | null>(null);
   protected readonly activeProgressLabel = signal<string | null>(null);
   protected readonly now = signal(Date.now());
-  protected readonly openMatches = computed(() =>
-    this.matches().filter((match) => isPredictionOpen(match, this.now()))
-  );
+  protected readonly openMatches = computed(() => getOpenMatches(this.matches(), this.now()));
   protected readonly groupedMatches = computed(() => groupMatches(this.openMatches(), this.sortPreference.sortMode()));
   protected readonly closedRoundSummaries = computed(() =>
     groupMatchesByRounds(this.matches()).filter((group) => isPredictionGroupClosed(group, this.now()))
@@ -336,7 +334,15 @@ function groupMatches(matches: readonly MatchWithPrediction[], sortMode: MatchSo
 }
 
 function isPredictionOpen(match: MatchWithPrediction, now: number): boolean {
-  return match.isPostponed || (!match.predictionLocked && Date.parse(match.predictionDeadlineAt) > now);
+  return !match.isPostponed && !match.predictionLocked && Date.parse(match.predictionDeadlineAt) > now;
+}
+
+function getOpenMatches(matches: readonly MatchWithPrediction[], now: number): MatchWithPrediction[] {
+  const openPredictionRounds = new Set(
+    matches.filter((match) => isPredictionOpen(match, now)).map((match) => match.predictionRound)
+  );
+
+  return matches.filter((match) => isPredictionOpen(match, now) || (match.isPostponed && openPredictionRounds.has(match.predictionRound)));
 }
 
 function isPredictionGroupClosed(group: MatchGroup, now: number): boolean {
