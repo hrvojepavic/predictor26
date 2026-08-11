@@ -18,11 +18,14 @@ import {
   findCompetitionsWithLiveScoreSyncEnabled,
   setCompetitionJobSettings
 } from '../competitions/competitions.repository.js';
+import { getAutoMatchImportJobSnapshot } from '../admin-matches/admin-matches.service.js';
 
 const provider = 'oddsportal';
 const recentRunLimit = 10;
 const recentUpdateLimit = 20;
 const schedulerMinimumDelayMs = 5_000;
+const autoImportLiveScoreDelayMs = 5 * 60 * 1_000;
+const noReleasedMatchRetryMs = 60 * 60 * 1_000;
 const liveScoreFetchAttempts = 4;
 const liveScoreFetchTimeoutMs = 30_000;
 const liveScoreFetchRetryDelayMs = 2_000;
@@ -55,7 +58,9 @@ export async function getLiveScoreJobSnapshot(competitionId: number) {
     findLatestLiveScoreSnapshotsForCompetition(competitionId).map((snapshot) => [snapshot.match_id, snapshot])
   );
   const activeMatches = getActiveMatches(matches, now, latestSnapshotsByMatchId);
-  const calculatedNextRunAt = enabled ? calculateNextRunAt(matches, now, activeMatches.length > 0, latestSnapshotsByMatchId) : null;
+  const calculatedNextRunAt = enabled
+    ? await calculateNextRunAt(competitionId, matches, now, activeMatches.length > 0, latestSnapshotsByMatchId)
+    : null;
   const scheduledNextRunAt = scheduledNextRunAtByCompetitionId.get(competitionId) ?? null;
   const nextRunAt = enabled ? scheduledNextRunAt ?? calculatedNextRunAt : null;
 
@@ -112,6 +117,18 @@ export async function getLiveScoreJobSnapshot(competitionId: number) {
 
 export function startLiveScoreScheduler(): void {
   scheduleNextLiveScoreSync(0);
+}
+
+export function rescheduleLiveScoreScheduler(competitionId?: number): void {
+  if (competitionId !== undefined) {
+    scheduledNextRunAtByCompetitionId.set(competitionId, null);
+  } else {
+    scheduledNextRunAtByCompetitionId.clear();
+  }
+
+  if (findCompetitionsWithLiveScoreSyncEnabled().length > 0) {
+    scheduleNextLiveScoreSync(0);
+  }
 }
 
 export async function runLiveScoreSyncNow(competitionId: number): Promise<LiveScoreRunReport> {
@@ -255,7 +272,9 @@ async function runLiveScoreSync(competitionId: number, options: { readonly force
   const latestSnapshotsByMatchId = new Map(
     findLatestLiveScoreSnapshotsForCompetition(competitionId).map((snapshot) => [snapshot.match_id, snapshot])
   );
-  const nextRunAt = enabled ? calculateNextRunAt(matches, finishedAt, liveMatches > 0, latestSnapshotsByMatchId) : null;
+  const nextRunAt = enabled
+    ? await calculateNextRunAt(competitionId, matches, finishedAt, liveMatches > 0, latestSnapshotsByMatchId)
+    : null;
   scheduledNextRunAtByCompetitionId.set(competitionId, nextRunAt);
   const report: LiveScoreRunReport = {
     runId: null,
@@ -330,6 +349,10 @@ function getActiveMatches(
       return false;
     }
 
+    if (match.released_for_predictions !== 1) {
+      return false;
+    }
+
     if (hasFinalScore(match) && !isLiveByProvider(latestSnapshotsByMatchId.get(match.id))) {
       return false;
     }
@@ -344,12 +367,13 @@ function getActiveMatches(
   });
 }
 
-function calculateNextRunAt(
+async function calculateNextRunAt(
+  competitionId: number,
   matches: readonly MatchRow[],
   now: Date,
   hasLiveMatches: boolean,
   latestSnapshotsByMatchId: ReadonlyMap<number, LatestLiveScoreSnapshotRow>
-): string | null {
+): Promise<string | null> {
   if (hasLiveMatches) {
     return new Date(now.getTime() + config.liveScorePollIntervalMs).toISOString();
   }
@@ -360,6 +384,7 @@ function calculateNextRunAt(
 
       return (
         match.is_postponed !== 1 &&
+        match.released_for_predictions === 1 &&
         (!hasFinalScore(match) || isLiveByProvider(latestSnapshot)) &&
         !isFinishedByProvider(latestSnapshot)
       );
@@ -369,7 +394,7 @@ function calculateNextRunAt(
     .sort((first, second) => first - second)[0];
 
   if (!nextKickoff) {
-    return null;
+    return calculateNoReleasedMatchNextRunAt(competitionId, now);
   }
 
   const bufferedKickoffTime = nextKickoff - config.liveScoreKickoffBufferMs;
@@ -379,6 +404,49 @@ function calculateNextRunAt(
       : now.getTime() + config.liveScorePollIntervalMs;
 
   return new Date(nextRunTime).toISOString();
+}
+
+async function calculateNoReleasedMatchNextRunAt(competitionId: number, now: Date): Promise<string> {
+  const autoImportSnapshot = await getAutoMatchImportJobSnapshot(competitionId);
+  const fallbackRetryAt = now.getTime() + noReleasedMatchRetryMs;
+
+  if (!autoImportSnapshot.enabled || !autoImportSnapshot.nextRunAt) {
+    return new Date(fallbackRetryAt).toISOString();
+  }
+
+  if (shouldRetryAfterUnreleasedAutoImport(autoImportSnapshot, now)) {
+    return new Date(fallbackRetryAt).toISOString();
+  }
+
+  const autoImportNextRunAt = Date.parse(autoImportSnapshot.nextRunAt);
+
+  if (!Number.isFinite(autoImportNextRunAt)) {
+    return new Date(fallbackRetryAt).toISOString();
+  }
+
+  return new Date(Math.max(autoImportNextRunAt + autoImportLiveScoreDelayMs, now.getTime() + schedulerMinimumDelayMs)).toISOString();
+}
+
+function shouldRetryAfterUnreleasedAutoImport(
+  autoImportSnapshot: Awaited<ReturnType<typeof getAutoMatchImportJobSnapshot>>,
+  now: Date
+): boolean {
+  const lastRun = autoImportSnapshot.lastRun;
+
+  if (!lastRun || lastRun.released) {
+    return false;
+  }
+
+  const lastFinishedAt = Date.parse(lastRun.finishedAt);
+  const autoImportNextRunAt = autoImportSnapshot.nextRunAt ? Date.parse(autoImportSnapshot.nextRunAt) : null;
+
+  return (
+    Number.isFinite(lastFinishedAt) &&
+    lastFinishedAt <= now.getTime() &&
+    (typeof autoImportNextRunAt !== 'number' ||
+      !Number.isFinite(autoImportNextRunAt) ||
+      autoImportNextRunAt > now.getTime() + noReleasedMatchRetryMs)
+  );
 }
 
 function isFinishedByProvider(snapshot: LatestLiveScoreSnapshotRow | undefined): boolean {
