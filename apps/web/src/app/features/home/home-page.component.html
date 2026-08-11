@@ -23,7 +23,7 @@
       }
     }
 
-    <a class="action-card" [routerLink]="['/competition', activeCompetition()?.slug, 'predictions']">
+    <a class="action-card" [routerLink]="postPredictionsRouterLink()">
       <span class="action-icon action-icon-post" aria-hidden="true">
         <span></span>
         <span></span>
@@ -48,7 +48,7 @@
       }
     </a>
 
-    <a class="action-card" [routerLink]="['/competition', activeCompetition()?.slug, 'my-predictions']">
+    <a class="action-card" [routerLink]="myPredictionsRouterLink()">
       <span class="action-icon action-icon-list" aria-hidden="true">
         <span></span>
         <span></span>
@@ -59,7 +59,7 @@
       </span>
     </a>
 
-    <a class="action-card" [routerLink]="['/competition', activeCompetition()?.slug, 'match-day']">
+    <a class="action-card" [routerLink]="matchDayRouterLink()">
       <span class="action-icon action-icon-match-day" aria-hidden="true">
         <span></span>
         <span></span>

@@ -1,7 +1,7 @@
 import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
-import { interval } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { interval, map } from 'rxjs';
 
 import { AppStateService } from '@core/state/app-state.service';
 import { MatchWithPrediction } from '@models/match.models';
@@ -27,10 +27,17 @@ export class HomePageComponent {
   private readonly matchesService = inject(MatchesService);
   private readonly paymentsService = inject(PaymentsService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly routeCompetitionSlug = toSignal(this.route.paramMap.pipe(map((params) => params.get('slug'))), {
+    initialValue: this.route.snapshot.paramMap.get('slug')
+  });
 
   protected readonly matches = this.matchesService.matches;
   protected readonly activeCompetition = this.appState.activeCompetition;
   protected readonly paymentInfo = this.paymentsService.paymentInfo;
+  protected readonly postPredictionsRouterLink = computed(() => this.createCompetitionRouterLink('predictions'));
+  protected readonly myPredictionsRouterLink = computed(() => this.createCompetitionRouterLink('my-predictions'));
+  protected readonly matchDayRouterLink = computed(() => this.createCompetitionRouterLink('match-day'));
   protected readonly paymentModalOpen = signal(false);
   protected readonly showPaymentNotice = computed(() => {
     const user = this.appState.currentUser();
@@ -91,6 +98,12 @@ export class HomePageComponent {
 
   protected closePaymentModal(): void {
     this.paymentModalOpen.set(false);
+  }
+
+  private createCompetitionRouterLink(section: string): readonly string[] {
+    const slug = this.routeCompetitionSlug();
+
+    return slug ? ['/competition', slug, section] : ['/'];
   }
 
   private loadMatches(): void {

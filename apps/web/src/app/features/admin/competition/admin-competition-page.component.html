@@ -11,7 +11,7 @@
     <p class="status-message status-error">Choose a competition from Admin first.</p>
   } @else {
     <nav class="admin-tool-grid" aria-label="Competition admin tools">
-      <a class="tool-card" [routerLink]="['/admin/competition', activeCompetition()!.slug, 'setup']">
+      <a class="tool-card" [routerLink]="setupRouterLink()">
         <span class="tool-icon tool-icon-settings" aria-hidden="true">
           <span></span>
           <span></span>
@@ -22,7 +22,7 @@
         </span>
       </a>
 
-      <a class="tool-card" [routerLink]="['/admin/competition', activeCompetition()!.slug, 'matches']">
+      <a class="tool-card" [routerLink]="matchesRouterLink()">
         <span class="tool-icon tool-icon-calendar" aria-hidden="true">
           <span></span>
           <span></span>
@@ -33,7 +33,7 @@
         </span>
       </a>
 
-      <a class="tool-card" [routerLink]="['/admin/competition', activeCompetition()!.slug, 'users']">
+      <a class="tool-card" [routerLink]="usersRouterLink()">
         <span class="tool-icon" aria-hidden="true">
           <span></span>
           <span></span>
@@ -44,7 +44,7 @@
         </span>
       </a>
 
-      <a class="tool-card" [routerLink]="['/admin/competition', activeCompetition()!.slug, 'teams']">
+      <a class="tool-card" [routerLink]="teamsRouterLink()">
         <span class="tool-icon" aria-hidden="true">
           <span></span>
           <span></span>
@@ -56,7 +56,7 @@
       </a>
 
       @if (activeCompetition()!.playoffsEnabled) {
-        <a class="tool-card" [routerLink]="['/admin/competition', activeCompetition()!.slug, 'playoffs']">
+        <a class="tool-card" [routerLink]="playoffsRouterLink()">
           <span class="tool-icon tool-icon-calendar" aria-hidden="true">
             <span></span>
             <span></span>
@@ -68,7 +68,7 @@
         </a>
       }
 
-      <a class="tool-card" [routerLink]="['/admin/competition', activeCompetition()!.slug, 'payments']">
+      <a class="tool-card" [routerLink]="paymentsRouterLink()">
         <span class="tool-icon tool-icon-payment" aria-hidden="true">
           <span></span>
           <span></span>
@@ -79,7 +79,7 @@
         </span>
       </a>
 
-      <a class="tool-card" [routerLink]="['/admin/competition', activeCompetition()!.slug, 'notifications']">
+      <a class="tool-card" [routerLink]="notificationsRouterLink()">
         <span class="tool-icon tool-icon-notification" aria-hidden="true">
           <span></span>
           <span></span>
@@ -90,7 +90,7 @@
         </span>
       </a>
 
-      <a class="tool-card" [routerLink]="['/admin/competition', activeCompetition()!.slug, 'jobs']">
+      <a class="tool-card" [routerLink]="jobsRouterLink()">
         <span class="tool-icon tool-icon-calendar" aria-hidden="true">
           <span></span>
           <span></span>
