@@ -730,5 +730,5 @@ function isRequiredAction(match: Match): boolean {
 function isInactive(match: Match): boolean {
   const matchSettlementWindowMs = (2 * 60 + 15) * 60 * 1_000;
 
-  return match.finalScore !== null && Date.now() - Date.parse(match.kickoffAt) >= matchSettlementWindowMs;
+  return (match.finalScore !== null || match.isPostponed) && Date.now() - Date.parse(match.kickoffAt) >= matchSettlementWindowMs;
 }

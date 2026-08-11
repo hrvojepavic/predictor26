@@ -2,7 +2,12 @@ import {
   getNotificationReminderJobSnapshot,
   sendDuePredictionRemindersForCompetition
 } from '../notifications/notifications.service.js';
-import { getLiveScoreJobSnapshot, runLiveScoreSyncNow, setLiveScoreSyncEnabled } from '../live-scores/live-scores.service.js';
+import {
+  getLiveScoreJobSnapshot,
+  rescheduleLiveScoreScheduler,
+  runLiveScoreSyncNow,
+  setLiveScoreSyncEnabled
+} from '../live-scores/live-scores.service.js';
 import {
   getAutoMatchImportJobSnapshot,
   runAutoMatchImportNow,
@@ -161,6 +166,7 @@ export async function runAdminJob(
 
   if (jobId === autoMatchImportJobId) {
     const autoRun = await runAutoMatchImportNow(competitionId);
+    rescheduleLiveScoreScheduler(competitionId);
 
     return {
       status: 'ran',
@@ -217,6 +223,8 @@ export async function updateAdminJobEnabled(
       return { status: 'invalid' };
     }
 
+    rescheduleLiveScoreScheduler(competitionId);
+
     return {
       status: 'updated',
       response: {
@@ -270,6 +278,8 @@ export async function updateAutoMatchImportJob(
   if (!snapshot) {
     return { status: 'invalid' };
   }
+
+  rescheduleLiveScoreScheduler(competitionId);
 
   return {
     status: 'updated',
