@@ -1,8 +1,9 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { map } from 'rxjs';
 
-import { AppStateService } from '@core/state/app-state.service';
 import { MatchWithPrediction } from '@models/match.models';
 import { MatchesService } from '@services/matches.service';
 import { MatchSortMode, MatchSortPreferenceService } from '@core/state/match-sort-preference.service';
@@ -30,11 +31,18 @@ interface TipSection {
   styleUrl: './my-predictions-page.component.scss'
 })
 export class MyPredictionsPageComponent {
-  private readonly appState = inject(AppStateService);
   private readonly matchesService = inject(MatchesService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly routeCompetitionSlug = toSignal(this.route.paramMap.pipe(map((params) => params.get('slug'))), {
+    initialValue: this.route.snapshot.paramMap.get('slug')
+  });
   private readonly sortPreference = inject(MatchSortPreferenceService);
 
-  protected readonly activeCompetition = this.appState.activeCompetition;
+  protected readonly postPredictionsRouterLink = computed(() => {
+    const slug = this.routeCompetitionSlug();
+
+    return slug ? ['/competition', slug, 'predictions'] : ['/'];
+  });
   protected readonly matches = this.matchesService.matches;
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal<string | null>(null);
