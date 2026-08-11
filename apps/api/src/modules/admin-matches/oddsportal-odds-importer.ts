@@ -18,10 +18,12 @@ export interface OddsPortalSportData {
   readonly oddsRequest?: {
     readonly url?: string;
   };
+  readonly initialOddsMap?: Record<string, OddsPortalOddsData>;
 }
 
 export interface OddsPortalEventRow {
   readonly [key: string]: unknown;
+  readonly id?: number;
   readonly encodeEventId?: string;
   readonly 'home-name'?: string;
   readonly 'away-name'?: string;
@@ -44,6 +46,7 @@ interface OddsPortalOddsResponse {
 }
 
 interface OddsPortalOddsData {
+  readonly event?: number;
   readonly odds?: OddsPortalOutcomeOdds[];
 }
 
@@ -69,6 +72,12 @@ export async function importOddsPortalOdds(sourceUrl = worldCupOddsPortalUrl): P
   const oddsRequestUrl = sportData.oddsRequest?.url;
 
   if (!oddsRequestUrl) {
+    const embeddedOdds = importEmbeddedOdds(events, sportData.initialOddsMap);
+
+    if (embeddedOdds.length > 0) {
+      return embeddedOdds;
+    }
+
     throw new Error('OddsPortal odds request URL was not found.');
   }
 
@@ -177,7 +186,154 @@ function parseSportData(html: string): OddsPortalSportData {
     return JSON.parse(value) as OddsPortalSportData;
   }
 
+  const nextFlightSportData = parseNextFlightSportData(html);
+
+  if (nextFlightSportData) {
+    return nextFlightSportData;
+  }
+
   throw new Error('OddsPortal sport data was not found.');
+}
+
+function parseNextFlightSportData(html: string): OddsPortalSportData | null {
+  const rowsCandidates: OddsPortalEventRow[][] = [];
+  const oddsMapCandidates: Array<Record<string, OddsPortalOddsData>> = [];
+  const chunkMatches = html.matchAll(/self\.__next_f\.push\(\[1,"((?:\\.|[^"\\])*)"\]\)<\/script>/g);
+
+  for (const match of chunkMatches) {
+    const chunk = parseJsonString(match[1] ?? '');
+
+    if (!chunk || (!chunk.includes('"rows"') && !chunk.includes('"initialOddsMap"'))) {
+      continue;
+    }
+
+    const payload = parseNextFlightChunkPayload(chunk);
+
+    if (!payload) {
+      continue;
+    }
+
+    collectNextFlightValues(payload, 'rows', rowsCandidates);
+    collectNextFlightValues(payload, 'initialOddsMap', oddsMapCandidates);
+  }
+
+  const rows = rowsCandidates.find((candidate) => candidate.some(isOddsPortalEventRow)) ?? [];
+  const initialOddsMap = oddsMapCandidates.find(isOddsPortalInitialOddsMap);
+
+  if (rows.length === 0 && !initialOddsMap) {
+    return null;
+  }
+
+  return {
+    d: { rows },
+    initialOddsMap
+  };
+}
+
+function parseNextFlightChunkPayload(chunk: string): unknown {
+  const separatorIndex = chunk.indexOf(':');
+  const payload = separatorIndex >= 0 ? chunk.slice(separatorIndex + 1).trim() : chunk.trim();
+
+  if (!payload.startsWith('[') && !payload.startsWith('{')) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(payload) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function parseJsonString(value: string): string | null {
+  try {
+    return JSON.parse(`"${value}"`) as string;
+  } catch {
+    return null;
+  }
+}
+
+function collectNextFlightValues<T>(value: unknown, key: string, matches: T[]): void {
+  if (!value || typeof value !== 'object') {
+    return;
+  }
+
+  if (!Array.isArray(value) && Object.prototype.hasOwnProperty.call(value, key)) {
+    matches.push((value as Record<string, T>)[key]);
+  }
+
+  for (const child of Array.isArray(value) ? value : Object.values(value)) {
+    collectNextFlightValues(child, key, matches);
+  }
+}
+
+function isOddsPortalEventRow(value: unknown): value is OddsPortalEventRow {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof (value as OddsPortalEventRow)['home-name'] === 'string' &&
+    typeof (value as OddsPortalEventRow)['away-name'] === 'string'
+  );
+}
+
+function isOddsPortalInitialOddsMap(value: unknown): value is Record<string, OddsPortalOddsData> {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    Object.values(value).some(
+      (oddsData) =>
+        !!oddsData &&
+        typeof oddsData === 'object' &&
+        typeof (oddsData as OddsPortalOddsData).event === 'number' &&
+        Array.isArray((oddsData as OddsPortalOddsData).odds)
+    )
+  );
+}
+
+function importEmbeddedOdds(
+  events: readonly OddsPortalEventRow[],
+  initialOddsMap: Record<string, OddsPortalOddsData> | undefined
+): ImportedMatchOdds[] {
+  if (!initialOddsMap) {
+    return [];
+  }
+
+  const oddsByNumericEventId = new Map<number, OddsPortalOddsData>();
+
+  for (const oddsData of Object.values(initialOddsMap)) {
+    if (typeof oddsData.event === 'number') {
+      oddsByNumericEventId.set(oddsData.event, oddsData);
+    }
+  }
+
+  return events.flatMap((event) => {
+    const homeTeamName = event['home-name'];
+    const awayTeamName = event['away-name'];
+    const odds = (typeof event.id === 'number' ? oddsByNumericEventId.get(event.id)?.odds : null) ?? [];
+
+    if (!homeTeamName || !awayTeamName || odds.length < 3) {
+      return [];
+    }
+
+    const homeWinOdds = normalizeOdds(odds[0]?.maxOdds);
+    const drawOdds = normalizeOdds(odds[1]?.maxOdds);
+    const awayWinOdds = normalizeOdds(odds[2]?.maxOdds);
+
+    if (!homeWinOdds || !drawOdds || !awayWinOdds) {
+      return [];
+    }
+
+    return [
+      {
+        homeTeamName,
+        awayTeamName,
+        homeWinOdds,
+        drawOdds,
+        awayWinOdds
+      }
+    ];
+  });
 }
 
 async function parseOddsPayload(payload: string): Promise<OddsPortalOddsResponse> {
