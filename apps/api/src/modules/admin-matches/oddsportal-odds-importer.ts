@@ -29,6 +29,8 @@ export interface OddsPortalEventRow {
   readonly 'away-name'?: string;
   readonly 'date-start-timestamp'?: number;
   readonly 'date-start-base'?: number;
+  readonly 'status-id'?: number;
+  readonly 'event-stage-name'?: string;
   readonly 'tournament-name'?: string;
   readonly venue?: string;
   readonly venueTown?: string;
@@ -97,7 +99,7 @@ export async function importOddsPortalOdds(sourceUrl = worldCupOddsPortalUrl): P
   const oddsByEventId = oddsPayload.d?.oddsData ?? {};
   const importedOdds: ImportedMatchOdds[] = [];
 
-  for (const event of events) {
+  for (const event of events.filter((event) => isUpcomingScheduledEvent(event))) {
     const encodeEventId = event.encodeEventId;
     const homeTeamName = event['home-name'];
     const awayTeamName = event['away-name'];
@@ -307,7 +309,7 @@ function importEmbeddedOdds(
     }
   }
 
-  return events.flatMap((event) => {
+  return events.filter((event) => isUpcomingScheduledEvent(event)).flatMap((event) => {
     const homeTeamName = event['home-name'];
     const awayTeamName = event['away-name'];
     const odds = (typeof event.id === 'number' ? oddsByNumericEventId.get(event.id)?.odds : null) ?? [];
@@ -368,6 +370,22 @@ function normalizeOdds(value: unknown): number | null {
   }
 
   return Number(value.toFixed(2));
+}
+
+export function isUpcomingScheduledEvent(event: OddsPortalEventRow, now = new Date()): boolean {
+  const statusId = event['status-id'];
+  const stageName = event['event-stage-name'];
+  const timestamp = typeof event['date-start-timestamp'] === 'number' ? event['date-start-timestamp'] : event['date-start-base'];
+
+  if (statusId !== undefined && statusId !== 1) {
+    return false;
+  }
+
+  if (typeof stageName === 'string' && stageName.trim().toLowerCase() !== 'scheduled') {
+    return false;
+  }
+
+  return typeof timestamp === 'number' && timestamp * 1000 > now.getTime();
 }
 
 function toArray<T>(value: readonly T[] | Record<string, T> | undefined): T[] {
