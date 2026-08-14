@@ -6,6 +6,7 @@ import {
   addLiveScoreJobRun,
   addLiveScoreUpdate,
   applyLiveScoreToFinalScore,
+  clearLiveScoreFinalScore,
   findLastLiveScoreJobRunForCompetition,
   findLatestLiveScoreSnapshotsForCompetition,
   findLiveScoreMatchesForCompetition,
@@ -209,7 +210,8 @@ async function runLiveScoreSync(competitionId: number, options: { readonly force
       status = 'skipped';
     } else {
       const providerScores = await fetchLiveScoresWithRetry(competition?.odds_source_url ?? '');
-      const matchesByProviderScore = mapProviderScoresToMatches(activeMatches, providerScores);
+      const scoreSyncMatches = options.force ? getManualRunScoreSyncMatches(matches, startedAt) : activeMatches;
+      const matchesByProviderScore = mapProviderScoresToMatches(scoreSyncMatches, providerScores);
       const fetchedAt = new Date().toISOString();
 
       checkedMatches = matchesByProviderScore.length;
@@ -236,6 +238,14 @@ async function runLiveScoreSync(competitionId: number, options: { readonly force
         }
 
         if (providerScore.homeScore === null || providerScore.awayScore === null) {
+          continue;
+        }
+
+        if (options.force && providerScore.status === 'live' && hasFinalScore(match)) {
+          if (clearLiveScoreFinalScore(competitionId, match.id)) {
+            updatedMatches += 1;
+          }
+
           continue;
         }
 
@@ -364,6 +374,20 @@ function getActiveMatches(
     const kickoffTime = Date.parse(match.kickoff_at);
 
     return kickoffTime <= nowTime + config.liveScoreKickoffBufferMs;
+  });
+}
+
+function getManualRunScoreSyncMatches(matches: readonly MatchRow[], now: Date): MatchRow[] {
+  const nowTime = now.getTime();
+
+  return matches.filter((match) => {
+    if (match.is_postponed === 1 || match.released_for_predictions !== 1) {
+      return false;
+    }
+
+    const kickoffTime = Date.parse(match.kickoff_at);
+
+    return Number.isFinite(kickoffTime) && kickoffTime <= nowTime + config.liveScoreKickoffBufferMs;
   });
 }
 

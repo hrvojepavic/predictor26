@@ -11,7 +11,7 @@ import {
   LiveScoreSnapshotInput,
   LiveScoreUpdateInput
 } from '../../database/queries/live-scores.queries.js';
-import { listMatches, updateFinalScoreIfChanged } from '../../database/queries/matches.queries.js';
+import { listMatches, updateFinalScore, updateFinalScoreIfChanged } from '../../database/queries/matches.queries.js';
 
 export function findLiveScoreMatchesForCompetition(competitionId: number) {
   return listMatches(competitionId);
@@ -36,6 +36,12 @@ export function applyLiveScoreToFinalScore(
   awayScore: number
 ): boolean {
   return updateFinalScoreIfChanged(competitionId, matchId, homeScore, awayScore);
+}
+
+export function clearLiveScoreFinalScore(competitionId: number, matchId: number): boolean {
+  const match = updateFinalScore(competitionId, matchId, null, null);
+
+  return Boolean(match && match.final_home_score === null && match.final_away_score === null);
 }
 
 export function findLastLiveScoreJobRunForCompetition(competitionId: number) {
