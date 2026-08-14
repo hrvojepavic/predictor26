@@ -133,7 +133,17 @@ export function rescheduleLiveScoreScheduler(competitionId?: number): void {
 }
 
 export async function runLiveScoreSyncNow(competitionId: number): Promise<LiveScoreRunReport> {
-  return runLiveScoreSync(competitionId, { force: true });
+  const report = await runLiveScoreSync(competitionId, { force: true });
+
+  if (report.enabled && report.nextRunAt) {
+    const nextRunAt = Date.parse(report.nextRunAt);
+
+    if (Number.isFinite(nextRunAt)) {
+      scheduleNextLiveScoreSync(Math.max(nextRunAt - Date.now(), schedulerMinimumDelayMs));
+    }
+  }
+
+  return report;
 }
 
 export function setLiveScoreSyncEnabled(competitionId: number, enabled: boolean): void {
