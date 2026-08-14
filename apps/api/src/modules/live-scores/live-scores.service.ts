@@ -239,7 +239,7 @@ async function runLiveScoreSync(competitionId: number, options: { readonly force
           continue;
         }
 
-        if (!shouldApplyProviderScore(providerScore, latestSnapshotsByMatchId.get(match.id))) {
+        if (!shouldApplyProviderScore(providerScore)) {
           continue;
         }
 
@@ -461,19 +461,8 @@ function hasFinalScore(match: Pick<MatchRow, 'final_home_score' | 'final_away_sc
   return match.final_home_score !== null && match.final_away_score !== null;
 }
 
-function shouldApplyProviderScore(
-  providerScore: ProviderLiveScore,
-  latestSnapshot: LatestLiveScoreSnapshotRow | undefined
-): boolean {
-  if (providerScore.status === 'finished') {
-    return true;
-  }
-
-  return (
-    latestSnapshot?.home_score === providerScore.homeScore &&
-    latestSnapshot.away_score === providerScore.awayScore &&
-    latestSnapshot.status === providerScore.status
-  );
+function shouldApplyProviderScore(providerScore: ProviderLiveScore): boolean {
+  return providerScore.status === 'finished';
 }
 
 function mapProviderScoresToMatches(matches: readonly MatchRow[], scores: readonly ProviderLiveScore[]) {
