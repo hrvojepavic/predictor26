@@ -4,7 +4,7 @@ import { extname, join } from 'node:path';
 
 import { config } from '../../config/index.js';
 import { MatchImportInput, MatchRow, TeamImportInput } from '../../database/queries/matches.queries.js';
-import { decodeHtmlEntities, fetchOddsPortalPageHtml, fetchOddsPortalSportData, oddsPortalRows } from './oddsportal-odds-importer.js';
+import { decodeHtmlEntities, fetchOddsPortalPageHtml, fetchOddsPortalSportData, isUpcomingScheduledEvent, oddsPortalRows } from './oddsportal-odds-importer.js';
 
 const sourceTimeZone = 'Europe/Zagreb';
 const croatiaTimeZone = 'Europe/Zagreb';
@@ -35,7 +35,7 @@ export async function importOddsPortalSchedule(sourceUrl: string, existingMatche
   const matches: MatchImportInput[] = [];
   const teamsByName = new Map<string, TeamImportInput>();
 
-  for (const row of rows) {
+  for (const row of rows.filter((event) => isUpcomingScheduledEvent(event))) {
     const homeTeamName = typeof row['home-name'] === 'string' ? row['home-name'].trim() : '';
     const awayTeamName = typeof row['away-name'] === 'string' ? row['away-name'].trim() : '';
     const timestamp = typeof row['date-start-timestamp'] === 'number' ? row['date-start-timestamp'] : row['date-start-base'];

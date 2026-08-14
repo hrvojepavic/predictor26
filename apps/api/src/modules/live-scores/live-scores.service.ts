@@ -205,7 +205,7 @@ async function runLiveScoreSync(competitionId: number, options: { readonly force
     );
     const activeMatches = getActiveMatches(matches, startedAt, latestSnapshotsByMatchId);
 
-    if (!enabled || (!options.force && activeMatches.length === 0)) {
+    if ((!enabled && !options.force) || (!options.force && activeMatches.length === 0)) {
       status = 'skipped';
     } else {
       const providerScores = await fetchLiveScoresWithRetry(competition?.odds_source_url ?? '');
