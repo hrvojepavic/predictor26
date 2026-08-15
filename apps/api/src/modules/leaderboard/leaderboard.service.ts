@@ -339,7 +339,7 @@ function getLiveMatches(
       (match) =>
         match.is_postponed !== 1 &&
         Date.parse(match.kickoff_at) <= now &&
-        (!hasFinalScore(match) || isLiveByProvider(latestSnapshotsByMatchId.get(match.id), liveSnapshotsEnabled)) &&
+        !hasFinalScore(match) &&
         !isFinishedByProvider(latestSnapshotsByMatchId.get(match.id))
     )
     .sort(sortMatchesByKickoff);
@@ -804,17 +804,17 @@ function getLiveScore(match: MatchRow, snapshot: LatestLiveScoreSnapshotRow | un
     return null;
   }
 
-  if (snapshot && isLiveByProvider(snapshot, liveSnapshotsEnabled) && snapshot.home_score !== null && snapshot.away_score !== null) {
-    return {
-      home: snapshot.home_score,
-      away: snapshot.away_score
-    };
-  }
-
   if (hasFinalScore(match)) {
     return {
       home: match.final_home_score,
       away: match.final_away_score
+    };
+  }
+
+  if (snapshot && isLiveByProvider(snapshot, liveSnapshotsEnabled) && snapshot.home_score !== null && snapshot.away_score !== null) {
+    return {
+      home: snapshot.home_score,
+      away: snapshot.away_score
     };
   }
 
@@ -1053,12 +1053,12 @@ function getMatchStatus(
     return 'finished';
   }
 
-  if (isLiveByProvider(snapshot, liveSnapshotsEnabled)) {
-    return 'live';
-  }
-
   if (hasFinalScore(match)) {
     return 'finished';
+  }
+
+  if (isLiveByProvider(snapshot, liveSnapshotsEnabled)) {
+    return 'live';
   }
 
   if (liveSnapshotsEnabled && kickoffTime <= now) {
