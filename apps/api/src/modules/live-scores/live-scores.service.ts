@@ -207,6 +207,7 @@ async function runLiveScoreSync(competitionId: number, options: { readonly force
     readonly newHomeScore: number;
     readonly newAwayScore: number;
     readonly providerStatus: ProviderLiveScore['status'];
+    readonly appliedToFinalScore: boolean;
   }> = [];
 
   try {
@@ -227,6 +228,12 @@ async function runLiveScoreSync(competitionId: number, options: { readonly force
       checkedMatches = matchesByProviderScore.length;
 
       for (const { match, providerScore } of matchesByProviderScore) {
+        const previousSnapshot = latestSnapshotsByMatchId.get(match.id);
+
+        if (isStaleProviderSnapshot(previousSnapshot, providerScore)) {
+          continue;
+        }
+
         setLiveScoreSnapshot({
           matchId: match.id,
           provider,
@@ -251,9 +258,24 @@ async function runLiveScoreSync(competitionId: number, options: { readonly force
           continue;
         }
 
+        const scoreChanged = hasProviderScoreChanged(previousSnapshot, providerScore);
+
+        if (scoreChanged && !shouldApplyProviderScore(providerScore)) {
+          updatedMatches += 1;
+          pendingUpdates.push({
+            matchId: match.id,
+            previousHomeScore: previousSnapshot?.home_score ?? null,
+            previousAwayScore: previousSnapshot?.away_score ?? null,
+            newHomeScore: providerScore.homeScore,
+            newAwayScore: providerScore.awayScore,
+            providerStatus: providerScore.status,
+            appliedToFinalScore: false
+          });
+        }
+
         if (options.force && providerScore.status === 'live' && hasFinalScore(match)) {
           if (clearLiveScoreFinalScore(competitionId, match.id)) {
-            updatedMatches += 1;
+            updatedMatches += scoreChanged ? 0 : 1;
           }
 
           continue;
@@ -269,14 +291,15 @@ async function runLiveScoreSync(competitionId: number, options: { readonly force
           continue;
         }
 
-        updatedMatches += 1;
+        updatedMatches += scoreChanged ? 0 : 1;
         pendingUpdates.push({
           matchId: match.id,
           previousHomeScore: match.final_home_score,
           previousAwayScore: match.final_away_score,
           newHomeScore: providerScore.homeScore,
           newAwayScore: providerScore.awayScore,
-          providerStatus: providerScore.status
+          providerStatus: providerScore.status,
+          appliedToFinalScore: true
         });
       }
     }
@@ -316,7 +339,6 @@ async function runLiveScoreSync(competitionId: number, options: { readonly force
     addLiveScoreUpdate({
       ...update,
       runId,
-      appliedToFinalScore: true,
       createdAt: report.finishedAt
     });
   }
@@ -497,6 +519,44 @@ function hasFinalScore(match: Pick<MatchRow, 'final_home_score' | 'final_away_sc
 
 function shouldApplyProviderScore(providerScore: ProviderLiveScore): boolean {
   return providerScore.status === 'finished';
+}
+
+function hasProviderScoreChanged(
+  latestSnapshot: LatestLiveScoreSnapshotRow | undefined,
+  providerScore: ProviderLiveScore
+): boolean {
+  return (
+    latestSnapshot?.home_score !== providerScore.homeScore ||
+    latestSnapshot.away_score !== providerScore.awayScore ||
+    latestSnapshot.status !== providerScore.status
+  );
+}
+
+function isStaleProviderSnapshot(
+  latestSnapshot: LatestLiveScoreSnapshotRow | undefined,
+  providerScore: ProviderLiveScore
+): boolean {
+  if (!latestSnapshot || providerScore.status === 'finished') {
+    return false;
+  }
+
+  if (latestSnapshot.status !== 'live') {
+    return false;
+  }
+
+  if (providerScore.status !== 'live') {
+    return true;
+  }
+
+  if (latestSnapshot.home_score === null || latestSnapshot.away_score === null) {
+    return false;
+  }
+
+  if (providerScore.homeScore === null || providerScore.awayScore === null) {
+    return true;
+  }
+
+  return providerScore.homeScore < latestSnapshot.home_score || providerScore.awayScore < latestSnapshot.away_score;
 }
 
 function mapProviderScoresToMatches(matches: readonly MatchRow[], scores: readonly ProviderLiveScore[]) {

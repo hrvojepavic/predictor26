@@ -168,6 +168,7 @@ export async function fetchOddsPortalPageHtml(
 function withCacheBuster(sourceUrl: string): string {
   const url = new URL(sourceUrl);
   url.searchParams.set('_predictor26_live', String(Date.now()));
+  url.searchParams.set('_predictor26_nonce', Math.random().toString(36).slice(2));
   return url.toString();
 }
 
