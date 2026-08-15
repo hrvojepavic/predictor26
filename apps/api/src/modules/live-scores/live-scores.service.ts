@@ -27,9 +27,9 @@ const recentUpdateLimit = 20;
 const schedulerMinimumDelayMs = 5_000;
 const autoImportLiveScoreDelayMs = 5 * 60 * 1_000;
 const noReleasedMatchRetryMs = 60 * 60 * 1_000;
-const liveScoreFetchAttempts = 4;
-const liveScoreFetchTimeoutMs = 30_000;
-const liveScoreFetchRetryDelayMs = 2_000;
+const liveScoreFetchAttempts = 2;
+const liveScoreFetchTimeoutMs = 25_000;
+const liveScoreFetchRetryDelayMs = 1_000;
 
 let schedulerTimer: NodeJS.Timeout | null = null;
 let syncRunning = false;
@@ -395,7 +395,7 @@ function getActiveMatches(
       return false;
     }
 
-    if (hasFinalScore(match) && !isLiveByProvider(latestSnapshotsByMatchId.get(match.id))) {
+    if (hasFinalScore(match)) {
       return false;
     }
 
@@ -441,7 +441,7 @@ async function calculateNextRunAt(
       return (
         match.is_postponed !== 1 &&
         match.released_for_predictions === 1 &&
-        (!hasFinalScore(match) || isLiveByProvider(latestSnapshot)) &&
+        !hasFinalScore(match) &&
         !isFinishedByProvider(latestSnapshot)
       );
     })

@@ -145,29 +145,45 @@ export async function fetchOddsPortalPageHtml(
   sourceUrl: string,
   options: OddsPortalPageFetchOptions = {}
 ): Promise<string> {
-  const pageResponse = await fetch(options.bypassCache ? withCacheBuster(sourceUrl) : sourceUrl, {
-    cache: options.bypassCache ? 'no-store' : 'default',
-    headers: {
-      ...browserHeaders,
-      ...(options.bypassCache
-        ? {
-            'cache-control': 'no-cache, no-store, max-age=0',
-            pragma: 'no-cache'
-          }
-        : {})
-    }
-  });
+  const candidateUrls = options.bypassCache ? cacheBustedUrls(sourceUrl) : [sourceUrl];
+  let lastError: Error | null = null;
 
-  if (!pageResponse.ok) {
-    throw new Error(`OddsPortal page fetch failed with status ${pageResponse.status}.`);
+  for (const candidateUrl of candidateUrls) {
+    try {
+      const pageResponse = await fetch(candidateUrl, {
+        cache: options.bypassCache ? 'no-store' : 'default',
+        headers: {
+          ...browserHeaders,
+          ...(options.bypassCache
+            ? {
+                'cache-control': 'no-cache, no-store, max-age=0',
+                pragma: 'no-cache'
+              }
+            : {})
+        }
+      });
+
+      if (!pageResponse.ok) {
+        lastError = new Error(`OddsPortal page fetch failed with status ${pageResponse.status}.`);
+        continue;
+      }
+
+      return pageResponse.text();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('OddsPortal page fetch failed.');
+    }
   }
 
-  return pageResponse.text();
+  throw lastError ?? new Error('OddsPortal page fetch failed.');
 }
 
-function withCacheBuster(sourceUrl: string): string {
+function cacheBustedUrls(sourceUrl: string): string[] {
+  return ['_', '_t', '_r', '_predictor26_live'].map((key) => withCacheBuster(sourceUrl, key));
+}
+
+function withCacheBuster(sourceUrl: string, key: string): string {
   const url = new URL(sourceUrl);
-  url.searchParams.set('_predictor26_live', String(Date.now()));
+  url.searchParams.set(key, String(Date.now()));
   url.searchParams.set('_predictor26_nonce', Math.random().toString(36).slice(2));
   return url.toString();
 }
