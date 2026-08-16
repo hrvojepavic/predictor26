@@ -86,7 +86,7 @@ async function overlayLiveSocketScores(scores: readonly ProviderLiveScore[]): Pr
     .filter((score) => score.providerEventId)
     .map((score) => score.providerEventId as string);
   const liveCandidateEventIds = scores
-    .filter((score) => score.providerEventId && (score.status === 'live' || isStartedProviderScore(score, now)))
+    .filter((score) => score.providerEventId && score.status !== 'finished' && (score.status === 'live' || isStartedProviderScore(score, now)))
     .map((score) => score.providerEventId as string);
 
   if (eventIds.length === 0) {
