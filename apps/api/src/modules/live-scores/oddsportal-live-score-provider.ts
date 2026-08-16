@@ -33,9 +33,14 @@ interface OddsPortalSocketScoreUpdate {
   readonly liveIcon: boolean;
 }
 
-const liveScoreSocketHost = 'oppush-tt2.livesport.eu';
+const liveScoreSocketHosts = [
+  'oppush-tt2.livesport.eu',
+  'oppush-tt1.livesport.eu',
+  'oppush-tt3.livesport.eu',
+  'oppush-tt4.livesport.eu'
+] as const;
 const liveScoreSocketPath = '/WebSocketConnection-Secure';
-const liveScoreSocketWaitMs = 4_000;
+const liveScoreSocketWaitMs = 8_000;
 const liveScoreSocketMaxPayloadBytes = 2 * 1024 * 1024;
 
 export async function fetchOddsPortalLiveScores(sourceUrl = defaultOddsPortalSourceUrl): Promise<ProviderLiveScore[]> {
@@ -76,23 +81,35 @@ function toProviderLiveScore(row: OddsPortalEventRow): ProviderLiveScore[] {
 }
 
 async function overlayLiveSocketScores(scores: readonly ProviderLiveScore[]): Promise<ProviderLiveScore[]> {
-  const liveEventIds = scores
-    .filter((score) => score.providerEventId && score.status === 'live')
+  const now = Date.now();
+  const eventIds = scores
+    .filter((score) => score.providerEventId)
+    .map((score) => score.providerEventId as string);
+  const liveCandidateEventIds = scores
+    .filter((score) => score.providerEventId && (score.status === 'live' || isStartedProviderScore(score, now)))
     .map((score) => score.providerEventId as string);
 
-  if (liveEventIds.length === 0) {
+  if (eventIds.length === 0) {
     return [...scores];
   }
 
   let socketScores: Map<string, OddsPortalSocketScoreUpdate>;
 
   try {
-    socketScores = await fetchOddsPortalSocketScores(liveEventIds);
+    socketScores = await fetchOddsPortalSocketScores(eventIds);
   } catch {
+    if (liveCandidateEventIds.length > 0) {
+      throw new Error('OddsPortal live score socket refresh failed for active matches.');
+    }
+
     return [...scores];
   }
 
   if (socketScores.size === 0) {
+    if (liveCandidateEventIds.length > 0) {
+      throw new Error('OddsPortal live score socket did not return active match scores.');
+    }
+
     return [...scores];
   }
 
@@ -134,27 +151,52 @@ async function overlayLiveSocketScores(scores: readonly ProviderLiveScore[]): Pr
   });
 }
 
+function isStartedProviderScore(score: ProviderLiveScore, now: number): boolean {
+  if (!score.kickoffAt) {
+    return false;
+  }
+
+  const kickoffTime = Date.parse(score.kickoffAt);
+
+  return Number.isFinite(kickoffTime) && kickoffTime <= now;
+}
+
 async function fetchOddsPortalSocketScores(eventIds: readonly string[]): Promise<Map<string, OddsPortalSocketScoreUpdate>> {
   const wantedEventIds = new Set(eventIds);
   const updates = new Map<string, OddsPortalSocketScoreUpdate>();
+  let lastError: unknown = null;
 
-  await withMigratoryDataSocket((payload) => {
-    for (const [eventId, update] of parseSocketScorePayload(payload)) {
-      if (wantedEventIds.has(eventId)) {
-        updates.set(eventId, update);
+  for (const host of liveScoreSocketHosts) {
+    try {
+      await withMigratoryDataSocket(host, (payload) => {
+        for (const [eventId, update] of parseSocketScorePayload(payload)) {
+          if (wantedEventIds.has(eventId)) {
+            updates.set(eventId, update);
+          }
+        }
+      });
+
+      if (updates.size > 0) {
+        return updates;
       }
+    } catch (error) {
+      lastError = error;
     }
-  });
+  }
+
+  if (lastError) {
+    throw lastError instanceof Error ? lastError : new Error('OddsPortal live score socket fetch failed.');
+  }
 
   return updates;
 }
 
-function withMigratoryDataSocket(onMessage: (payload: string) => void): Promise<void> {
+function withMigratoryDataSocket(host: string, onMessage: (payload: string) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const socket = connectTls({
-      host: liveScoreSocketHost,
+      host,
       port: 443,
-      servername: liveScoreSocketHost
+      servername: host
     });
     const key = randomBytes(16).toString('base64');
     const expectedAccept = createHash('sha1')
@@ -193,7 +235,7 @@ function withMigratoryDataSocket(onMessage: (payload: string) => void): Promise<
       socket.write(
         [
           `GET ${liveScoreSocketPath} HTTP/1.1`,
-          `Host: ${liveScoreSocketHost}`,
+          `Host: ${host}`,
           'Upgrade: websocket',
           'Connection: Upgrade',
           `Sec-WebSocket-Key: ${key}`,
