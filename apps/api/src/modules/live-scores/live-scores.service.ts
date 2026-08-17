@@ -450,7 +450,7 @@ async function calculateNextRunAt(
     .sort((first, second) => first - second)[0];
 
   if (!nextKickoff) {
-    return calculateNoReleasedMatchNextRunAt(competitionId, now);
+    return calculateNoReleasedMatchNextRunAt(competitionId, matches, now, latestSnapshotsByMatchId);
   }
 
   const bufferedKickoffTime = nextKickoff - config.liveScoreKickoffBufferMs;
@@ -462,7 +462,12 @@ async function calculateNextRunAt(
   return new Date(nextRunTime).toISOString();
 }
 
-async function calculateNoReleasedMatchNextRunAt(competitionId: number, now: Date): Promise<string> {
+async function calculateNoReleasedMatchNextRunAt(
+  competitionId: number,
+  matches: readonly MatchRow[],
+  now: Date,
+  latestSnapshotsByMatchId: ReadonlyMap<number, LatestLiveScoreSnapshotRow>
+): Promise<string> {
   const autoImportSnapshot = await getAutoMatchImportJobSnapshot(competitionId);
   const fallbackRetryAt = now.getTime() + noReleasedMatchRetryMs;
 
@@ -470,7 +475,7 @@ async function calculateNoReleasedMatchNextRunAt(competitionId: number, now: Dat
     return new Date(fallbackRetryAt).toISOString();
   }
 
-  if (shouldRetryAfterUnreleasedAutoImport(autoImportSnapshot, now)) {
+  if (shouldRetryAfterUnreleasedAutoImport(autoImportSnapshot, getLastCompletedReleasedMatchTime(matches, latestSnapshotsByMatchId))) {
     return new Date(fallbackRetryAt).toISOString();
   }
 
@@ -485,7 +490,7 @@ async function calculateNoReleasedMatchNextRunAt(competitionId: number, now: Dat
 
 function shouldRetryAfterUnreleasedAutoImport(
   autoImportSnapshot: Awaited<ReturnType<typeof getAutoMatchImportJobSnapshot>>,
-  now: Date
+  lastCompletedReleasedMatchTime: number | null
 ): boolean {
   const lastRun = autoImportSnapshot.lastRun;
 
@@ -494,15 +499,30 @@ function shouldRetryAfterUnreleasedAutoImport(
   }
 
   const lastFinishedAt = Date.parse(lastRun.finishedAt);
-  const autoImportNextRunAt = autoImportSnapshot.nextRunAt ? Date.parse(autoImportSnapshot.nextRunAt) : null;
 
-  return (
-    Number.isFinite(lastFinishedAt) &&
-    lastFinishedAt <= now.getTime() &&
-    (typeof autoImportNextRunAt !== 'number' ||
-      !Number.isFinite(autoImportNextRunAt) ||
-      autoImportNextRunAt > now.getTime() + noReleasedMatchRetryMs)
-  );
+  if (!Number.isFinite(lastFinishedAt)) {
+    return false;
+  }
+
+  return lastCompletedReleasedMatchTime === null || lastFinishedAt > lastCompletedReleasedMatchTime;
+}
+
+function getLastCompletedReleasedMatchTime(
+  matches: readonly MatchRow[],
+  latestSnapshotsByMatchId: ReadonlyMap<number, LatestLiveScoreSnapshotRow>
+): number | null {
+  const completedMatchTimes = matches
+    .filter((match) => {
+      if (match.is_postponed === 1 || match.released_for_predictions !== 1) {
+        return false;
+      }
+
+      return hasFinalScore(match) || isFinishedByProvider(latestSnapshotsByMatchId.get(match.id));
+    })
+    .map((match) => Date.parse(match.kickoff_at))
+    .filter((kickoffTime) => Number.isFinite(kickoffTime));
+
+  return completedMatchTimes.length > 0 ? Math.max(...completedMatchTimes) : null;
 }
 
 function isFinishedByProvider(snapshot: LatestLiveScoreSnapshotRow | undefined): boolean {
