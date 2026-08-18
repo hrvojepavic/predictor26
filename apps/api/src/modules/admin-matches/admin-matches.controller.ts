@@ -22,6 +22,7 @@ import {
   syncOdds
 } from './admin-matches.service.js';
 import { resolveCompetitionIdForAdmin } from '../competitions/competitions.service.js';
+import { rescheduleLiveScoreScheduler } from '../live-scores/live-scores.service.js';
 
 interface MatchIdParams {
   readonly matchId: string;
@@ -99,6 +100,7 @@ export async function importMatchesController(
     }
 
     res.json(result.response);
+    rescheduleLiveScoreScheduler(competitionId);
   } catch (error) {
     next(error);
   }
@@ -130,6 +132,7 @@ export async function syncMatchOddsController(
     }
 
     res.json(result.response);
+    rescheduleLiveScoreScheduler(competitionId);
   } catch (error) {
     next(error);
   }
@@ -161,6 +164,7 @@ export async function importMatchesWithOddsController(
     }
 
     res.json(result.response);
+    rescheduleLiveScoreScheduler(competitionId);
   } catch (error) {
     next(error);
   }
@@ -192,6 +196,7 @@ export async function releaseMatchRoundController(
     }
 
     res.json(result.response);
+    rescheduleLiveScoreScheduler(competitionId);
   } catch (error) {
     next(error);
   }
@@ -226,6 +231,7 @@ export async function updateFinalScoreController(
       match: result.match,
       finalScore: result.match.finalScore
     });
+    rescheduleLiveScoreScheduler(competitionId);
   } catch (error) {
     next(error);
   }
@@ -264,6 +270,7 @@ export async function updateKickoffController(
     res.json({
       match: result.match
     });
+    rescheduleLiveScoreScheduler(competitionId);
   } catch (error) {
     next(error);
   }
@@ -300,6 +307,7 @@ export async function updatePostponedController(
     }
 
     res.json(result.response);
+    rescheduleLiveScoreScheduler(competitionId);
   } catch (error) {
     next(error);
   }
