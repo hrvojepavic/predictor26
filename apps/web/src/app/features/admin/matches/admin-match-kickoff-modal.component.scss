@@ -83,6 +83,23 @@ h2 {
   outline-color: #fecaca;
 }
 
+.odds-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 2px 0 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.odds-fields legend {
+  padding: 0 4px;
+  color: #374151;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .form-error {
   min-height: 1.2em;
   margin: 0;
@@ -127,4 +144,10 @@ button:disabled,
 input[readonly] {
   cursor: default;
   opacity: 0.72;
+}
+
+@media (max-width: 520px) {
+  .odds-fields {
+    grid-template-columns: 1fr;
+  }
 }

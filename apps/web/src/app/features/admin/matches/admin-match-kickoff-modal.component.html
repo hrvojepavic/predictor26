@@ -23,6 +23,54 @@
       />
     </label>
 
+    @if (canAddOdds()) {
+      <fieldset class="odds-fields">
+        <legend>Add odds</legend>
+
+        <label class="field">
+          <span>Home win</span>
+          <input
+            type="number"
+            min="1.01"
+            max="1000"
+            step="0.01"
+            inputmode="decimal"
+            appFormFieldState="invalid"
+            formControlName="homeWinOdds"
+            [readonly]="isSubmitting()"
+          />
+        </label>
+
+        <label class="field">
+          <span>Draw</span>
+          <input
+            type="number"
+            min="1.01"
+            max="1000"
+            step="0.01"
+            inputmode="decimal"
+            appFormFieldState="invalid"
+            formControlName="drawOdds"
+            [readonly]="isSubmitting()"
+          />
+        </label>
+
+        <label class="field">
+          <span>Away win</span>
+          <input
+            type="number"
+            min="1.01"
+            max="1000"
+            step="0.01"
+            inputmode="decimal"
+            appFormFieldState="invalid"
+            formControlName="awayWinOdds"
+            [readonly]="isSubmitting()"
+          />
+        </label>
+      </fieldset>
+    }
+
     <label class="field">
       <span>What is the secret code?</span>
       <input

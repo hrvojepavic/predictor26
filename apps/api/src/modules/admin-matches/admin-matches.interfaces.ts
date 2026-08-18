@@ -85,6 +85,9 @@ export interface UpdateKickoffRequest {
   readonly kickoffAt: string;
   readonly city: string;
   readonly venue: string;
+  readonly homeWinOdds?: number;
+  readonly drawOdds?: number;
+  readonly awayWinOdds?: number;
   readonly secretCode: string;
 }
 

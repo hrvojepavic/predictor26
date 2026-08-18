@@ -226,14 +226,10 @@ function parseNextFlightSportData(html: string): OddsPortalSportData | null {
       continue;
     }
 
-    const payload = parseNextFlightChunkPayload(chunk);
-
-    if (!payload) {
-      continue;
+    for (const payload of parseNextFlightChunkPayloads(chunk)) {
+      collectNextFlightValues(payload, 'rows', rowsCandidates);
+      collectNextFlightValues(payload, 'initialOddsMap', oddsMapCandidates);
     }
-
-    collectNextFlightValues(payload, 'rows', rowsCandidates);
-    collectNextFlightValues(payload, 'initialOddsMap', oddsMapCandidates);
   }
 
   const rows = rowsCandidates.find((candidate) => candidate.some(isOddsPortalEventRow)) ?? [];
@@ -249,19 +245,25 @@ function parseNextFlightSportData(html: string): OddsPortalSportData | null {
   };
 }
 
-function parseNextFlightChunkPayload(chunk: string): unknown {
-  const separatorIndex = chunk.indexOf(':');
-  const payload = separatorIndex >= 0 ? chunk.slice(separatorIndex + 1).trim() : chunk.trim();
+function parseNextFlightChunkPayloads(chunk: string): unknown[] {
+  const payloads: unknown[] = [];
 
-  if (!payload.startsWith('[') && !payload.startsWith('{')) {
-    return null;
+  for (const record of chunk.split('\n')) {
+    const separatorIndex = record.indexOf(':');
+    const payload = separatorIndex >= 0 ? record.slice(separatorIndex + 1).trim() : record.trim();
+
+    if (!payload.startsWith('[') && !payload.startsWith('{')) {
+      continue;
+    }
+
+    try {
+      payloads.push(JSON.parse(payload) as unknown);
+    } catch {
+      // Next flight chunks also contain non-JSON records such as module references.
+    }
   }
 
-  try {
-    return JSON.parse(payload) as unknown;
-  } catch {
-    return null;
-  }
+  return payloads;
 }
 
 function parseJsonString(value: string): string | null {

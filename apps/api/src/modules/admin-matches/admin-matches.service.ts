@@ -408,14 +408,17 @@ export async function importScheduleWithOdds(
   };
 }
 
-export async function runAutoMatchImportForCompetition(competitionId: number): Promise<ImportMatchesWithOddsResponse | null> {
+export async function runAutoMatchImportForCompetition(
+  competitionId: number,
+  options: { readonly requireAutoEnabled: boolean } = { requireAutoEnabled: true }
+): Promise<ImportMatchesWithOddsResponse | null> {
   const competition = findCompetitionForAdmin(competitionId);
   const sourceUrl = competition?.odds_source_url.trim() ?? '';
 
   if (
     !competition ||
     competition.is_finished === 1 ||
-    competition.auto_import_matches_enabled !== 1 ||
+    (options.requireAutoEnabled && competition.auto_import_matches_enabled !== 1) ||
     competition.import_matches_with_odds_enabled !== 1 ||
     !isValidSourceUrl(sourceUrl)
   ) {
@@ -550,7 +553,7 @@ async function runAutoMatchImportJob(
       status = 'skipped';
       errorMessage = 'Auto match import is disabled.';
     } else {
-      const result = await runAutoMatchImportForCompetition(competitionId);
+      const result = await runAutoMatchImportForCompetition(competitionId, { requireAutoEnabled: !options.force });
 
       if (!result) {
         status = 'skipped';
@@ -1063,13 +1066,19 @@ export async function changeKickoff(
   matchId: number,
   input: Partial<UpdateKickoffRequest> | undefined
 ): Promise<UpdateKickoffResult> {
+  const hasOddsInput =
+    input?.homeWinOdds !== undefined ||
+    input?.drawOdds !== undefined ||
+    input?.awayWinOdds !== undefined;
+
   if (
     !Number.isInteger(matchId) ||
     matchId < 1 ||
     typeof input?.kickoffAt !== 'string' ||
     !isValidIsoDate(input.kickoffAt) ||
     !isValidVenuePart(input.city, 80) ||
-    !isValidVenuePart(input.venue, 120)
+    !isValidVenuePart(input.venue, 120) ||
+    (hasOddsInput && (!isValidOddsValue(input.homeWinOdds) || !isValidOddsValue(input.drawOdds) || !isValidOddsValue(input.awayWinOdds)))
   ) {
     return { status: 'invalid' };
   }
@@ -1080,10 +1089,52 @@ export async function changeKickoff(
     return secretCodeResult;
   }
 
-  const match = setKickoff(competitionId, matchId, input.kickoffAt, input.city.trim(), input.venue.trim());
+  const existingMatch = findAdminMatches(competitionId).find((match) => match.id === matchId);
+
+  if (!existingMatch) {
+    return { status: 'not_found' };
+  }
+
+  if (
+    hasOddsInput &&
+    (existingMatch.home_win_odds !== null ||
+      existingMatch.draw_odds !== null ||
+      existingMatch.away_win_odds !== null ||
+      existingMatch.final_home_score !== null ||
+      existingMatch.final_away_score !== null)
+  ) {
+    return { status: 'invalid' };
+  }
+
+  let match = setKickoff(competitionId, matchId, input.kickoffAt, input.city.trim(), input.venue.trim());
 
   if (!match) {
     return { status: 'not_found' };
+  }
+
+  if (hasOddsInput) {
+    const homeWinOdds = input.homeWinOdds;
+    const drawOdds = input.drawOdds;
+    const awayWinOdds = input.awayWinOdds;
+
+    if (!isValidOddsValue(homeWinOdds) || !isValidOddsValue(drawOdds) || !isValidOddsValue(awayWinOdds)) {
+      return { status: 'invalid' };
+    }
+
+    const updated = setMatchOdds([
+      {
+        matchId,
+        homeWinOdds,
+        drawOdds,
+        awayWinOdds
+      }
+    ]);
+
+    if (updated !== 1) {
+      return { status: 'invalid' };
+    }
+
+    match = findAdminMatches(competitionId).find((currentMatch) => currentMatch.id === matchId) ?? match;
   }
 
   return {
