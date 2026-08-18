@@ -237,7 +237,11 @@ export class AdminMatchesPageComponent {
           matches.map((currentMatch) => (currentMatch.id === updatedMatch.id ? updatedMatch : currentMatch))
         );
         this.editingKickoffMatch.set(null);
-        this.importMessage.set(`Match ${updatedMatch.matchNumber} details saved.`);
+        this.importMessage.set(
+          !match.odds && updatedMatch.odds
+            ? `Match ${updatedMatch.matchNumber} details and odds saved.`
+            : `Match ${updatedMatch.matchNumber} details saved.`
+        );
         this.ensureSelectedFilterHasResults();
         this.setSaving(match.id, false);
       },

@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, output } from '@angular/core';
+import { Component, computed, effect, inject, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { Match } from '@models/match.models';
@@ -8,6 +8,9 @@ export interface KickoffChangeConfirmation {
   readonly kickoffAt: string;
   readonly city: string;
   readonly venue: string;
+  readonly homeWinOdds?: number;
+  readonly drawOdds?: number;
+  readonly awayWinOdds?: number;
   readonly secretCode: string;
 }
 
@@ -30,8 +33,12 @@ export class AdminMatchKickoffModalComponent {
   protected readonly kickoffForm = this.formBuilder.nonNullable.group({
     kickoffAt: ['', Validators.required],
     venueDisplay: ['', [Validators.required, Validators.maxLength(160)]],
+    homeWinOdds: [null as number | null],
+    drawOdds: [null as number | null],
+    awayWinOdds: [null as number | null],
     secretCode: ['', [Validators.required, Validators.maxLength(128)]]
   });
+  protected readonly canAddOdds = computed(() => this.match().odds === null && this.match().finalScore === null);
 
   constructor() {
     effect(() => {
@@ -39,6 +46,9 @@ export class AdminMatchKickoffModalComponent {
 
       this.kickoffForm.controls.kickoffAt.setValue(toLocalDateTimeInputValue(match.kickoffAt), { emitEvent: false });
       this.kickoffForm.controls.venueDisplay.setValue(toVenueDisplay(match.city, match.venue), { emitEvent: false });
+      this.kickoffForm.controls.homeWinOdds.setValue(null, { emitEvent: false });
+      this.kickoffForm.controls.drawOdds.setValue(null, { emitEvent: false });
+      this.kickoffForm.controls.awayWinOdds.setValue(null, { emitEvent: false });
     });
   }
 
@@ -51,6 +61,10 @@ export class AdminMatchKickoffModalComponent {
     const value = this.kickoffForm.getRawValue();
     const kickoffDate = new Date(value.kickoffAt);
     const venue = parseVenueDisplay(value.venueDisplay, this.match());
+    const hasOddsInput = hasAnyOddsValue(value.homeWinOdds, value.drawOdds, value.awayWinOdds);
+    const odds = this.canAddOdds()
+      ? parseOdds(value.homeWinOdds, value.drawOdds, value.awayWinOdds)
+      : null;
 
     if (Number.isNaN(kickoffDate.getTime())) {
       this.kickoffForm.controls.kickoffAt.setErrors({ invalid: true });
@@ -62,10 +76,18 @@ export class AdminMatchKickoffModalComponent {
       return;
     }
 
+    if (this.canAddOdds() && hasOddsInput && !odds) {
+      this.kickoffForm.controls.homeWinOdds.setErrors({ invalid: true });
+      this.kickoffForm.controls.drawOdds.setErrors({ invalid: true });
+      this.kickoffForm.controls.awayWinOdds.setErrors({ invalid: true });
+      return;
+    }
+
     this.confirmKickoffChange.emit({
       kickoffAt: kickoffDate.toISOString(),
       city: venue.city,
       venue: venue.venue,
+      ...(odds ?? {}),
       secretCode: value.secretCode
     });
   }
@@ -119,4 +141,32 @@ function parseVenueDisplay(value: string, match: Match): Pick<Match, 'city' | 'v
   }
 
   return { city, venue };
+}
+
+function parseOdds(
+  homeWinOdds: number | null,
+  drawOdds: number | null,
+  awayWinOdds: number | null
+): Pick<KickoffChangeConfirmation, 'homeWinOdds' | 'drawOdds' | 'awayWinOdds'> | null {
+  if (!hasAnyOddsValue(homeWinOdds, drawOdds, awayWinOdds)) {
+    return null;
+  }
+
+  if (!isValidOddsValue(homeWinOdds) || !isValidOddsValue(drawOdds) || !isValidOddsValue(awayWinOdds)) {
+    return null;
+  }
+
+  return {
+    homeWinOdds,
+    drawOdds,
+    awayWinOdds
+  };
+}
+
+function hasAnyOddsValue(homeWinOdds: number | null, drawOdds: number | null, awayWinOdds: number | null): boolean {
+  return homeWinOdds !== null || drawOdds !== null || awayWinOdds !== null;
+}
+
+function isValidOddsValue(value: number | null): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 1 && value <= 1000;
 }
