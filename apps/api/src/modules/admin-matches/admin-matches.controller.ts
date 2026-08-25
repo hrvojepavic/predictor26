@@ -111,8 +111,10 @@ export async function syncMatchOddsController(
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  let competitionId: number | null = null;
+
   try {
-    const competitionId = await resolveRequestedCompetitionId(req);
+    competitionId = await resolveRequestedCompetitionId(req);
 
     if (competitionId === null) {
       res.status(403).json({ message: 'Competition access is required.' });
@@ -134,6 +136,11 @@ export async function syncMatchOddsController(
     res.json(result.response);
     rescheduleLiveScoreScheduler(competitionId);
   } catch (error) {
+    if (competitionId !== null) {
+      res.status(502).json({ message: error instanceof Error ? error.message : 'Odds could not be synced from OddsPortal.' });
+      return;
+    }
+
     next(error);
   }
 }
@@ -143,8 +150,10 @@ export async function importMatchesWithOddsController(
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  let competitionId: number | null = null;
+
   try {
-    const competitionId = await resolveRequestedCompetitionId(req);
+    competitionId = await resolveRequestedCompetitionId(req);
 
     if (competitionId === null) {
       res.status(403).json({ message: 'Competition access is required.' });
@@ -166,6 +175,11 @@ export async function importMatchesWithOddsController(
     res.json(result.response);
     rescheduleLiveScoreScheduler(competitionId);
   } catch (error) {
+    if (competitionId !== null) {
+      res.status(502).json({ message: error instanceof Error ? error.message : 'Matches and odds could not be synced from OddsPortal.' });
+      return;
+    }
+
     next(error);
   }
 }
