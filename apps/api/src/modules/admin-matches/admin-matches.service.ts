@@ -761,7 +761,7 @@ async function importScheduleForCompetition(
 
   return {
     imported,
-    roundLabel: importedSchedule.matches[0]?.roundLabel ?? findUpcomingRoundLabel(matchesAfterImport),
+    roundLabel: importedSchedule.matches[0]?.roundLabel ?? findUpcomingUnreleasedRoundLabel(matchesAfterImport) ?? findUpcomingRoundLabel(matchesAfterImport),
     requiredTeamNames
   };
 }
@@ -911,6 +911,14 @@ function findUpcomingRoundLabel(matches: readonly MatchRow[]): string | null {
   return (
     matches
       .filter((match) => !isFinished(match))
+      .sort((firstMatch, secondMatch) => firstMatch.kickoff_at.localeCompare(secondMatch.kickoff_at))[0]?.round_label ?? null
+  );
+}
+
+function findUpcomingUnreleasedRoundLabel(matches: readonly MatchRow[]): string | null {
+  return (
+    matches
+      .filter((match) => match.released_for_predictions === 0 && !isFinished(match))
       .sort((firstMatch, secondMatch) => firstMatch.kickoff_at.localeCompare(secondMatch.kickoff_at))[0]?.round_label ?? null
   );
 }
