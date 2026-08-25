@@ -5,7 +5,7 @@ import {
 } from '../../database/queries/leaderboard.queries.js';
 
 export function findLeaderboardMatches(competitionId: number) {
-  return listMatches(competitionId);
+  return listMatches(competitionId).filter((match) => match.released_for_predictions === 1);
 }
 
 export function findLeaderboardPredictions(competitionId: number) {
