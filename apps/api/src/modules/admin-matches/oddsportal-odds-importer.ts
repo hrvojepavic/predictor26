@@ -60,6 +60,7 @@ export const worldCupOddsPortalUrl = defaultOddsPortalSourceUrl;
 export const friendlyInternationalOddsPortalUrl = 'https://www.oddsportal.com/football/world/friendly-international/';
 const productionKey = 'J*8sQ!p$7aD_fR2yW@gHn*3bVp#sAdLd_k';
 const productionSalt = '5b9a8f2c3e6d1a4b7c8e9d0f1a2b3c4d';
+const oddsPageFetchAttempts = 3;
 
 const browserHeaders = {
   accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -69,12 +70,18 @@ const browserHeaders = {
 };
 
 export async function importOddsPortalOdds(sourceUrl = worldCupOddsPortalUrl): Promise<ImportedMatchOdds[]> {
-  const sportData = await fetchOddsPortalSportData(sourceUrl);
-  const events = toArray(sportData.d?.rows);
+  let sportData = await fetchOddsPortalSportData(sourceUrl);
+  let events = toArray(sportData.d?.rows);
   const oddsRequestUrl = sportData.oddsRequest?.url;
 
   if (!oddsRequestUrl) {
-    const embeddedOdds = importEmbeddedOdds(events, sportData.initialOddsMap);
+    let embeddedOdds = importEmbeddedOdds(events, sportData.initialOddsMap);
+
+    for (let attempt = 1; embeddedOdds.length === 0 && attempt < oddsPageFetchAttempts; attempt += 1) {
+      sportData = await fetchOddsPortalSportData(sourceUrl, { bypassCache: true });
+      events = toArray(sportData.d?.rows);
+      embeddedOdds = importEmbeddedOdds(events, sportData.initialOddsMap);
+    }
 
     if (embeddedOdds.length > 0) {
       return embeddedOdds;
