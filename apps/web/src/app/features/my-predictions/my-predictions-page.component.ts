@@ -112,7 +112,7 @@ function groupTipsByRounds(matches: readonly MatchWithPrediction[]): TipGroup[] 
   return Array.from(groups, ([label, groupedMatches]) => ({
     label,
     sections: groupByGroupName(groupedMatches)
-  }));
+  })).sort(compareTipGroupsByLatestKickoffDesc);
 }
 
 function groupTipsByGroups(matches: readonly MatchWithPrediction[]): TipGroup[] {
@@ -154,4 +154,20 @@ function groupByPredictionRound(matches: readonly MatchWithPrediction[]): TipSec
     label,
     matches: sortMatchesByKickoff(sectionMatches)
   }));
+}
+
+function compareTipGroupsByLatestKickoffDesc(firstGroup: TipGroup, secondGroup: TipGroup): number {
+  const kickoffComparison = latestKickoffTime(secondGroup) - latestKickoffTime(firstGroup);
+
+  if (kickoffComparison !== 0) {
+    return kickoffComparison;
+  }
+
+  return secondGroup.label.localeCompare(firstGroup.label, undefined, { numeric: true });
+}
+
+function latestKickoffTime(group: TipGroup): number {
+  return Math.max(
+    ...group.sections.flatMap((section) => section.matches.map((match) => Date.parse(match.kickoffAt)))
+  );
 }

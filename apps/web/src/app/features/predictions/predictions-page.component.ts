@@ -369,7 +369,7 @@ function groupMatchesByRounds(matches: readonly MatchWithPrediction[]): MatchGro
       totalCount: activeMatches.length,
       sections: groupRoundSections(groupedMatches)
     };
-  });
+  }).sort(compareMatchGroupsByLatestKickoffDesc);
 }
 
 function groupRoundSections(matches: readonly MatchWithPrediction[]): MatchSection[] {
@@ -419,4 +419,20 @@ function groupPredictionRoundSections(matches: readonly MatchWithPrediction[]): 
     label,
     matches: sortMatchesByKickoff(sectionMatches)
   }));
+}
+
+function compareMatchGroupsByLatestKickoffDesc(firstGroup: MatchGroup, secondGroup: MatchGroup): number {
+  const kickoffComparison = latestKickoffTime(secondGroup) - latestKickoffTime(firstGroup);
+
+  if (kickoffComparison !== 0) {
+    return kickoffComparison;
+  }
+
+  return secondGroup.label.localeCompare(firstGroup.label, undefined, { numeric: true });
+}
+
+function latestKickoffTime(group: MatchGroup): number {
+  return Math.max(
+    ...group.sections.flatMap((section) => section.matches.map((match) => Date.parse(match.kickoffAt)))
+  );
 }

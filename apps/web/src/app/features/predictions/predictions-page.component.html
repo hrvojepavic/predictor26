@@ -26,23 +26,6 @@
   @if (loading()) {
     <p class="status-message">Loading matches...</p>
   } @else {
-    @if (closedRoundSummaries().length > 0) {
-      <div class="closed-round-list" aria-label="Closed prediction rounds">
-        @for (group of closedRoundSummaries(); track group.label) {
-          <section class="closed-round-card" [attr.aria-labelledby]="'closed-group-' + group.label">
-            <div class="group-header">
-              <div>
-                <h2 [id]="'closed-group-' + group.label">{{ group.label }}</h2>
-                <p>{{ group.savedCount }}/{{ group.totalCount }} predictions entered</p>
-              </div>
-
-              <span class="lock-badge">Closed</span>
-            </div>
-          </section>
-        }
-      </div>
-    }
-
     <div class="match-groups">
       @for (group of groupedMatches(); track group.label) {
         <section class="match-group" [attr.aria-labelledby]="'group-' + group.label">
@@ -215,5 +198,22 @@
         </p>
       }
     </div>
+
+    @if (closedRoundSummaries().length > 0) {
+      <div class="closed-round-list" aria-label="Closed prediction rounds">
+        @for (group of closedRoundSummaries(); track group.label) {
+          <section class="closed-round-card" [attr.aria-labelledby]="'closed-group-' + group.label">
+            <div class="group-header">
+              <div>
+                <h2 [id]="'closed-group-' + group.label">{{ group.label }}</h2>
+                <p>{{ group.savedCount }}/{{ group.totalCount }} predictions entered</p>
+              </div>
+
+              <span class="lock-badge">Closed</span>
+            </div>
+          </section>
+        }
+      </div>
+    }
   }
 </section>
