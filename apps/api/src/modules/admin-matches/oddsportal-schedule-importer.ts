@@ -7,28 +7,26 @@ import { MatchImportInput, MatchRow, TeamImportInput } from '../../database/quer
 import { decodeHtmlEntities, fetchOddsPortalPageHtml, fetchOddsPortalSportData, isUpcomingScheduledEvent, oddsPortalRows } from './oddsportal-odds-importer.js';
 
 const sourceTimeZone = 'Europe/Zagreb';
-const croatiaTimeZone = 'Europe/Zagreb';
-const weekdayByName: Record<string, number> = {
-  Sunday: 0,
-  Monday: 1,
-  Tuesday: 2,
-  Wednesday: 3,
-  Thursday: 4,
-  Friday: 5,
-  Saturday: 6
-};
 
 export interface OddsPortalScheduleImport {
   readonly matches: MatchImportInput[];
   readonly teams: TeamImportInput[];
 }
 
-export async function importOddsPortalSchedule(sourceUrl: string, existingMatches: readonly MatchRow[]): Promise<OddsPortalScheduleImport> {
+export interface OddsPortalScheduleWindow {
+  readonly startAt: Date;
+  readonly endAt: Date;
+}
+
+export async function importOddsPortalSchedule(
+  sourceUrl: string,
+  existingMatches: readonly MatchRow[],
+  window: OddsPortalScheduleWindow
+): Promise<OddsPortalScheduleImport> {
   const pageHtml = await fetchOddsPortalPageHtml(sourceUrl);
   const sportData = await fetchOddsPortalSportData(sourceUrl);
   const rows = oddsPortalRows(sportData);
   const logoByTeamName = parseTeamLogos(pageHtml, sourceUrl);
-  const cutoff = nextTuesdayEndInCroatia(new Date());
   const existingKeys = new Set(existingMatches.map(matchKey));
   const nextMatchNumber = Math.max(0, ...existingMatches.map((match) => match.match_number)) + 1;
   const weekLabel = `Week ${Math.max(0, ...existingMatches.map((match) => weekNumber(match.round_label))) + 1}`;
@@ -39,12 +37,13 @@ export async function importOddsPortalSchedule(sourceUrl: string, existingMatche
     const homeTeamName = typeof row['home-name'] === 'string' ? row['home-name'].trim() : '';
     const awayTeamName = typeof row['away-name'] === 'string' ? row['away-name'].trim() : '';
     const timestamp = typeof row['date-start-timestamp'] === 'number' ? row['date-start-timestamp'] : row['date-start-base'];
-    const homeTeamLogo = logoByTeamName.get(normalizeTeamName(homeTeamName)) ?? teamLogoUrl(row, 'home', sourceUrl);
-    const awayTeamLogo = logoByTeamName.get(normalizeTeamName(awayTeamName)) ?? teamLogoUrl(row, 'away', sourceUrl);
 
-    if (!homeTeamName || !awayTeamName || typeof timestamp !== 'number') {
+    if (!homeTeamName || !awayTeamName || typeof timestamp !== 'number' || !isInsideWindow(timestamp * 1000, window)) {
       continue;
     }
+
+    const homeTeamLogo = logoByTeamName.get(normalizeTeamName(homeTeamName)) ?? teamLogoUrl(row, 'home', sourceUrl);
+    const awayTeamLogo = logoByTeamName.get(normalizeTeamName(awayTeamName)) ?? teamLogoUrl(row, 'away', sourceUrl);
 
     addTeam(teamsByName, homeTeamName, await localTeamLogoUrl(homeTeamName, homeTeamLogo));
     addTeam(teamsByName, awayTeamName, await localTeamLogoUrl(awayTeamName, awayTeamLogo));
@@ -65,7 +64,7 @@ export async function importOddsPortalSchedule(sourceUrl: string, existingMatche
       city: textValue(row.venueTown) || textValue(row['country-name']) || 'TBD'
     };
 
-    if (new Date(kickoffAt).getTime() > cutoff.getTime() || existingKeys.has(matchKey(candidate))) {
+    if (existingKeys.has(matchKey(candidate))) {
       continue;
     }
 
@@ -81,6 +80,10 @@ export async function importOddsPortalSchedule(sourceUrl: string, existingMatche
       matchNumber: nextMatchNumber + index
     }))
   };
+}
+
+function isInsideWindow(timestampMs: number, window: OddsPortalScheduleWindow): boolean {
+  return timestampMs >= window.startAt.getTime() && timestampMs < window.endAt.getTime();
 }
 
 function matchKey(match: MatchImportInput | MatchRow): string {
@@ -279,65 +282,4 @@ function normalizeLogoUrl(value: unknown, sourceUrl: string): string | null {
   } catch {
     return null;
   }
-}
-
-function nextTuesdayEndInCroatia(now: Date): Date {
-  const parts = zonedDateParts(now, croatiaTimeZone);
-  const calendarDaysUntilTuesday = (2 - weekdayByName[parts.weekday] + 7) % 7 || 7;
-  const daysUntilTuesday = calendarDaysUntilTuesday <= 1 ? calendarDaysUntilTuesday + 7 : calendarDaysUntilTuesday;
-  const localAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day + daysUntilTuesday, 23, 59, 59, 999);
-
-  return zonedLocalTimeToUtc(localAsUtc, croatiaTimeZone);
-}
-
-function zonedDateParts(date: Date, timeZone: string): { readonly year: number; readonly month: number; readonly day: number; readonly weekday: string } {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    weekday: 'long',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).formatToParts(date);
-  const values = new Map(parts.map((part) => [part.type, part.value]));
-
-  return {
-    year: Number(values.get('year')),
-    month: Number(values.get('month')),
-    day: Number(values.get('day')),
-    weekday: values.get('weekday') ?? 'Tuesday'
-  };
-}
-
-function zonedLocalTimeToUtc(localAsUtcMs: number, timeZone: string): Date {
-  let utcMs = localAsUtcMs;
-
-  for (let index = 0; index < 2; index += 1) {
-    utcMs = localAsUtcMs - timeZoneOffsetMs(new Date(utcMs), timeZone);
-  }
-
-  return new Date(utcMs);
-}
-
-function timeZoneOffsetMs(date: Date, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23'
-  }).formatToParts(date);
-  const values = new Map(parts.map((part) => [part.type, part.value]));
-  const zonedAsUtc = Date.UTC(
-    Number(values.get('year')),
-    Number(values.get('month')) - 1,
-    Number(values.get('day')),
-    Number(values.get('hour')),
-    Number(values.get('minute')),
-    Number(values.get('second'))
-  );
-
-  return zonedAsUtc - date.getTime();
 }
