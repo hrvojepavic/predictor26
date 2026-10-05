@@ -45,7 +45,7 @@ import {
   ImportedMatchOdds,
   importOddsPortalOdds
 } from './oddsportal-odds-importer.js';
-import { importOddsPortalSchedule } from './oddsportal-schedule-importer.js';
+import { importOddsPortalSchedule, OddsPortalScheduleWindow } from './oddsportal-schedule-importer.js';
 import {
   findCompetitionForAdmin,
   findCompetitionCanonicalTeamNames,
@@ -138,6 +138,12 @@ interface MatchOddsSyncPlan {
   readonly skippedFinished: number;
   readonly skippedUnresolved: number;
   readonly unmatched: number;
+}
+
+interface AutoMatchImportSchedule {
+  readonly weekday: number;
+  readonly time: string;
+  readonly timeZone: string;
 }
 
 export type UpdateFinalScoreResult =
@@ -341,7 +347,7 @@ export async function importSchedule(
     return { status: 'invalid' };
   }
 
-  const imported = await importScheduleForCompetition(competitionId, sourceUrl);
+  const imported = await importScheduleForCompetition(competitionId, sourceUrl, createImportWindow(new Date()));
   const roundLabel = imported.roundLabel;
   const validation = roundLabel ? validateImportedRound(competitionId, roundLabel, imported.requiredTeamNames) : null;
 
@@ -372,8 +378,10 @@ export async function importScheduleWithOdds(
     return { status: 'invalid' };
   }
 
-  const imported = await importScheduleForCompetition(competitionId, sourceUrl);
-  const oddsResponse = await syncOddsForCompetition(competitionId, sourceUrl, { roundLabel: imported.roundLabel });
+  const imported = await importScheduleForCompetition(competitionId, sourceUrl, createImportWindow(new Date()));
+  const oddsResponse = imported.roundLabel
+    ? await syncOddsForCompetition(competitionId, sourceUrl, { roundLabel: imported.roundLabel })
+    : createEmptyOddsSyncResponse(competitionId);
   const validation = imported.roundLabel
     ? validateImportedRound(competitionId, imported.roundLabel, imported.requiredTeamNames)
     : createEmptyValidation();
@@ -410,7 +418,7 @@ export async function importScheduleWithOdds(
 
 export async function runAutoMatchImportForCompetition(
   competitionId: number,
-  options: { readonly requireAutoEnabled: boolean } = { requireAutoEnabled: true }
+  options: { readonly requireAutoEnabled: boolean; readonly window?: OddsPortalScheduleWindow } = { requireAutoEnabled: true }
 ): Promise<ImportMatchesWithOddsResponse | null> {
   const competition = findCompetitionForAdmin(competitionId);
   const sourceUrl = competition?.odds_source_url.trim() ?? '';
@@ -425,8 +433,14 @@ export async function runAutoMatchImportForCompetition(
     return null;
   }
 
-  const imported = await importScheduleForCompetition(competitionId, sourceUrl);
-  const oddsResponse = await syncOddsForCompetition(competitionId, sourceUrl, { roundLabel: imported.roundLabel });
+  const imported = await importScheduleForCompetition(
+    competitionId,
+    sourceUrl,
+    options.window ?? createImportWindow(new Date())
+  );
+  const oddsResponse = imported.roundLabel
+    ? await syncOddsForCompetition(competitionId, sourceUrl, { roundLabel: imported.roundLabel })
+    : createEmptyOddsSyncResponse(competitionId);
   const validation = imported.roundLabel
     ? validateImportedRound(competitionId, imported.roundLabel, imported.requiredTeamNames)
     : createEmptyValidation();
@@ -502,7 +516,7 @@ async function runDueAutoMatchImports(): Promise<number> {
 
       if (scheduledAt.getTime() <= now.getTime() && lastRunLocalSlot !== localRunSlot) {
         try {
-          await runAutoMatchImportJob(competition.id, { force: false });
+          await runAutoMatchImportJob(competition.id, { force: false, scheduledAt });
           setMetadataValue(metadataKey, localRunSlot);
         } catch (error) {
           console.error(
@@ -531,12 +545,12 @@ async function runDueAutoMatchImports(): Promise<number> {
 
 async function runAutoMatchImportJob(
   competitionId: number,
-  options: { readonly force: boolean }
+  options: { readonly force: boolean; readonly scheduledAt?: Date }
 ): Promise<AutoMatchImportRunReport> {
   const startedAt = new Date();
   const competition = findCompetitionForAdmin(competitionId);
   const enabled = isAutoMatchImportEnabled(competition);
-  const schedule = {
+  const schedule: AutoMatchImportSchedule = {
     weekday: competition?.auto_import_matches_weekday ?? 2,
     time: competition?.auto_import_matches_time ?? '08:00',
     timeZone: competition?.auto_import_matches_time_zone ?? 'Europe/Zagreb'
@@ -553,7 +567,10 @@ async function runAutoMatchImportJob(
       status = 'skipped';
       errorMessage = 'Auto match import is disabled.';
     } else {
-      const result = await runAutoMatchImportForCompetition(competitionId, { requireAutoEnabled: !options.force });
+      const result = await runAutoMatchImportForCompetition(competitionId, {
+        requireAutoEnabled: !options.force,
+        window: options.scheduledAt ? createScheduledImportWindow(options.scheduledAt, schedule) : createImportWindow(startedAt)
+      });
 
       if (!result) {
         status = 'skipped';
@@ -644,7 +661,7 @@ function isValidAutoImportSettings(input: {
 
 function getNextScheduledInstant(
   now: Date,
-  schedule: { readonly weekday: number; readonly time: string; readonly timeZone: string }
+  schedule: AutoMatchImportSchedule
 ): Date {
   const currentWeekRun = getScheduledInstantForLocalWeek(now, schedule);
 
@@ -657,7 +674,7 @@ function getNextScheduledInstant(
 
 function getScheduledInstantForLocalWeek(
   reference: Date,
-  schedule: { readonly weekday: number; readonly time: string; readonly timeZone: string }
+  schedule: AutoMatchImportSchedule
 ): Date {
   const parts = getLocalDateTimeParts(reference, schedule.timeZone);
   const daysSinceScheduledWeekday = (parts.weekday - schedule.weekday + 7) % 7;
@@ -746,13 +763,28 @@ function weekdayNumber(value: string): number {
   return weekdays[value] ?? 0;
 }
 
+function createImportWindow(startAt: Date): OddsPortalScheduleWindow {
+  return {
+    startAt,
+    endAt: new Date(startAt.getTime() + 7 * 24 * 60 * 60 * 1_000)
+  };
+}
+
+function createScheduledImportWindow(startAt: Date, schedule: AutoMatchImportSchedule): OddsPortalScheduleWindow {
+  return {
+    startAt,
+    endAt: getNextScheduledInstant(startAt, schedule)
+  };
+}
+
 async function importScheduleForCompetition(
   competitionId: number,
-  sourceUrl: string
+  sourceUrl: string,
+  window: OddsPortalScheduleWindow
 ): Promise<{ readonly imported: number; readonly roundLabel: string | null; readonly requiredTeamNames: string[] }> {
   const existingMatches = findAdminMatches(competitionId);
   const requiredTeamNames = findCompetitionCanonicalTeamNames(competitionId);
-  const importedSchedule = await importOddsPortalSchedule(sourceUrl, existingMatches);
+  const importedSchedule = await importOddsPortalSchedule(sourceUrl, existingMatches, window);
   importTeams(importedSchedule.teams, competitionId);
   applyTeamLogosToMatches(competitionId);
   const imported = importMatches(importedSchedule.matches, competitionId);
@@ -761,7 +793,10 @@ async function importScheduleForCompetition(
 
   return {
     imported,
-    roundLabel: importedSchedule.matches[0]?.roundLabel ?? findUpcomingUnreleasedRoundLabel(matchesAfterImport) ?? findUpcomingRoundLabel(matchesAfterImport),
+    roundLabel:
+      importedSchedule.matches[0]?.roundLabel ??
+      findUpcomingUnreleasedRoundLabel(matchesAfterImport, window) ??
+      findUpcomingRoundLabel(matchesAfterImport, window),
     requiredTeamNames
   };
 }
@@ -842,6 +877,19 @@ async function syncOddsForCompetition(
   };
 }
 
+function createEmptyOddsSyncResponse(competitionId: number): SyncMatchOddsResponse {
+  return {
+    synced: 0,
+    matched: 0,
+    skippedExisting: 0,
+    skippedFinished: 0,
+    skippedUnresolved: 0,
+    unmatched: 0,
+    backfilled: 0,
+    matches: findAdminMatches(competitionId).map(toMatchResponse)
+  };
+}
+
 function validateImportedRound(
   competitionId: number,
   roundLabel: string,
@@ -907,20 +955,30 @@ function createEmptyValidation(): MatchImportValidationResponse {
   };
 }
 
-function findUpcomingRoundLabel(matches: readonly MatchRow[]): string | null {
+function findUpcomingRoundLabel(matches: readonly MatchRow[], window?: OddsPortalScheduleWindow): string | null {
   return (
     matches
-      .filter((match) => !isFinished(match))
+      .filter((match) => !isFinished(match) && isMatchInsideWindow(match, window))
       .sort((firstMatch, secondMatch) => firstMatch.kickoff_at.localeCompare(secondMatch.kickoff_at))[0]?.round_label ?? null
   );
 }
 
-function findUpcomingUnreleasedRoundLabel(matches: readonly MatchRow[]): string | null {
+function findUpcomingUnreleasedRoundLabel(matches: readonly MatchRow[], window?: OddsPortalScheduleWindow): string | null {
   return (
     matches
-      .filter((match) => match.released_for_predictions === 0 && !isFinished(match))
+      .filter((match) => match.released_for_predictions === 0 && !isFinished(match) && isMatchInsideWindow(match, window))
       .sort((firstMatch, secondMatch) => firstMatch.kickoff_at.localeCompare(secondMatch.kickoff_at))[0]?.round_label ?? null
   );
+}
+
+function isMatchInsideWindow(match: MatchRow, window: OddsPortalScheduleWindow | undefined): boolean {
+  if (!window) {
+    return true;
+  }
+
+  const kickoffTime = Date.parse(match.kickoff_at);
+
+  return !Number.isNaN(kickoffTime) && kickoffTime >= window.startAt.getTime() && kickoffTime < window.endAt.getTime();
 }
 
 function findManualMatchRoundLabel(matches: readonly MatchRow[]): string {
