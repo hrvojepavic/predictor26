@@ -75,10 +75,20 @@ describe('Header navigation drawer', () => {
     expect(document.body.style.overflow).not.toBe('hidden');
   });
 
-  it('hides the hamburger while the authenticated user is still loading', async () => {
+  it('keeps the same hamburger visible and usable while the session loads', async () => {
     loggedIn.set(true);
-    const { toggle } = await render();
-    expect(toggle).toBeNull();
+    const { fixture, root, toggle } = await render();
+    expect(toggle).not.toBeNull();
+    toggle!.click();
+    await fixture.whenStable();
+    expect(root.querySelector('[role="status"]')?.textContent).toContain('Loading your account');
+    expect(root.querySelector('a[href="/login"]')).toBeNull();
+    signIn();
+    await fixture.whenStable();
+    expect(root.querySelector('.menu-toggle')).toBe(toggle);
+    expect(toggle!.getAttribute('aria-expanded')).toBe('true');
+    expect(root.querySelector('[role="status"]')).toBeNull();
+    expect(root.querySelector('#menu-user-title')?.textContent).toContain('Player');
   });
 
   function signIn() {

@@ -34,7 +34,6 @@ export class AppHeaderComponent {
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly menuToggle = viewChild<ElementRef<HTMLButtonElement>>('menuToggle');
   protected readonly menuOpen = signal(false);
-  protected readonly hasMenuContent = computed(() => !!this.appState.currentUser() || !this.appState.isLoggedIn());
 
   protected readonly routeCompetition = computed(() => {
     const competition = this.appState.activeCompetition();
@@ -86,11 +85,6 @@ export class AppHeaderComponent {
           item.element.inert = item.inert;
         }
       });
-    });
-    effect(() => {
-      if (!this.hasMenuContent()) {
-        this.closeMenu();
-      }
     });
     this.router.events
       .pipe(
