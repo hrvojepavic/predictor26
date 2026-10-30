@@ -1,8 +1,9 @@
-<div class="modal-backdrop" role="presentation" (click)="closeFromBackdrop()">
+<div class="modal-backdrop" [class.drawer-backdrop]="drawer()" role="presentation" (click)="closeFromBackdrop()">
   <section
     class="modal-panel"
     role="dialog"
     aria-modal="true"
+    [attr.aria-owns]="ownedControls()"
     [attr.aria-labelledby]="labelledBy()"
     [style.--modal-panel-width]="panelWidth()"
     (click)="$event.stopPropagation()"

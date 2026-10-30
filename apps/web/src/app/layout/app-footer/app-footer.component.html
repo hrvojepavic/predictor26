@@ -2,13 +2,5 @@
   <div class="footer-content">
     <p class="copyright">© 2026 Predictor26. All rights reserved.</p>
     <p class="board-members">Board members: Jaki, Seba, Kocka, Hrka</p>
-    <span class="footer-actions">
-      @if (appState.activeCompetition(); as competition) {
-        <a class="footer-link" [routerLink]="['/competition', competition.slug, 'rules']">Rules</a>
-      }
-      @if (appState.isLoggedIn()) {
-        <button class="footer-link footer-button" type="button" (click)="logout()">Logout</button>
-      }
-    </span>
   </div>
 </footer>

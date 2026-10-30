@@ -24,12 +24,9 @@
     }
 
     <a class="action-card" [routerLink]="postPredictionsRouterLink()">
-      <span class="action-icon action-icon-post" aria-hidden="true">
-        <span></span>
-        <span></span>
-      </span>
+      <app-prediction-action-icon kind="predict" />
       <span class="action-content">
-        <span class="action-title">Post Predictions</span>
+        <span class="action-title">Predict</span>
         <span class="action-description">
           Enter or update your match score predictions.
           <span class="action-deadline">
@@ -41,18 +38,11 @@
           </span>
         </span>
       </span>
-      @if (remainingPredictionsCount() > 0) {
-        <span class="action-badge" [attr.aria-label]="remainingPredictionsCount() + ' predictions remaining'">
-          {{ remainingPredictionsCount() }}
-        </span>
-      }
+      <app-prediction-count-badge [count]="remainingPredictionsCount()" />
     </a>
 
     <a class="action-card" [routerLink]="myPredictionsRouterLink()">
-      <span class="action-icon action-icon-list" aria-hidden="true">
-        <span></span>
-        <span></span>
-      </span>
+      <app-prediction-action-icon kind="list" />
       <span class="action-content">
         <span class="action-title">See my predictions</span>
         <span class="action-description">Review every prediction you have submitted.</span>
@@ -60,10 +50,7 @@
     </a>
 
     <a class="action-card" [routerLink]="matchDayRouterLink()">
-      <span class="action-icon action-icon-match-day" aria-hidden="true">
-        <span></span>
-        <span></span>
-      </span>
+      <app-prediction-action-icon kind="match-day" />
       <span class="action-content">
         <span class="action-title">Match Day</span>
         <span class="action-description">Browse games by day and compare everyone’s predictions.</span>

@@ -1,0 +1,104 @@
+:host { display: block; width: 50px; height: 50px; flex: 0 0 auto; } :host(.compact) { width: 36px; height: 36px; } :host(.compact) .action-icon { transform: scale(0.72); transform-origin: top left; }
+.action-icon {
+  position: relative;
+  display: grid;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: #eef2ff;
+}
+
+.action-icon::before,
+.action-icon::after,
+.action-icon span {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  background: #3730a3;
+}
+
+.action-icon-post::before {
+  inset: 12px;
+  border: 3px solid #3730a3;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.action-icon-post::after {
+  top: 24px;
+  left: 16px;
+  width: 18px;
+  height: 2px;
+  background: #3730a3;
+}
+
+.action-icon-post span {
+  background: #3730a3;
+}
+
+.action-icon-post span:first-child {
+  top: 16px;
+  left: 24px;
+  width: 2px;
+  height: 18px;
+}
+
+.action-icon-post span:last-child {
+  display: none;
+}
+
+.action-icon-list::before {
+  top: 13px;
+  left: 13px;
+  width: 7px;
+  height: 7px;
+}
+
+.action-icon-list::after {
+  top: 16px;
+  right: 12px;
+  width: 19px;
+  height: 3px;
+}
+
+.action-icon-list span:first-child {
+  top: 28px;
+  left: 13px;
+  width: 7px;
+  height: 7px;
+}
+
+.action-icon-list span:last-child {
+  top: 30px;
+  right: 12px;
+  width: 19px;
+  height: 3px;
+}
+
+.action-icon-match-day::before {
+  top: 13px;
+  left: 13px;
+  width: 24px;
+  height: 24px;
+  background: #eff6ff;
+}
+
+.action-icon-match-day::after {
+  top: 18px;
+  left: 18px;
+  width: 14px;
+  height: 14px;
+  background: #3730a3;
+}
+
+.action-icon-match-day span:first-child {
+  top: 11px;
+  left: 11px;
+  width: 28px;
+  height: 28px;
+  background: rgba(55, 48, 163, 0.12);
+}
+
+
