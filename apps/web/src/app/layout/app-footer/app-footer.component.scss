@@ -32,32 +32,6 @@ p {
   text-align: center;
 }
 
-.footer-link {
-  border-radius: 8px;
-  border: 0;
-  background: transparent;
-  color: #374151;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  padding: 8px 10px;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.footer-actions {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
-}
-
-.footer-link:hover,
-.footer-link:focus-visible {
-  background: #eef2f7;
-  color: #111827;
-}
-
 @media (max-width: 720px) {
   .footer-content {
     text-align: center;

@@ -1,62 +1,89 @@
 <header class="site-header">
-  <a class="brand" [routerLink]="brandRouterLink()" [state]="brandState()" aria-label="Predictor26 home">
+  <a class="brand" [routerLink]="brandRouterLink()" [state]="brandState()" [attr.inert]="menuOpen() ? '' : null" aria-label="Predictor26 home">
     <img class="brand-icon" src="icons/predictor26-icon.svg" alt="" width="34" height="34" />
     <span class="brand-name">Predictor26</span>
   </a>
 
-  <nav class="account-nav" aria-label="Account">
-    @if (appState.currentUser(); as user) {
-      @if (routeCompetition() && finalResults.available()) {
-        <button
-          class="header-icon-link"
-          type="button"
-          aria-label="View final rankings"
-          animate.enter="account-nav-enter"
-          (click)="finalResults.openFinalResults()"
-        >
-          <span class="final-results-icon" aria-hidden="true"></span>
-        </button>
-      }
-      <span class="user-pill" animate.enter="account-nav-enter">
-        @if (routeCompetition(); as competition) {
-          <a
-            class="user-name"
-            [routerLink]="['/competition', competition.slug, 'my-predictions']"
-            aria-label="View my predictions"
-          >
-            {{ user.username }}
-          </a>
-        } @else {
-          <span class="user-name">{{ user.username }}</span>
-        }
-        @if (routeCompetition() && user.isVerified) {
-          <app-tooltip class="verified-tooltip" text="I've paid my dues!" placement="bottom-end">
-            <img class="verified-badge" src="icons/verified-badge.svg" alt="" width="18" height="23" aria-hidden="true" />
-          </app-tooltip>
-        }
-      </span>
-      @if (routeCompetition(); as competition) {
-        <a class="nav-link" routerLink="/" [state]="{ showCompetitionList: true }" animate.enter="account-nav-enter">{{ competition.name }}</a>
-      }
-      @if (user.role === 'super_admin' || user.role === 'admin') {
-        <a class="nav-link" routerLink="/admin" animate.enter="account-nav-enter">Admin</a>
-      }
-      @if (routeCompetition(); as competition) {
-        <a
-          class="header-icon-link"
-          [routerLink]="['/competition', competition.slug, 'stats']"
-          aria-label="View stats"
-          animate.enter="account-nav-enter"
-        >
-          <span class="stats-icon" aria-hidden="true"></span>
-        </a>
-      }
-    } @else if (appState.isLoggedIn()) {
-    } @else {
-      <span class="guest-actions" animate.enter="account-nav-enter">
-        <a class="nav-link" routerLink="/login">Login</a>
-        <a class="nav-link nav-link-primary" routerLink="/register">Register</a>
-      </span>
-    }
-  </nav>
+  @if (hasMenuContent()) {
+    <button #menuToggle id="navigation-toggle" class="menu-toggle" [class.is-open]="menuOpen()" type="button"
+      [attr.aria-label]="menuOpen() ? 'Close navigation' : 'Open navigation'"
+      [attr.aria-expanded]="menuOpen()" [attr.aria-controls]="menuOpen() ? 'header-navigation' : null"
+      (click)="toggleMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  }
 </header>
+
+@if (menuOpen()) {
+  <app-modal-shell labelledBy="navigation-title" panelWidth="380px" [drawer]="true" ownedControls="navigation-toggle"
+    animate.enter="drawer-enter" animate.leave="drawer-leave">
+    <div class="menu-content">
+      <h2 id="navigation-title">Menu</h2>
+      <nav id="header-navigation" class="account-nav" aria-label="Account">
+        @if (appState.currentUser(); as user) {
+          <section class="menu-section" aria-labelledby="menu-user-title">
+            <h3 id="menu-user-title" class="section-heading user-heading">
+              <span [title]="user.username">{{ user.username }}</span>
+              @if (routeCompetition() && user.isVerified) {
+                <app-tooltip text="I've paid my dues!" placement="bottom-end">
+                  <img class="verified-badge" src="icons/verified-badge.svg" alt="" width="18" height="23" aria-hidden="true" />
+                </app-tooltip>
+              }
+            </h3>
+            @if (routeCompetition(); as competition) {
+              <a class="menu-link" [routerLink]="['/competition', competition.slug, 'predictions']" (click)="closeMenu()">
+                <app-prediction-action-icon kind="predict" [compact]="true" />
+                <span>Predict</span><span class="chevron" aria-hidden="true">&#8250;</span>
+                <app-prediction-count-badge [count]="predictionSummary.remainingCount()" />
+              </a>
+              <a class="menu-link" [routerLink]="['/competition', competition.slug, 'my-predictions']" (click)="closeMenu()">
+                <app-prediction-action-icon kind="list" [compact]="true" />
+                <span>My predictions</span><span class="chevron" aria-hidden="true">&#8250;</span>
+              </a>
+            }
+          </section>
+          @if (routeCompetition(); as competition) {
+            <section class="menu-section league-section" aria-labelledby="menu-league-title">
+              <h3 id="menu-league-title" class="section-heading" [title]="competition.name">{{ competition.name }}</h3>
+              <a class="menu-link" [routerLink]="['/competition', competition.slug, 'match-day']" (click)="closeMenu()">
+                <app-prediction-action-icon kind="match-day" [compact]="true" />
+                <span>Match Day</span><span class="chevron" aria-hidden="true">&#8250;</span>
+              </a>
+              <a class="menu-link" [routerLink]="['/competition', competition.slug, 'stats']" (click)="closeMenu()">
+                <span class="menu-icon"><span class="stats-icon" aria-hidden="true"></span></span>
+                <span>Stats</span><span class="chevron" aria-hidden="true">&#8250;</span>
+              </a>
+              <a class="menu-link" [routerLink]="['/competition', competition.slug, 'rules']" (click)="closeMenu()">
+                <span>Rules</span><span class="chevron" aria-hidden="true">&#8250;</span>
+              </a>
+              @if (finalResults.available()) {
+                <button class="menu-link final-rankings-link" type="button" (click)="openFinalResults()">
+                  <span class="menu-icon"><span class="final-results-icon" aria-hidden="true"></span></span>
+                  <span>Final rankings</span><span class="chevron" aria-hidden="true">&#8250;</span>
+                </button>
+              }
+              <a class="menu-link all-leagues-link" routerLink="/" [state]="{ showCompetitionList: true }" (click)="closeMenu()">
+                <span>All leagues</span><span class="chevron" aria-hidden="true">&#8250;</span>
+              </a>
+            </section>
+          }
+          @if (user.role === 'super_admin' || user.role === 'admin') {
+            <section class="menu-section admin-section" aria-label="Administration">
+              <a class="menu-link" routerLink="/admin" (click)="closeMenu()"><span>Admin</span><span class="chevron" aria-hidden="true">&#8250;</span></a>
+            </section>
+          }
+        } @else if (!appState.isLoggedIn()) {
+          <a class="menu-link" routerLink="/login" (click)="closeMenu()"><span>Login</span><span class="chevron" aria-hidden="true">&#8250;</span></a>
+          <a class="menu-link menu-link-primary" routerLink="/register" (click)="closeMenu()"><span>Register</span><span class="chevron" aria-hidden="true">&#8250;</span></a>
+        }
+      </nav>
+      @if (appState.isLoggedIn()) {
+        <div class="menu-bottom">
+          <button class="menu-link logout-link" type="button" (click)="logout()">
+            <span>Logout</span><span class="chevron" aria-hidden="true">&#8594;</span>
+          </button>
+        </div>
+      }
+    </div>
+  </app-modal-shell>
+}

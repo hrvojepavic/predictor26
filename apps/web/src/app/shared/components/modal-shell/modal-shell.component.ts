@@ -9,6 +9,8 @@ export class ModalShellComponent {
   readonly labelledBy = input.required<string>();
   readonly panelWidth = input('520px');
   readonly closeOnBackdrop = input(false);
+  readonly drawer = input(false);
+  readonly ownedControls = input<string | null>(null);
 
   readonly closeModal = output<void>();
 

@@ -1,10 +1,12 @@
 import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { interval, map } from 'rxjs';
+import { map } from 'rxjs';
 
 import { AppStateService } from '@core/state/app-state.service';
-import { MatchWithPrediction } from '@models/match.models';
+import { PredictionSummaryService } from '@services/prediction-summary.service';
+import { PredictionActionIconComponent } from '@shared/components/prediction-action-icon/prediction-action-icon.component';
+import { PredictionCountBadgeComponent } from '@shared/components/prediction-count-badge/prediction-count-badge.component';
 import { MatchesService } from '@services/matches.service';
 import { PaymentsService } from '@services/payments.service';
 import { ModalShellComponent } from '@shared/components/modal-shell/modal-shell.component';
@@ -18,13 +20,14 @@ interface NextPredictionDeadline {
 
 @Component({
   selector: 'app-home-page',
-  imports: [HomeLeaderboardComponent, ModalShellComponent, PaymentInfoModalComponent, RouterLink],
+  imports: [HomeLeaderboardComponent, ModalShellComponent, PaymentInfoModalComponent, RouterLink, PredictionActionIconComponent, PredictionCountBadgeComponent],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.scss'
 })
 export class HomePageComponent {
   private readonly appState = inject(AppStateService);
   private readonly matchesService = inject(MatchesService);
+  private readonly predictionSummary = inject(PredictionSummaryService);
   private readonly paymentsService = inject(PaymentsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
@@ -44,10 +47,10 @@ export class HomePageComponent {
 
     return user !== null && !user.isVerified && this.paymentInfo()?.visible === true;
   });
-  protected readonly now = signal(Date.now());
+  protected readonly now = this.predictionSummary.now;
   protected readonly nextPredictionDeadline = computed<NextPredictionDeadline | null>(() => {
     const now = this.now();
-    const nextGroup = getNextPredictionGroup(this.matches(), now);
+    const nextGroup = this.predictionSummary.nextGroup();
 
     if (!nextGroup) {
       return null;
@@ -58,25 +61,9 @@ export class HomePageComponent {
       remaining: getTimeRemaining(nextGroup.deadlineAt, now)
     };
   });
-  protected readonly remainingPredictionsCount = computed(() => {
-    const nextGroup = getNextPredictionGroup(this.matches(), this.now());
-
-    if (!nextGroup) {
-      return 0;
-    }
-
-    return this.matches().filter(
-      (match) => match.predictionRound === nextGroup.label && !match.isPostponed && match.prediction === null
-    ).length;
-  });
+  protected readonly remainingPredictionsCount = this.predictionSummary.remainingCount;
 
   constructor() {
-    interval(60_000)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.now.set(Date.now());
-      });
-
     effect(() => {
       if (this.appState.isLoggedIn() && this.appState.activeCompetition()) {
         untracked(() => this.loadMatches());
@@ -113,40 +100,6 @@ export class HomePageComponent {
   private loadPaymentInfo(): void {
     this.paymentsService.ensurePaymentInfo().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
-}
-
-function getPredictionGroups(
-  matches: readonly MatchWithPrediction[]
-): Array<{ readonly label: string; readonly deadlineAt: string }> {
-  const groups = new Map<string, string>();
-
-  for (const match of matches) {
-    if (match.isPostponed) {
-      continue;
-    }
-
-    const currentDeadline = groups.get(match.predictionRound);
-
-    if (!currentDeadline || Date.parse(match.predictionDeadlineAt) < Date.parse(currentDeadline)) {
-      groups.set(match.predictionRound, match.predictionDeadlineAt);
-    }
-  }
-
-  return Array.from(groups, ([label, deadlineAt]) => ({
-    label,
-    deadlineAt
-  }));
-}
-
-function getNextPredictionGroup(
-  matches: readonly MatchWithPrediction[],
-  now: number
-): { readonly label: string; readonly deadlineAt: string } | null {
-  return (
-    getPredictionGroups(matches)
-      .filter((group) => Date.parse(group.deadlineAt) > now)
-      .sort((firstGroup, secondGroup) => Date.parse(firstGroup.deadlineAt) - Date.parse(secondGroup.deadlineAt))[0] ?? null
-  );
 }
 
 function getPredictionRoundLabel(label: string): string {
