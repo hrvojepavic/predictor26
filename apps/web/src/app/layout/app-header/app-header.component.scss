@@ -129,25 +129,31 @@ h2 {
 
 .menu-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
 .section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0 0 6px;
   color: #6b7280;
   font-size: 0.88rem;
   font-weight: 600;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  > app-tooltip { flex: 0 0 auto; }
 }
 .user-heading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #374151;
   font-size: 0.95rem;
   font-weight: 500;
-  overflow: visible;
-  > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  > app-tooltip { flex: 0 0 auto; }
+}
+.heading-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.heading-icon { display: block; flex: 0 0 28px; width: 28px; height: 28px; box-sizing: border-box; }
+.user-icon { border-radius: 50%; background: #eef2ff; color: #6366a0; }
+.competition-logo { object-fit: contain; border-radius: 5px; }
+.competition-logo-placeholder {
+  display: grid;
+  place-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  background: #f9fafb;
+  &::before { content: ''; width: 12px; height: 12px; border-radius: 3px; background: #d1d5db; }
 }
 .league-section, .admin-section { margin-top: 10px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
 .menu-icon { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 6px; background: #eef2ff; }

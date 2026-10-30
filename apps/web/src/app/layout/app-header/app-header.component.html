@@ -4,14 +4,12 @@
     <span class="brand-name">Predictor26</span>
   </a>
 
-  @if (hasMenuContent()) {
     <button #menuToggle id="navigation-toggle" class="menu-toggle" [class.is-open]="menuOpen()" type="button"
       [attr.aria-label]="menuOpen() ? 'Close navigation' : 'Open navigation'"
       [attr.aria-expanded]="menuOpen()" [attr.aria-controls]="menuOpen() ? 'header-navigation' : null"
       (click)="toggleMenu()">
       <span></span><span></span><span></span>
     </button>
-  }
 </header>
 
 @if (menuOpen()) {
@@ -23,7 +21,11 @@
         @if (appState.currentUser(); as user) {
           <section class="menu-section" aria-labelledby="menu-user-title">
             <h3 id="menu-user-title" class="section-heading user-heading">
-              <span [title]="user.username">{{ user.username }}</span>
+              <svg class="heading-icon user-icon" viewBox="0 0 28 28" fill="currentColor" aria-hidden="true" focusable="false">
+                <circle cx="14" cy="10.5" r="4" />
+                <path d="M6.5 22a7.5 7.5 0 0 1 15 0 11.5 11.5 0 0 1-15 0Z" />
+              </svg>
+              <span class="heading-name" [title]="user.username">{{ user.username }}</span>
               @if (routeCompetition() && user.isVerified) {
                 <app-tooltip text="I've paid my dues!" placement="bottom-end">
                   <img class="verified-badge" src="icons/verified-badge.svg" alt="" width="18" height="23" aria-hidden="true" />
@@ -44,7 +46,14 @@
           </section>
           @if (routeCompetition(); as competition) {
             <section class="menu-section league-section" aria-labelledby="menu-league-title">
-              <h3 id="menu-league-title" class="section-heading" [title]="competition.name">{{ competition.name }}</h3>
+              <h3 id="menu-league-title" class="section-heading">
+                @if (competition.logoUrl) {
+                  <img class="heading-icon competition-logo" [src]="competition.logoUrl" alt="" width="28" height="28" />
+                } @else {
+                  <span class="heading-icon competition-logo-placeholder" aria-hidden="true"></span>
+                }
+                <span class="heading-name" [title]="competition.name">{{ competition.name }}</span>
+              </h3>
               <a class="menu-link" [routerLink]="['/competition', competition.slug, 'match-day']" (click)="closeMenu()">
                 <app-prediction-action-icon kind="match-day" [compact]="true" />
                 <span>Match Day</span><span class="chevron" aria-hidden="true">&#8250;</span>
@@ -72,7 +81,9 @@
               <a class="menu-link" routerLink="/admin" (click)="closeMenu()"><span>Admin</span><span class="chevron" aria-hidden="true">&#8250;</span></a>
             </section>
           }
-        } @else if (!appState.isLoggedIn()) {
+        } @else if (appState.isLoggedIn()) {
+          <p role="status">Loading your account…</p>
+        } @else {
           <a class="menu-link" routerLink="/login" (click)="closeMenu()"><span>Login</span><span class="chevron" aria-hidden="true">&#8250;</span></a>
           <a class="menu-link menu-link-primary" routerLink="/register" (click)="closeMenu()"><span>Register</span><span class="chevron" aria-hidden="true">&#8250;</span></a>
         }
