@@ -51,6 +51,7 @@ Frontend conventions:
 
 - Prefer standalone components and lazy feature routes.
 - Prefer signals for component and service state.
+- Display match kickoffs and prediction deadlines in the viewer's device timezone using Angular's DatePipe without a fixed offset. Never hardcode UTC+2: local offsets depend on daylight saving for the displayed date. Keep stored UTC timestamps and countdown/locking comparisons independent of display formatting.
 - Prefer reactive forms (`ReactiveFormsModule`, `FormBuilder`, and `formControlName`) for Angular forms. Avoid template-driven forms and `ngModel` unless there is a specific, justified need.
 - Services own writable signals privately and expose readonly state.
 - `AppStateService` in `app/core/state` is the frontend source of truth for auth session state. It stores the login token and user in `localStorage` so refreshes keep the user logged in, and logout must clear that stored session.

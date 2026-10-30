@@ -26,7 +26,7 @@
           <div class="match-meta">
             <span>Match {{ match.matchNumber }}</span>
             <span>{{ match.roundLabel }}</span>
-            <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'EEE, MMM d, HH:mm' : '+0200' }}</time>
+            <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'EEE, MMM d, HH:mm' }}</time>
           </div>
 
           <div class="slot-grid">

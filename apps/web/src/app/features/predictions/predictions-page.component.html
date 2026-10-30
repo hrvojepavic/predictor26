@@ -35,7 +35,7 @@
               @if (group.deadlineAt) {
                 <p>
                   Predictions close at
-                  <time [dateTime]="group.deadlineAt">{{ group.deadlineAt | date: 'EEE, MMM d, HH:mm' : '+0200' }}</time>
+                  <time [dateTime]="group.deadlineAt">{{ group.deadlineAt | date: 'EEE, MMM d, HH:mm' }}</time>
                   @if (hasTimeRemaining(group.deadlineAt)) {
                     <span class="deadline-separator">·</span>
                     <span class="deadline-remaining">Time remaining: {{ timeRemaining(group.deadlineAt) }}</span>
@@ -89,7 +89,7 @@
                           <span class="postponed-badge">Postponed</span>
                         }
                       </span>
-                      <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'EEE, MMM d, HH:mm' : '+0200' }}</time>
+                      <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'EEE, MMM d, HH:mm' }}</time>
                       <span>{{ match.city }} · {{ match.venue }}</span>
                     </div>
 
