@@ -37,7 +37,7 @@
                     <article class="tip-row">
                       <div class="match-meta">
                         <span>Match {{ match.matchNumber }}</span>
-                        <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'EEE, MMM d, HH:mm' : '+0200' }}</time>
+                        <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'EEE, MMM d, HH:mm' }}</time>
                         <span>{{ matchStatus(match) }}</span>
                       </div>
 
@@ -67,7 +67,7 @@
                           <span class="result-score">Postponed</span>
                         } @else {
                           <span class="result-label">Kickoff</span>
-                          <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'MMM d, HH:mm' : '+0200' }}</time>
+                          <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'MMM d, HH:mm' }}</time>
                         }
                       </div>
 
