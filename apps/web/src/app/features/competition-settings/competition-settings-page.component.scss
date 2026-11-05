@@ -1,0 +1,17 @@
+:host { display: block; }
+
+.settings-page {
+  width: min(760px, calc(100% - 32px));
+  margin: 32px auto 56px;
+}
+
+h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 520px) {
+  .settings-page { width: calc(100% - 24px); margin-top: 24px; }
+}

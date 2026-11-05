@@ -15,8 +15,10 @@
 @if (menuOpen()) {
   <app-modal-shell labelledBy="navigation-title" panelWidth="380px" [drawer]="true" ownedControls="navigation-toggle"
     animate.enter="drawer-enter" animate.leave="drawer-leave">
+    <div class="menu-top">
+      <span id="navigation-title" class="visually-hidden">Navigation</span>
+    </div>
     <div class="menu-content">
-      <h2 id="navigation-title">Menu</h2>
       <nav id="header-navigation" class="account-nav" aria-label="Account">
         @if (appState.currentUser(); as user) {
           <section class="menu-section" aria-labelledby="menu-user-title">
@@ -54,15 +56,40 @@
                 }
                 <span class="heading-name" [title]="competition.name">{{ competition.name }}</span>
               </h3>
+              <a class="menu-link" [routerLink]="['/competition', competition.slug]" (click)="closeMenu()">
+                <span class="menu-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#312e81" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <rect x="1" y="13" width="6" height="8" rx="1" />
+                    <rect x="9" y="9" width="6" height="12" rx="1" />
+                    <rect x="17" y="16" width="6" height="5" rx="1" />
+                  </svg>
+                </span>
+                <span>Rankings</span><span class="chevron" aria-hidden="true">&#8250;</span>
+              </a>
               <a class="menu-link" [routerLink]="['/competition', competition.slug, 'match-day']" (click)="closeMenu()">
                 <app-prediction-action-icon kind="match-day" [compact]="true" />
                 <span>Match Day</span><span class="chevron" aria-hidden="true">&#8250;</span>
+              </a>
+              <a class="menu-link" [routerLink]="['/competition', competition.slug, 'settings']" (click)="closeMenu()">
+                <span class="menu-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#312e81" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="m9 3-.5 2.3-1.8 1L4.5 6l-2 3.5 1.7 1.6v1.8l-1.7 1.6 2 3.5 2.2-.3 1.8 1L9 21h4l.5-2.3 1.8-1 2.2.3 2-3.5-1.7-1.6v-1.8l1.7-1.6-2-3.5-2.2.3-1.8-1L13 3Z" />
+                    <circle cx="11" cy="12" r="3" />
+                  </svg>
+                </span>
+                <span>Settings</span><span class="chevron" aria-hidden="true">&#8250;</span>
               </a>
               <a class="menu-link" [routerLink]="['/competition', competition.slug, 'stats']" (click)="closeMenu()">
                 <span class="menu-icon"><span class="stats-icon" aria-hidden="true"></span></span>
                 <span>Stats</span><span class="chevron" aria-hidden="true">&#8250;</span>
               </a>
               <a class="menu-link" [routerLink]="['/competition', competition.slug, 'rules']" (click)="closeMenu()">
+                <span class="menu-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#312e81" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+                    <path d="M14 3v5h5M8 12h7M8 16h7" />
+                  </svg>
+                </span>
                 <span>Rules</span><span class="chevron" aria-hidden="true">&#8250;</span>
               </a>
               @if (finalResults.available()) {
@@ -72,6 +99,14 @@
                 </button>
               }
               <a class="menu-link all-leagues-link" routerLink="/" [state]="{ showCompetitionList: true }" (click)="closeMenu()">
+                <span class="menu-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#312e81" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                  </svg>
+                </span>
                 <span>All leagues</span><span class="chevron" aria-hidden="true">&#8250;</span>
               </a>
             </section>
@@ -91,6 +126,11 @@
       @if (appState.isLoggedIn()) {
         <div class="menu-bottom">
           <button class="menu-link logout-link" type="button" (click)="logout()">
+            <span class="menu-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M10 12h11m-4-4 4 4-4 4" />
+              </svg>
+            </span>
             <span>Logout</span><span class="chevron" aria-hidden="true">&#8594;</span>
           </button>
         </div>

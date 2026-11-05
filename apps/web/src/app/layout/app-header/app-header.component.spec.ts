@@ -56,6 +56,8 @@ describe('Header navigation drawer', () => {
     toggle!.click();
     await fixture.whenStable();
     expect(toggle!.getAttribute('aria-expanded')).toBe('true');
+    expect(toggle!.classList.contains('is-open')).toBe(true);
+    expect(root.querySelectorAll('.menu-toggle')).toHaveLength(1);
     expect(document.body.style.overflow).toBe('hidden');
     expect(root.querySelector('.brand')!.hasAttribute('inert')).toBe(true);
     (root.querySelector('.modal-backdrop') as HTMLElement).click();
@@ -71,6 +73,7 @@ describe('Header navigation drawer', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await fixture.whenStable();
     expect(toggle!.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle!.classList.contains('is-open')).toBe(false);
     expect(document.activeElement).toBe(toggle);
     expect(document.body.style.overflow).not.toBe('hidden');
   });
@@ -105,6 +108,7 @@ describe('Header navigation drawer', () => {
     await fixture.whenStable();
     const nav = root.querySelector('nav')!;
     expect(nav.textContent).toContain('Player');
+    expect(nav.textContent).not.toContain('Settings');
     expect(nav.textContent).toContain('Admin');
     expect(nav.textContent).not.toContain('Stats');
     expect(nav.textContent).not.toContain('Final rankings');
@@ -120,10 +124,10 @@ describe('Header navigation drawer', () => {
     toggle!.click();
     await fixture.whenStable();
     const links = Array.from(root.querySelectorAll<HTMLAnchorElement>('.menu-link[href]'));
-    expect(links.map(link => link.getAttribute('href'))).toEqual(['/competition/league/predictions', '/competition/league/my-predictions', '/competition/league/match-day', '/competition/league/stats', '/competition/league/rules', '/', '/admin']);
-    links.find(link => link.getAttribute('href')?.endsWith('/stats'))!.click();
+    expect(links.map(link => link.getAttribute('href'))).toEqual(['/competition/league/predictions', '/competition/league/my-predictions', '/competition/league', '/competition/league/match-day', '/competition/league/settings', '/competition/league/stats', '/competition/league/rules', '/', '/admin']);
+    links.find(link => link.getAttribute('href')?.endsWith('/settings'))!.click();
     await fixture.whenStable();
-    expect(router.url).toBe('/competition/league/stats');
+    expect(router.url).toBe('/competition/league/settings');
     expect(toggle!.getAttribute('aria-expanded')).toBe('false');
   });
 
