@@ -5,6 +5,7 @@ import { RouterOutlet } from '@angular/router';
 import { AuthApiProvider } from '@services/providers/auth-api.provider';
 import { AppStateService } from '@core/state/app-state.service';
 import { NotificationBrowserAccountService } from '@services/notification-browser-account.service';
+import { debugSetUser, debugFlush } from '@core/guards/debug-log';
 import { FinalResultsService } from '@services/final-results.service';
 import { AppHeaderComponent } from './layout/app-header/app-header.component';
 import { AppFooterComponent } from './layout/app-footer/app-footer.component';
@@ -55,6 +56,8 @@ export class App {
     this.authApi.getCurrentUser().subscribe({
       next: (user) => {
         this.appState.updateCurrentUser(user);
+        debugSetUser(user.username);
+        debugFlush();
       },
       error: (error: unknown) => {
         if (error instanceof HttpErrorResponse && error.status === 401) {
