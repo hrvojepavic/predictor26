@@ -81,7 +81,27 @@ export class CompetitionsPageComponent {
     this.competitionsService.enterCompetition(competition);
     this.router.navigate(['/competition', competition.slug]).then(
       (success) => debugLog(`[click] router.navigate resolved: success=${success}, url=${this.router.url}`),
-      (err) => debugLog(`[click] router.navigate REJECTED: ${err?.message ?? err}`)
+      (err) => {
+        debugLog(`[click] router.navigate REJECTED: ${err?.message ?? err}`);
+        // Diagnose chunk loading failure
+        const chunkMatch = String(err?.message ?? '').match(/https?:\/\/[^\s]+\.js/);
+        if (chunkMatch) {
+          const chunkUrl = chunkMatch[0];
+          debugLog(`[diag] trying fetch("${chunkUrl}")...`);
+          fetch(chunkUrl).then(
+            (res) => {
+              const ct = res.headers.get('content-type');
+              debugLog(`[diag] fetch status=${res.status}, ok=${res.ok}, content-type="${ct}"`);
+              res.text().then((body) => {
+                const preview = body.substring(0, 120);
+                const isHtml = body.trimStart().startsWith('<');
+                debugLog(`[diag] body starts with HTML=${isHtml}, length=${body.length}, preview: ${preview}`);
+              });
+            },
+            (fetchErr) => debugLog(`[diag] fetch FAILED: ${fetchErr?.message ?? fetchErr}`)
+          );
+        }
+      }
     );
   }
 
