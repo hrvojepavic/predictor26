@@ -10,7 +10,6 @@ import { CompetitionsService } from '@services/competitions.service';
 import { CompetitionsApiProvider } from '@services/providers/competitions-api.provider';
 import { ModalShellComponent } from '@shared/components/modal-shell/modal-shell.component';
 import { FormFieldStateDirective } from '@shared/directives/form-field-state.directive';
-import { debugLog } from '@core/guards/debug-log';
 
 @Component({
   selector: 'app-competitions-page',
@@ -39,27 +38,19 @@ export class CompetitionsPageComponent {
   });
 
   constructor() {
-    debugLog('[page] CompetitionsPage constructor');
     this.competitionsService.exitCompetition();
     this.competitionsService
       .refreshCompetitions()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ competitions }) => {
-          debugLog(`[page] loaded ${competitions.length} competitions: ${competitions.map(c => `${c.slug}(joined=${c.isJoined},finished=${c.isFinished})`).join(', ')}`);
-        },
-        error: (err) => {
-          debugLog(`[page] load ERROR: ${err?.message ?? err}`);
+        error: () => {
           this.errorMessage.set('Competitions could not be loaded.');
         }
       });
   }
 
   protected enterCompetition(competition: Competition): void {
-    debugLog(`[click] enterCompetition: slug=${competition.slug}, isJoined=${competition.isJoined}, isFinished=${competition.isFinished}, isLoggedIn=${this.appState.isLoggedIn()}`);
-
     if (!this.appState.isLoggedIn()) {
-      debugLog('[click] NOT logged in - redirecting to /login');
       void this.router.navigate(['/login'], {
         queryParams: {
           returnUrl: '/'
@@ -69,7 +60,6 @@ export class CompetitionsPageComponent {
     }
 
     if (!competition.isJoined) {
-      debugLog('[click] NOT joined - showing join modal');
       this.joinErrorMessage.set(null);
       this.joinCompetitionPrompt.set(competition);
       this.joinForm.reset({ passcode: '' });
@@ -77,32 +67,8 @@ export class CompetitionsPageComponent {
       return;
     }
 
-    debugLog(`[click] calling enterCompetition service, then navigate to /competition/${competition.slug}`);
     this.competitionsService.enterCompetition(competition);
-    this.router.navigate(['/competition', competition.slug]).then(
-      (success) => debugLog(`[click] router.navigate resolved: success=${success}, url=${this.router.url}`),
-      (err) => {
-        debugLog(`[click] router.navigate REJECTED: ${err?.message ?? err}`);
-        // Diagnose chunk loading failure
-        const chunkMatch = String(err?.message ?? '').match(/https?:\/\/[^\s]+\.js/);
-        if (chunkMatch) {
-          const chunkUrl = chunkMatch[0];
-          debugLog(`[diag] trying fetch("${chunkUrl}")...`);
-          fetch(chunkUrl).then(
-            (res) => {
-              const ct = res.headers.get('content-type');
-              debugLog(`[diag] fetch status=${res.status}, ok=${res.ok}, content-type="${ct}"`);
-              res.text().then((body) => {
-                const preview = body.substring(0, 120);
-                const isHtml = body.trimStart().startsWith('<');
-                debugLog(`[diag] body starts with HTML=${isHtml}, length=${body.length}, preview: ${preview}`);
-              });
-            },
-            (fetchErr) => debugLog(`[diag] fetch FAILED: ${fetchErr?.message ?? fetchErr}`)
-          );
-        }
-      }
-    );
+    void this.router.navigate(['/competition', competition.slug]);
   }
 
   protected cancelJoinCompetition(): void {
