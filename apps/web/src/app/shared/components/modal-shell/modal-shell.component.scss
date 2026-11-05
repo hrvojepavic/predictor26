@@ -51,6 +51,8 @@
     flex-direction: column;
     width: min(var(--modal-panel-width), calc(100% - 48px));
     max-block-size: 100%;
+    min-height: 0;
+    overflow: hidden;
     border-radius: 20px 0 0 20px;
     overscroll-behavior: contain;
   }
