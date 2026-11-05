@@ -1,3 +1,48 @@
 <section class="settings-page" aria-labelledby="settings-title">
   <h1 id="settings-title">Settings</h1>
+  <p class="competition-name">{{ competition()?.name }}</p>
+  <section class="settings-panel" aria-labelledby="notifications-title">
+    <h2 id="notifications-title">Notifications</h2>
+    @if (settings.error(); as error) {
+      <p class="error" role="alert">{{ error }}</p>
+      @if (!settings.settings()) { <button type="button" (click)="reload()">Try again</button> }
+    }
+    @if (settings.loading()) {
+      <p role="status">Loading...</p>
+    } @else if (settings.settings()) {
+      <form [formGroup]="form">
+        <fieldset [disabled]="settings.saving()">
+          <label class="toggle-row">
+            <span id="reminder-1h-label">1 hour before prediction round closes</span>
+            <span class="toggle-control">
+              <span class="saving" [class.is-saving]="savingTiming() === 'reminder1h'" [attr.aria-hidden]="savingTiming() !== 'reminder1h'" role="status">Saving...</span>
+              <input type="checkbox" role="switch" aria-labelledby="reminder-1h-label" formControlName="reminder1h" (change)="toggle('reminder1h')" />
+            </span>
+          </label>
+          <label class="toggle-row">
+            <span id="reminder-9h-label">9 hours before prediction round closes</span>
+            <span class="toggle-control">
+              <span class="saving" [class.is-saving]="savingTiming() === 'reminder9h'" [attr.aria-hidden]="savingTiming() !== 'reminder9h'" role="status">Saving...</span>
+              <input type="checkbox" role="switch" aria-labelledby="reminder-9h-label" formControlName="reminder9h" (change)="toggle('reminder9h')" />
+            </span>
+          </label>
+        </fieldset>
+      </form>
+      @if (notificationsEnabled() && browsers().length) {
+        <ul class="browser-list" aria-label="Notification browsers">
+          @for (browser of browsers(); track browser.id) {
+            <li>
+              <span>{{ browser.name }} @if (browser.current) { <span class="current-browser">(this browser)</span> }</span>
+              @if (canRemove()) {
+                <button class="remove-browser" type="button" [disabled]="settings.saving()" [attr.aria-label]="'Remove ' + browser.name" (click)="removeBrowser(browser.id)">Remove</button>
+              }
+            </li>
+          }
+        </ul>
+      }
+      @if (canAdd()) {
+        <button class="add-browser" type="button" [disabled]="settings.saving()" (click)="addBrowser()">Add this browser</button>
+      }
+    }
+  </section>
 </section>

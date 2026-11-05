@@ -16,7 +16,7 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
     Authorization: `Bearer ${token}`
   };
 
-  if (activeCompetition) {
+  if (activeCompetition && !req.headers.has('X-Competition-Id')) {
     headers['X-Competition-Id'] = String(activeCompetition.id);
   }
 

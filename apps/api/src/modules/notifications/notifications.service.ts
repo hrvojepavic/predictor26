@@ -1,12 +1,19 @@
+import { createHash } from 'node:crypto';
 import webPush, { PushSubscription } from 'web-push';
 
 import { config } from '../../config/index.js';
 import { getAppMetadataValue, setAppMetadataValue } from '../../database/queries/app-metadata.queries.js';
 import { getSuperAdminUser } from '../../database/queries/users.queries.js';
 import { verifyPassword } from '../../shared/utils/password.js';
-import { SavePushSubscriptionRequest, UpdateNotificationSettingsRequest } from './notifications.interfaces.js';
+import { AdminNotificationSettingsResponse, NotificationPreferences, NotificationPreferencesResponse, SavePushSubscriptionRequest, UpdateNotificationSettingsRequest } from './notifications.interfaces.js';
 import {
-  disableAllUserNotificationSubscriptions,
+  findNotificationPreferences,
+  isNotificationRecipient,
+  skipNotificationReminder,
+  listCompetitionNotificationMembers,
+  listCompetitionNotificationBrowsers,
+  removeCompetitionNotificationBrowser,
+  saveNotificationPreferences,
   disableUserNotificationSubscription,
   findUserNotificationSubscriptions,
   findReminderCandidates,
@@ -31,7 +38,7 @@ const recentReminderAttemptLimit = 30;
 const dueReminderCandidateLimit = 20;
 const reminderCandidateWindowMs = 10 * 60 * 1000;
 
-let activeReminderRun: Promise<NotificationReminderRunReport> | null = null;
+const activeReminderRuns = new Map<number, Promise<NotificationReminderRunReport>>();
 
 export interface NotificationReminderRunReport {
   readonly competitionId: number;
@@ -68,8 +75,12 @@ export async function getNotificationConfig(competitionId: number) {
   };
 }
 
-export async function getNotificationSettings(competitionId: number) {
+export async function getNotificationSettings(competitionId: number): Promise<AdminNotificationSettingsResponse> {
   return {
+    members: listCompetitionNotificationMembers(competitionId).map(({ browserUserAgents, ...member }) => ({
+      ...member,
+      browsers: browserUserAgents.map(agent => `${formatBrowserLabel(agent)}${browserPlatform(agent)}`)
+    })),
     remindersEnabled: await areNotificationRemindersEnabled(competitionId)
   };
 }
@@ -173,7 +184,8 @@ export async function updateNotificationSettings(
 export async function savePushSubscription(
   userId: number,
   input: Partial<SavePushSubscriptionRequest> | undefined,
-  userAgent: string | null
+  userAgent: string | null,
+  competitionId?: number
 ): Promise<boolean> {
   if (!isValidSubscriptionRequest(input)) {
     return false;
@@ -183,7 +195,7 @@ export async function savePushSubscription(
     endpoint: input.endpoint,
     subscriptionJson: JSON.stringify(input),
     userAgent
-  });
+  }, competitionId);
 
   return true;
 }
@@ -201,34 +213,22 @@ export function startNotificationReminderScheduler(): void {
 }
 
 export async function sendDuePredictionReminders(): Promise<NotificationReminderRunReport> {
-  if (activeReminderRun) {
-    return activeReminderRun;
-  }
-
-  activeReminderRun = runDuePredictionRemindersForEnabledCompetitions().finally(() => {
-    activeReminderRun = null;
-  });
-
-  return activeReminderRun;
+  return runDuePredictionRemindersForEnabledCompetitions();
 }
 
 export async function sendDuePredictionRemindersForCompetition(competitionId: number): Promise<NotificationReminderRunReport> {
-  if (activeReminderRun) {
-    return activeReminderRun;
-  }
-
-  activeReminderRun = runDuePredictionReminders(competitionId).finally(() => {
-    activeReminderRun = null;
-  });
-
-  return activeReminderRun;
+  const active = activeReminderRuns.get(competitionId);
+  if (active) return active;
+  const run = runDuePredictionReminders(competitionId).finally(() => activeReminderRuns.delete(competitionId));
+  activeReminderRuns.set(competitionId, run);
+  return run;
 }
 
 async function runDuePredictionRemindersForEnabledCompetitions(): Promise<NotificationReminderRunReport> {
   let lastReport: NotificationReminderRunReport | null = null;
 
   for (const competition of findCompetitionsWithNotificationRemindersEnabled()) {
-    lastReport = await runDuePredictionReminders(competition.id);
+    lastReport = await sendDuePredictionRemindersForCompetition(competition.id);
   }
 
   if (lastReport) {
@@ -259,6 +259,7 @@ async function runDuePredictionReminders(competitionId: number): Promise<Notific
   const candidates = enabled ? getDueReminderCandidates(competitionId, now, windowEnd) : [];
   const candidateGroups = groupReminderCandidatesByUser(candidates);
   let acceptedSubscriptionCount = 0;
+  let attemptedSubscriptionCount = 0;
   let sentCount = 0;
   let failedCount = 0;
   let disabledSubscriptionCount = 0;
@@ -267,10 +268,27 @@ async function runDuePredictionReminders(competitionId: number): Promise<Notific
   for (const group of candidateGroups) {
     const payload = buildReminderPayload(group.reminder);
     let groupAcceptedCount = 0;
+    let groupAttemptedCount = 0;
 
     for (const candidate of group.subscriptions) {
+      // A user can opt out while an earlier push in this batch is in flight.
+      const settings = findNotificationPreferences(candidate.user_id, competitionId);
+      if (!settings.competitionEnabled || !settings.eligible || !settings.preferences.enabled ||
+          !(candidate.reminder_hours === 9 ? settings.preferences.reminder9h : settings.preferences.reminder1h)) continue;
+      const subscriptionActive = listCompetitionNotificationBrowsers(candidate.user_id, competitionId).some(subscription => subscription.id === candidate.subscription_id);
+      if (!subscriptionActive || Date.parse(candidate.deadline_at) <= Date.now()) continue;
+      if (!isNotificationRecipient(candidate.subscription_id, candidate.user_id)) {
+        skipNotificationReminder(candidate);
+        continue;
+      }
+      attemptedSubscriptionCount += 1;
+      groupAttemptedCount += 1;
       try {
-        await webPush.sendNotification(JSON.parse(candidate.subscription_json) as PushSubscription, JSON.stringify(payload));
+        await webPush.sendNotification(
+          JSON.parse(candidate.subscription_json) as PushSubscription,
+          JSON.stringify(payload),
+          { TTL: Math.max(1, Math.floor((Date.parse(candidate.deadline_at) - Date.now()) / 1000)) }
+        );
         markReminderAttempted({
           userId: candidate.user_id,
           competitionId: candidate.competition_id,
@@ -322,7 +340,7 @@ async function runDuePredictionReminders(competitionId: number): Promise<Notific
         group.reminder.reminder_hours
       );
       sentCount += 1;
-    } else if (group.subscriptions.length > 0) {
+    } else if (groupAttemptedCount > 0) {
       failedCount += 1;
     }
   }
@@ -333,7 +351,7 @@ async function runDuePredictionReminders(competitionId: number): Promise<Notific
     finishedAt: new Date().toISOString(),
     enabled,
     candidateCount: candidateGroups.length,
-    attemptedSubscriptionCount: candidates.length,
+    attemptedSubscriptionCount,
     acceptedSubscriptionCount,
     sentCount,
     failedCount,
@@ -390,22 +408,25 @@ function groupReminderCandidatesByUser(candidates: ReminderCandidate[]) {
   return [...groups.values()];
 }
 
-export async function sendTestNotification(userId: number): Promise<{ readonly sent: number; readonly subscriptions: number }> {
+export async function sendTestNotification(userId: number, competitionId: number): Promise<{ readonly sent: number; readonly subscriptions: number }> {
   const subscriptions = findUserNotificationSubscriptions(userId);
   let sent = 0;
 
   for (const subscription of subscriptions) {
+    if (!isNotificationRecipient(subscription.id, userId)) continue;
     try {
       await webPush.sendNotification(
         JSON.parse(subscription.subscription_json) as PushSubscription,
         JSON.stringify({
-          title: 'Test reminder',
-          body: 'Notifications are enabled for Predictor26.',
+          title: `${findCompetitionForAdmin(competitionId)?.name ?? 'Competition'}: test reminder`,
+          body: 'This is a manual test. Your reminder preferences have not changed.',
           icon: '/icons/predictor26-icon.svg',
           badge: '/icons/predictor26-icon.svg',
-          tag: `prediction-reminder:test:${userId}`,
+          tag: `prediction-reminder:test:${competitionId}:${userId}`,
           data: {
-            url: '/',
+            url: `/competition/${findCompetitionForAdmin(competitionId)?.slug}/settings`,
+            competitionId,
+            userId,
             test: true
           }
         })
@@ -432,24 +453,34 @@ export async function sendTestNotification(userId: number): Promise<{ readonly s
   };
 }
 
-export function resetUserNotificationSubscriptions(userId: number): { readonly reset: true } {
-  disableAllUserNotificationSubscriptions(userId);
-
+export function getUserNotificationPreferences(userId: number, competitionId: number): NotificationPreferencesResponse {
   return {
-    reset: true
+    ...findNotificationPreferences(userId, competitionId),
+    browsers: listCompetitionNotificationBrowsers(userId, competitionId).map(browser => ({
+      id: browser.id,
+      name: `${formatBrowserLabel(browser.user_agent)}${browserPlatform(browser.user_agent)}`,
+      fingerprint: createHash('sha256').update(browser.endpoint).digest('hex')
+    }))
   };
+}
+
+export function updateUserNotificationPreferences(userId: number, competitionId: number, input: unknown): NotificationPreferencesResponse | null {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  const value = input as Partial<NotificationPreferences>;
+  if (typeof value.enabled !== 'boolean' || typeof value.reminder9h !== 'boolean' || typeof value.reminder1h !== 'boolean') return null;
+  saveNotificationPreferences(userId, competitionId, value as NotificationPreferences);
+  return getUserNotificationPreferences(userId, competitionId);
 }
 
 async function areNotificationRemindersEnabled(competitionId: number): Promise<boolean> {
   const competition = findCompetitionForAdmin(competitionId);
 
-  return competition?.notification_reminders_enabled === 1 && competition.is_finished === 0;
+  return competition?.notification_reminders_enabled === 1 && competition.is_finished === 0 && competition.is_archived === 0;
 }
 
 async function getLastNotificationReminderRun(competitionId: number): Promise<NotificationReminderRunReport | null> {
   const value =
-    (await getAppMetadataValue(`${notificationReminderLastRunKey}:${competitionId}`)) ??
-    (await getAppMetadataValue(notificationReminderLastRunKey));
+    await getAppMetadataValue(`${notificationReminderLastRunKey}:${competitionId}`);
 
   if (!value) {
     return null;
@@ -472,20 +503,23 @@ function buildReminderPayload(candidate: ReturnType<typeof findReminderCandidate
   const missingCount = Math.max(candidate.expected_count - candidate.submitted_count, 0);
   const roundLabel = getShortRoundLabel(candidate.prediction_round);
   const title = missingCount > 0 ? `${roundLabel}: ${missingCount} predictions left` : `${roundLabel}: predictions complete`;
+  const timing = `Prediction round closes in about ${candidate.reminder_hours} ${candidate.reminder_hours === 1 ? 'hour' : 'hours'}.`;
   const body =
     missingCount > 0
-      ? `${candidate.reminder_hours}h until lock. Post ${missingCount} missing ${missingCount === 1 ? 'prediction' : 'predictions'}.`
-      : `${candidate.reminder_hours}h until lock. You can still update your predictions.`;
+      ? `${timing} Post ${missingCount} missing ${missingCount === 1 ? 'prediction' : 'predictions'}.`
+      : `${timing} You can still update your predictions.`;
 
   return {
-    title,
+    title: `${candidate.competition_name}: ${title}`,
     body,
     icon: '/icons/predictor26-icon.svg',
     badge: '/icons/predictor26-icon.svg',
-    tag: `prediction-reminder:${candidate.prediction_round}:${candidate.reminder_hours}`,
+    tag: `prediction-reminder:${candidate.competition_id}:${candidate.user_id}:${candidate.prediction_round}:${candidate.reminder_hours}`,
     renotify: true,
     data: {
       url: `/competition/${candidate.competition_slug}/predictions`,
+      competitionId: candidate.competition_id,
+      userId: candidate.user_id,
       predictionRound: candidate.prediction_round,
       deadlineAt: candidate.deadline_at,
       reminderHours: candidate.reminder_hours,
@@ -563,7 +597,7 @@ function formatBrowserLabel(userAgent: string | null): string {
     return 'Unknown browser';
   }
 
-  if (userAgent.includes('Edg/')) {
+  if (/Edg\/|EdgiOS\/|EdgA\//.test(userAgent)) {
     return 'Edge';
   }
 
@@ -571,11 +605,11 @@ function formatBrowserLabel(userAgent: string | null): string {
     return 'Opera';
   }
 
-  if (userAgent.includes('Firefox/')) {
+  if (/Firefox\/|FxiOS\//.test(userAgent)) {
     return 'Firefox';
   }
 
-  if (userAgent.includes('Chrome/') && userAgent.includes('Safari/')) {
+  if (/Chrome\/|CriOS\//.test(userAgent)) {
     return 'Chrome/Chromium';
   }
 
@@ -584,4 +618,18 @@ function formatBrowserLabel(userAgent: string | null): string {
   }
 
   return 'Unknown browser';
+}
+
+function browserPlatform(agent: string | null): string {
+  if (!agent) return '';
+  if (/iPhone|iPad/.test(agent)) return ' on iOS';
+  if (agent.includes('Android')) return ' on Android';
+  if (agent.includes('Windows')) return ' on Windows';
+  if (agent.includes('Macintosh')) return ' on Mac';
+  if (agent.includes('Linux')) return ' on Linux';
+  return '';
+}
+
+export function removeUserNotificationBrowser(userId: number, competitionId: number, subscriptionId: number) {
+  return removeCompetitionNotificationBrowser(userId, competitionId, subscriptionId);
 }

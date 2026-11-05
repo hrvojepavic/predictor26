@@ -134,6 +134,16 @@ function initializeDatabase(db: Database.Database) {
       UNIQUE(user_id, match_id)
     );
 
+    CREATE TABLE IF NOT EXISTS competition_notification_preferences (
+      competition_id INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      enabled INTEGER NOT NULL DEFAULT 0 CHECK(enabled IN (0, 1)),
+      reminder_9h INTEGER NOT NULL DEFAULT 0 CHECK(reminder_9h IN (0, 1)),
+      reminder_1h INTEGER NOT NULL DEFAULT 0 CHECK(reminder_1h IN (0, 1)),
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (competition_id, user_id)
+    );
+
     CREATE TABLE IF NOT EXISTS notification_subscriptions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -143,6 +153,16 @@ function initializeDatabase(db: Database.Database) {
       is_enabled INTEGER NOT NULL DEFAULT 1 CHECK(is_enabled IN (0, 1)),
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS notification_reminder_skips (
+      competition_id INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      subscription_id INTEGER NOT NULL REFERENCES notification_subscriptions(id) ON DELETE CASCADE,
+      prediction_round TEXT NOT NULL,
+      reminder_hours INTEGER NOT NULL CHECK(reminder_hours IN (1, 9)),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (competition_id, user_id, subscription_id, prediction_round, reminder_hours)
     );
 
     CREATE TABLE IF NOT EXISTS notification_reminder_deliveries (
@@ -209,6 +229,8 @@ function initializeDatabase(db: Database.Database) {
     );
   `);
 
+  ensureCompetitionNotificationBrowsers(db);
+  ensureCompetitionTeamsTableSupportsName(db);
   ensureSuperAdminPredictionsBlocked(db);
   ensureFinishedCompetitionLiveSnapshotsClosed(db);
   seedRuleTemplates(db);
@@ -293,7 +315,6 @@ function ensureCompetitionSchema(db: Database.Database) {
 
   ensureCompetitionTableSupportsManagementFields(db);
   ensureCompetitionUsersTableSupportsScopedRole(db);
-  ensureCompetitionTeamsTableSupportsName(db);
   ensureCompetitionTeamsTableSupportsGroupName(db);
 }
 
@@ -953,4 +974,22 @@ function ensureCompetitionScopedIndexes(db: Database.Database) {
   if (reminderAttemptColumnNames.has('competition_id')) {
     db.exec('CREATE INDEX IF NOT EXISTS notification_reminder_attempts_competition_id_index ON notification_reminder_attempts(competition_id)');
   }
+}
+
+function ensureCompetitionNotificationBrowsers(db: Database.Database) {
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'competition_notification_browsers'").get()) return;
+  db.transaction(() => {
+    db.exec(`CREATE TABLE competition_notification_browsers (
+      competition_id INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      subscription_id INTEGER NOT NULL REFERENCES notification_subscriptions(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (competition_id, user_id, subscription_id)
+    );
+    INSERT INTO competition_notification_browsers (competition_id, user_id, subscription_id)
+      SELECT p.competition_id, p.user_id, s.id
+      FROM competition_notification_preferences p
+      JOIN notification_subscriptions s ON s.user_id = p.user_id AND s.is_enabled = 1
+      WHERE p.enabled = 1;`);
+  })();
 }

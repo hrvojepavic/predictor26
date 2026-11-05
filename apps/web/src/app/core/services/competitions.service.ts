@@ -5,7 +5,6 @@ import { AppStateService } from '@core/state/app-state.service';
 import { Competition, CompetitionsResponse, JoinCompetitionResponse, UpdateCompetitionTiebreakerResponse } from '@models/competition.models';
 import { LeaderboardService } from '@services/leaderboard.service';
 import { MatchesService } from '@services/matches.service';
-import { NotificationRemindersService } from '@services/notification-reminders.service';
 import { PaymentsService } from '@services/payments.service';
 import { AuthApiProvider } from '@services/providers/auth-api.provider';
 import { CompetitionsApiProvider } from '@services/providers/competitions-api.provider';
@@ -18,7 +17,6 @@ export class CompetitionsService {
   private readonly authApi = inject(AuthApiProvider);
   private readonly leaderboardService = inject(LeaderboardService);
   private readonly matchesService = inject(MatchesService);
-  private readonly notificationRemindersService = inject(NotificationRemindersService);
   private readonly paymentsService = inject(PaymentsService);
   private readonly competitionsApi = inject(CompetitionsApiProvider);
   private readonly competitionsSignal = signal<Competition[]>([]);
@@ -81,7 +79,6 @@ export class CompetitionsService {
     this.appState.setActiveCompetition(competition);
     this.matchesService.clearCompetitionData();
     this.leaderboardService.clearCompetitionData();
-    this.notificationRemindersService.clearCompetitionData();
     this.paymentsService.clearPaymentInfo();
     this.authApi.getCurrentUser().subscribe((user) => {
       this.appState.updateCurrentUser(user);
@@ -92,7 +89,6 @@ export class CompetitionsService {
     this.appState.clearActiveCompetition();
     this.matchesService.clearCompetitionData();
     this.leaderboardService.clearCompetitionData();
-    this.notificationRemindersService.clearCompetitionData();
     this.paymentsService.clearPaymentInfo();
   }
 
@@ -112,7 +108,6 @@ export class CompetitionsService {
         );
         this.appState.setActiveCompetition(competition);
         this.leaderboardService.clearCompetitionData();
-        this.notificationRemindersService.clearCompetitionData();
       })
     );
   }

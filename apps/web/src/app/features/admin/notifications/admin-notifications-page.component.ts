@@ -1,6 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
+import { AdminNotificationMember } from '@models/notification.models';
 import { RouterLink } from '@angular/router';
+import { notificationSetupMessages } from '@core/constants/notification-setup-messages';
 
 import { NotificationRemindersService } from '@services/notification-reminders.service';
 import { NotificationsApiProvider } from '@services/providers/notifications-api.provider';
@@ -17,6 +19,8 @@ export class AdminNotificationsPageComponent {
   private readonly notificationsApi = inject(NotificationsApiProvider);
   private readonly notificationRemindersService = inject(NotificationRemindersService);
 
+  protected readonly members = signal<readonly (AdminNotificationMember & { browsersLabel: string })[]>([]);
+  protected readonly membersLoaded = signal(false);
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly enablingBrowser = signal(false);
@@ -120,12 +124,8 @@ export class AdminNotificationsPageComponent {
 
     if (result.status === 'subscribed') {
       this.successMessage.set('This browser is ready for admin test notifications.');
-    } else if (result.status === 'blocked') {
-      this.errorMessage.set('Browser notifications are blocked. Enable them in site settings and try again.');
-    } else if (result.status === 'unsupported') {
-      this.errorMessage.set('This browser does not support web push notifications.');
     } else {
-      this.errorMessage.set('This browser could not be registered for test notifications.');
+      this.errorMessage.set(notificationSetupMessages[result.status]);
     }
 
     this.enablingBrowser.set(false);
@@ -139,6 +139,8 @@ export class AdminNotificationsPageComponent {
     this.notificationsApi.getAdminSettings().subscribe({
       next: (settings) => {
         this.remindersEnabled.set(settings.remindersEnabled);
+        this.members.set(settings.members.map(member => ({ ...member, browsersLabel: member.browsers.join(', ') || '\u2014' })));
+        this.membersLoaded.set(true);
         this.loading.set(false);
       },
       error: () => {

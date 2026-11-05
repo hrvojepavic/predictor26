@@ -1,3 +1,4 @@
+import { getPredictionRound } from '../../shared/utils/prediction-round.js';
 import { listMatches, MatchRow, PredictionOddsOutcome, PredictionRow } from '../../database/queries/matches.queries.js';
 import { LatestLiveScoreSnapshotRow } from '../../database/queries/live-scores.queries.js';
 import {
@@ -248,30 +249,6 @@ function withPredictionLockData<T extends MatchRow>(matches: readonly T[]): Arra
       predictionLocked: match.is_postponed === 1 || Date.now() >= Date.parse(predictionDeadlineAt)
     };
   });
-}
-
-function getPredictionRound(match: MatchRow): string {
-  if (isWeekRoundLabel(match.round_label)) {
-    return match.round_label;
-  }
-
-  if (match.match_number <= 24) {
-    return 'Group stage - Round 1';
-  }
-
-  if (match.match_number <= 48) {
-    return 'Group stage - Round 2';
-  }
-
-  if (match.match_number <= 72) {
-    return 'Group stage - Round 3';
-  }
-
-  return match.round_label;
-}
-
-function isWeekRoundLabel(label: string): boolean {
-  return /^Week \d+$/.test(label);
 }
 
 interface PredictionLockData {
