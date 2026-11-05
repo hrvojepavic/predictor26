@@ -10,6 +10,7 @@ import { CompetitionsService } from '@services/competitions.service';
 import { CompetitionsApiProvider } from '@services/providers/competitions-api.provider';
 import { ModalShellComponent } from '@shared/components/modal-shell/modal-shell.component';
 import { FormFieldStateDirective } from '@shared/directives/form-field-state.directive';
+import { debugLog } from '@core/guards/debug-log';
 
 @Component({
   selector: 'app-competitions-page',
@@ -38,19 +39,27 @@ export class CompetitionsPageComponent {
   });
 
   constructor() {
+    debugLog('[page] CompetitionsPage constructor');
     this.competitionsService.exitCompetition();
     this.competitionsService
       .refreshCompetitions()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        error: () => {
+        next: ({ competitions }) => {
+          debugLog(`[page] loaded ${competitions.length} competitions: ${competitions.map(c => `${c.slug}(joined=${c.isJoined},finished=${c.isFinished})`).join(', ')}`);
+        },
+        error: (err) => {
+          debugLog(`[page] load ERROR: ${err?.message ?? err}`);
           this.errorMessage.set('Competitions could not be loaded.');
         }
       });
   }
 
   protected enterCompetition(competition: Competition): void {
+    debugLog(`[click] enterCompetition: slug=${competition.slug}, isJoined=${competition.isJoined}, isFinished=${competition.isFinished}, isLoggedIn=${this.appState.isLoggedIn()}`);
+
     if (!this.appState.isLoggedIn()) {
+      debugLog('[click] NOT logged in - redirecting to /login');
       void this.router.navigate(['/login'], {
         queryParams: {
           returnUrl: '/'
@@ -60,6 +69,7 @@ export class CompetitionsPageComponent {
     }
 
     if (!competition.isJoined) {
+      debugLog('[click] NOT joined - showing join modal');
       this.joinErrorMessage.set(null);
       this.joinCompetitionPrompt.set(competition);
       this.joinForm.reset({ passcode: '' });
@@ -67,8 +77,12 @@ export class CompetitionsPageComponent {
       return;
     }
 
+    debugLog(`[click] calling enterCompetition service, then navigate to /competition/${competition.slug}`);
     this.competitionsService.enterCompetition(competition);
-    void this.router.navigate(['/competition', competition.slug]);
+    this.router.navigate(['/competition', competition.slug]).then(
+      (success) => debugLog(`[click] router.navigate resolved: success=${success}, url=${this.router.url}`),
+      (err) => debugLog(`[click] router.navigate REJECTED: ${err?.message ?? err}`)
+    );
   }
 
   protected cancelJoinCompetition(): void {
