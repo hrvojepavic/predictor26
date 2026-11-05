@@ -1,6 +1,5 @@
 import {
   disableNotificationSubscription,
-  disableNotificationSubscriptionsForUser,
   listRecentReminderAttempts,
   listNotificationSubscriptionsForUser,
   listRecentReminderDeliveries,
@@ -12,16 +11,12 @@ import {
   upsertNotificationSubscription
 } from '../../database/queries/notifications.queries.js';
 
-export function saveUserNotificationSubscription(userId: number, input: PushSubscriptionInput): void {
-  upsertNotificationSubscription(userId, input);
+export function saveUserNotificationSubscription(userId: number, input: PushSubscriptionInput, competitionId?: number): void {
+  upsertNotificationSubscription(userId, input, competitionId);
 }
 
 export function disableUserNotificationSubscription(endpoint: string): void {
   disableNotificationSubscription(endpoint);
-}
-
-export function disableAllUserNotificationSubscriptions(userId: number): void {
-  disableNotificationSubscriptionsForUser(userId);
 }
 
 export function findUserNotificationSubscriptions(userId: number) {
@@ -41,3 +36,11 @@ export function markReminderAttempted(input: ReminderAttemptInput): void {
 }
 
 export { listRecentReminderAttempts, listRecentReminderDeliveries };
+
+export { getNotificationPreferences as findNotificationPreferences, upsertNotificationPreferences as saveNotificationPreferences } from '../../database/queries/notifications.queries.js';
+
+export { listCompetitionNotificationBrowsers, removeCompetitionNotificationBrowser } from '../../database/queries/notifications.queries.js';
+
+export { listCompetitionNotificationMembers } from '../../database/queries/notifications.queries.js';
+
+export { isNotificationRecipient, skipNotificationReminder } from '../../database/queries/notifications.queries.js';

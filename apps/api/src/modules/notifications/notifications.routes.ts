@@ -3,8 +3,11 @@ import { Router } from 'express';
 import { requireAuth } from '../../shared/middleware/require-auth.middleware.js';
 import {
   getNotificationConfigController,
+  addNotificationBrowserController,
+  removeNotificationBrowserController,
   getNotificationSettingsController,
-  resetNotificationSubscriptionsController,
+  getNotificationPreferencesController,
+  updateNotificationPreferencesController,
   savePushSubscriptionController,
   sendTestNotificationController,
   updateNotificationSettingsController
@@ -16,5 +19,10 @@ notificationsRoutes.get('/notifications/config', requireAuth, getNotificationCon
 notificationsRoutes.post('/notifications/subscriptions', requireAuth, savePushSubscriptionController);
 notificationsRoutes.get('/admin/notifications/settings', requireAuth, getNotificationSettingsController);
 notificationsRoutes.patch('/admin/notifications/settings', requireAuth, updateNotificationSettingsController);
-notificationsRoutes.post('/admin/notifications/reset-subscriptions', requireAuth, resetNotificationSubscriptionsController);
 notificationsRoutes.post('/admin/notifications/test', requireAuth, sendTestNotificationController);
+
+notificationsRoutes.get('/competitions/:competitionId/notification-preferences', requireAuth, getNotificationPreferencesController);
+notificationsRoutes.put('/competitions/:competitionId/notification-preferences', requireAuth, updateNotificationPreferencesController);
+
+notificationsRoutes.post('/competitions/:competitionId/notification-browsers', requireAuth, addNotificationBrowserController);
+notificationsRoutes.delete('/competitions/:competitionId/notification-browsers/:browserId', requireAuth, removeNotificationBrowserController);

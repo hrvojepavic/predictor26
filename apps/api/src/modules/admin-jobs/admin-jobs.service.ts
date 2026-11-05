@@ -295,7 +295,7 @@ async function getNotificationReminderJobDetails(competitionId: number): Promise
   return {
     id: notificationReminderJobId,
     name: 'Prediction reminders',
-    description: 'Checks for users who still need predictions and sends 9h and 1h web push reminders.',
+    description: 'Sends selected 9h and 1h reminders to opted-in, verified competition members, including those with completed predictions.',
     enabled: snapshot.enabled,
     intervalMs: snapshot.intervalMs,
     lastRun: snapshot.lastRun,

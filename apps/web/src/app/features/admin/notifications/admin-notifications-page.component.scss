@@ -2,6 +2,19 @@
   display: block;
 }
 
+.members-panel { margin-top: 14px; padding: 18px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; }
+.members-table-scroll { max-width: 100%; overflow-x: auto; margin-top: 12px; }
+.members-table-scroll:focus-visible { outline: 2px solid #6366f1; outline-offset: 3px; }
+.members-panel table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 0.92rem; }
+.members-panel .browsers-cell { text-align: left; min-width: 180px; }
+.members-panel th, .members-panel td { padding: 12px 8px; border-bottom: 1px solid #e5e7eb; text-align: center; }
+.members-panel th:first-child { text-align: left; overflow-wrap: anywhere; }
+.members-panel thead th { color: #4b5563; background: #f9fafb; }
+.members-panel tbody th { font-weight: 500; color: #111827; }
+.members-panel tr:last-child td, .members-panel tbody tr:last-child th { border-bottom: 0; }
+.preference-mark { color: #b91c1c; font-size: 1.2rem; font-weight: 700; }
+.preference-mark.enabled { color: #166534; }
+
 .admin-notifications-page {
   width: min(860px, calc(100% - 32px));
   margin: 32px auto 56px;

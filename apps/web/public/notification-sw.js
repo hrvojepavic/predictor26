@@ -1,3 +1,11 @@
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', (event) => {
   const payload = event.data
     ? event.data.json()
@@ -21,7 +29,15 @@ self.addEventListener('push', (event) => {
     }
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil((async () => {
+    // Never display a push for an account other than the last login on this browser.
+    // Missing recipient data fails closed, including legacy pushes queued before upgrade.
+    const cache = await caches.open('predictor26-notification-recipient');
+    const saved = await cache.match('/notification-recipient');
+    const recipient = saved ? await saved.json() : null;
+    if (!recipient || recipient.userId !== payload.data?.userId) return;
+    await self.registration.showNotification(title, options);
+  })());
 });
 
 self.addEventListener('notificationclick', (event) => {

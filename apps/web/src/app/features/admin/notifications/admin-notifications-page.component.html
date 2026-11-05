@@ -22,8 +22,8 @@
       <div class="settings-copy">
         <h2 id="reminders-title">Prediction reminders</h2>
         <p>
-          Enable this only when you want users to see the reminder opt-in drawer. Scheduled reminders send 9h and 1h
-          before a round locks.
+          Allow reminders for this competition. Verified members choose 9h and/or 1h reminders in Settings;
+          everyone starts opted out. Disabling this pauses delivery without changing their preferences.
         </p>
       </div>
 
@@ -37,7 +37,7 @@
         <h2 id="test-title">Admin test notification</h2>
         <p>
           First register this browser for your admin user, then send a real push notification only to your own active
-          subscriptions.
+          subscriptions. This manual test bypasses reminder preferences and does not opt you in.
         </p>
       </div>
 
@@ -48,6 +48,29 @@
         <button class="test-button" type="button" [disabled]="testing()" (click)="sendTestNotification()">
           {{ testing() ? 'Sending...' : 'Send test' }}
         </button>
+      </div>
+    </section>
+  }
+
+  @if (membersLoaded()) {
+    <section class="members-panel" aria-labelledby="members-title">
+      <h2 id="members-title">User notification preferences</h2>
+      <div class="members-table-scroll" role="region" aria-labelledby="members-title" tabindex="0">
+      <table>
+        <thead><tr><th scope="col">User</th><th scope="col">1h</th><th scope="col">9h</th><th scope="col" class="browsers-cell">Browsers</th></tr></thead>
+        <tbody>
+          @for (member of members(); track member.userId) {
+            <tr>
+              <th scope="row">{{ member.username }}</th>
+              <td><span class="preference-mark" [class.enabled]="member.reminder1h" [attr.aria-label]="member.reminder1h ? 'Enabled' : 'Disabled'" role="img">{{ member.reminder1h ? '✓' : '✕' }}</span></td>
+              <td><span class="preference-mark" [class.enabled]="member.reminder9h" [attr.aria-label]="member.reminder9h ? 'Enabled' : 'Disabled'" role="img">{{ member.reminder9h ? '✓' : '✕' }}</span></td>
+              <td class="browsers-cell">{{ member.browsersLabel }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4">No users in this competition.</td></tr>
+          }
+        </tbody>
+      </table>
       </div>
     </section>
   }

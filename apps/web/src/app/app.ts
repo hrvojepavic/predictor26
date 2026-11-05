@@ -4,12 +4,12 @@ import { RouterOutlet } from '@angular/router';
 
 import { AuthApiProvider } from '@services/providers/auth-api.provider';
 import { AppStateService } from '@core/state/app-state.service';
+import { NotificationBrowserAccountService } from '@services/notification-browser-account.service';
 import { FinalResultsService } from '@services/final-results.service';
 import { AppHeaderComponent } from './layout/app-header/app-header.component';
 import { AppFooterComponent } from './layout/app-footer/app-footer.component';
 import { FinalResultsModalComponent } from './features/final-results/final-results-modal.component';
 import { ModalShellComponent } from './shared/components/modal-shell/modal-shell.component';
-import { NotificationReminderDrawerComponent } from './shared/components/notification-reminder-drawer/notification-reminder-drawer.component';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +18,6 @@ import { NotificationReminderDrawerComponent } from './shared/components/notific
     AppFooterComponent,
     FinalResultsModalComponent,
     ModalShellComponent,
-    NotificationReminderDrawerComponent,
     RouterOutlet
   ],
   templateUrl: './app.html',
@@ -27,11 +26,19 @@ import { NotificationReminderDrawerComponent } from './shared/components/notific
 export class App {
   private readonly appState = inject(AppStateService);
   private readonly authApi = inject(AuthApiProvider);
+  private readonly notificationBrowserAccount = inject(NotificationBrowserAccountService);
   protected readonly finalResults = inject(FinalResultsService);
   protected readonly routeActivated = signal(false);
 
   constructor() {
     this.refreshCurrentUser();
+    effect(() => {
+      const user = this.appState.currentUser();
+      const token = this.appState.token();
+      if (user && token) {
+        untracked(() => { void this.notificationBrowserAccount.synchronize(user.id, token).catch(() => {}); });
+      }
+    });
 
     effect(() => {
       if (this.appState.currentUser() && this.appState.activeCompetition()) {

@@ -4,7 +4,9 @@ import { SavePushSubscriptionRequest, UpdateNotificationSettingsRequest } from '
 import {
   getNotificationConfig,
   getNotificationSettings,
-  resetUserNotificationSubscriptions,
+  getUserNotificationPreferences,
+  removeUserNotificationBrowser,
+  updateUserNotificationPreferences,
   savePushSubscription,
   sendTestNotification,
   updateNotificationSettings
@@ -124,16 +126,63 @@ function readCompetitionHeader(req: Pick<Request, 'header'>): number | null | un
 
 export async function sendTestNotificationController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    res.json(await sendTestNotification(req.authUser!.id));
+    const competitionId = await resolveRequestedCompetitionIdForAdmin(req);
+    if (competitionId === null) {
+      res.status(403).json({ message: 'Competition admin access is required.' });
+      return;
+    }
+    res.json(await sendTestNotification(req.authUser!.id, competitionId));
   } catch (error) {
     next(error);
   }
 }
 
-export async function resetNotificationSubscriptionsController(req: Request, res: Response, next: NextFunction): Promise<void> {
+// Preferences always require an explicit competition; never fall back to another league.
+async function resolvePreferenceCompetition(req: Request): Promise<number | null> {
+  const id = Number(req.params.competitionId);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  return resolveCompetitionIdForViewer(req.authUser!.id, req.authUser!.role, id);
+}
+
+export async function getNotificationPreferencesController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    res.json(resetUserNotificationSubscriptions(req.authUser!.id));
-  } catch (error) {
-    next(error);
-  }
+    const id = await resolvePreferenceCompetition(req);
+    if (id === null) { res.status(403).json({ message: 'Competition access is required.' }); return; }
+    res.json(getUserNotificationPreferences(req.authUser!.id, id));
+  } catch (error) { next(error); }
+}
+
+export async function updateNotificationPreferencesController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const id = await resolvePreferenceCompetition(req);
+    if (id === null) { res.status(403).json({ message: 'Competition access is required.' }); return; }
+    const result = updateUserNotificationPreferences(req.authUser!.id, id, req.body);
+    if (!result) { res.status(400).json({ message: 'Notification preferences must be boolean values.' }); return; }
+    res.json(result);
+  } catch (error) { next(error); }
+}
+
+export async function addNotificationBrowserController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const id = await resolvePreferenceCompetition(req);
+    if (id === null) { res.status(403).json({ message: 'Competition access is required.' }); return; }
+    const saved = await savePushSubscription(req.authUser!.id, req.body, req.get('user-agent') ?? null, id);
+    if (!saved) { res.status(400).json({ message: 'Invalid push subscription.' }); return; }
+    res.status(201).json(getUserNotificationPreferences(req.authUser!.id, id));
+  } catch (error) { next(error); }
+}
+
+export async function removeNotificationBrowserController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const id = await resolvePreferenceCompetition(req);
+    if (id === null) { res.status(403).json({ message: 'Competition access is required.' }); return; }
+    const browserId = Number(req.params.browserId);
+    if (!Number.isSafeInteger(browserId) || browserId <= 0) { res.status(400).json({ message: 'Invalid browser.' }); return; }
+    const result = removeUserNotificationBrowser(req.authUser!.id, id, browserId);
+    if (result !== 'removed') {
+      res.status(result === 'last_browser' ? 409 : 404).json({ message: result === 'last_browser' ? 'Keep at least one browser.' : 'Browser not found.' });
+      return;
+    }
+    res.json(getUserNotificationPreferences(req.authUser!.id, id));
+  } catch (error) { next(error); }
 }
