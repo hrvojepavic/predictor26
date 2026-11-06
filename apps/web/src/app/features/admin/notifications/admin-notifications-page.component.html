@@ -18,16 +18,19 @@
   @if (loading()) {
     <p class="status-message">Loading notification settings...</p>
   } @else {
+    @if (competitionClosed()) {
+      <p class="status-message">Notifications are disabled because this competition is closed.</p>
+    }
     <section class="settings-panel" aria-labelledby="reminders-title">
       <div class="settings-copy">
         <h2 id="reminders-title">Prediction reminders</h2>
         <p>
-          Allow reminders for this competition. Verified members choose 9h and/or 1h reminders in Settings;
+          Allow notifications for this competition. Verified members choose round-opening, 9h and/or 1h notifications in Settings;
           everyone starts opted out. Disabling this pauses delivery without changing their preferences.
         </p>
       </div>
 
-      <button class="toggle-button" type="button" [class.toggle-button-on]="remindersEnabled()" [disabled]="saving()" (click)="toggleReminders()">
+      <button class="toggle-button" type="button" [class.toggle-button-on]="remindersEnabled()" [disabled]="saving() || competitionClosed()" (click)="toggleReminders()">
         {{ saving() ? 'Saving...' : remindersEnabled() ? 'Enabled' : 'Disabled' }}
       </button>
     </section>
@@ -42,10 +45,10 @@
       </div>
 
       <div class="test-actions">
-        <button class="secondary-button" type="button" [disabled]="enablingBrowser()" (click)="enableThisBrowser()">
+        <button class="secondary-button" type="button" [disabled]="enablingBrowser() || competitionClosed()" (click)="enableThisBrowser()">
           {{ enablingBrowser() ? 'Enabling...' : 'Enable this browser' }}
         </button>
-        <button class="test-button" type="button" [disabled]="testing()" (click)="sendTestNotification()">
+        <button class="test-button" type="button" [disabled]="testing() || competitionClosed()" (click)="sendTestNotification()">
           {{ testing() ? 'Sending...' : 'Send test' }}
         </button>
       </div>
@@ -57,17 +60,18 @@
       <h2 id="members-title">User notification preferences</h2>
       <div class="members-table-scroll" role="region" aria-labelledby="members-title" tabindex="0">
       <table>
-        <thead><tr><th scope="col">User</th><th scope="col">1h</th><th scope="col">9h</th><th scope="col" class="browsers-cell">Browsers</th></tr></thead>
+        <thead><tr><th scope="col">User</th><th scope="col">1h</th><th scope="col">9h</th><th scope="col">Round opens</th><th scope="col" class="browsers-cell">Browsers</th></tr></thead>
         <tbody>
           @for (member of members(); track member.userId) {
             <tr>
               <th scope="row">{{ member.username }}</th>
               <td><span class="preference-mark" [class.enabled]="member.reminder1h" [attr.aria-label]="member.reminder1h ? 'Enabled' : 'Disabled'" role="img">{{ member.reminder1h ? '✓' : '✕' }}</span></td>
               <td><span class="preference-mark" [class.enabled]="member.reminder9h" [attr.aria-label]="member.reminder9h ? 'Enabled' : 'Disabled'" role="img">{{ member.reminder9h ? '✓' : '✕' }}</span></td>
+              <td><span class="preference-mark" [class.enabled]="member.roundOpened" [attr.aria-label]="member.roundOpened ? 'Enabled' : 'Disabled'" role="img">{{ member.roundOpened ? '✓' : '✕' }}</span></td>
               <td class="browsers-cell">{{ member.browsersLabel }}</td>
             </tr>
           } @empty {
-            <tr><td colspan="4">No users in this competition.</td></tr>
+            <tr><td colspan="5">No users in this competition.</td></tr>
           }
         </tbody>
       </table>

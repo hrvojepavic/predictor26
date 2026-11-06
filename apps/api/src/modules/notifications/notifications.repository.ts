@@ -11,6 +11,8 @@ import {
   upsertNotificationSubscription
 } from '../../database/queries/notifications.queries.js';
 
+export { listPendingRoundOpenings, claimRoundOpening, finishRoundOpening } from '../../database/queries/round-opening-notifications.queries.js';
+
 export function saveUserNotificationSubscription(userId: number, input: PushSubscriptionInput, competitionId?: number): void {
   upsertNotificationSubscription(userId, input, competitionId);
 }

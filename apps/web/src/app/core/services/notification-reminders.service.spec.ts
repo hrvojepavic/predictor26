@@ -22,7 +22,7 @@ describe('Browser notification setup', () => {
     token.set('account-one');
     localStorage.setItem('predictor26.session', JSON.stringify({token:'account-one'}));
     addBrowser.mockReset();
-    addBrowser.mockReturnValue(of({preferences:{enabled:false,reminder1h:false,reminder9h:false},browsers:[],competitionEnabled:true,eligible:true}));
+    addBrowser.mockReturnValue(of({preferences:{enabled:false,reminder1h:false,reminder9h:false, roundOpened: false},browsers:[],competitionEnabled:true,competitionClosed:false,eligible:true}));
     getConfig.mockReset(); saveSubscription.mockReset(); requestPermission.mockReset(); subscribe.mockReset(); existing.mockReset();
     vi.stubGlobal('Notification', { permission: 'default', requestPermission });
     vi.stubGlobal('PushManager', function () {});

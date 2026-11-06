@@ -10,7 +10,7 @@ import { CompetitionNotificationSettingsService } from './competition-notificati
 
 const response: NotificationPreferencesResponse = {
   browsers: [],
-  preferences: { enabled: true, reminder9h: true, reminder1h: false }, competitionEnabled: true, eligible: true
+  preferences: { enabled: true, reminder9h: true, roundOpened: false, reminder1h: false }, competitionEnabled: true, competitionClosed: false, eligible: true
 };
 
 describe('Competition notification settings state', () => {
@@ -29,7 +29,7 @@ describe('Competition notification settings state', () => {
 
   it('ignores a stale response after switching competitions', async () => {
     const first = new Subject<NotificationPreferencesResponse>();
-    getPreferences.mockReturnValueOnce(first).mockReturnValueOnce(of({ ...response, preferences: { enabled: false, reminder9h: false, reminder1h: false } }));
+    getPreferences.mockReturnValueOnce(first).mockReturnValueOnce(of({ ...response, preferences: { enabled: false, reminder9h: false, roundOpened: false, reminder1h: false } }));
     const service = TestBed.inject(CompetitionNotificationSettingsService);
     const oldLoad = service.load(1);
     await service.load(2);
@@ -48,7 +48,7 @@ describe('Competition notification settings state', () => {
     expect(service.error()).toContain('not saved');
   });
   it('does not turn reminders on when permission is denied', async () => {
-    const off = { ...response, preferences: { enabled:false, reminder1h:false, reminder9h:false } };
+    const off = { ...response, preferences: { enabled:false, reminder1h:false, reminder9h:false, roundOpened: false } };
     getPreferences.mockReturnValue(of(off));
     enableReminders.mockResolvedValue({ status:'blocked', permission:'denied' });
     const service=TestBed.inject(CompetitionNotificationSettingsService);
@@ -71,7 +71,7 @@ describe('Competition notification settings state', () => {
   });
 
   it('keeps preferences off after dismissal and explains how to recover a missing prompt', async () => {
-    const off = { ...response, preferences: { enabled: false, reminder1h: false, reminder9h: false } };
+    const off = { ...response, preferences: { enabled: false, reminder1h: false, reminder9h: false, roundOpened: false } };
     getPreferences.mockReturnValue(of(off));
     enableReminders.mockResolvedValue({ status: 'dismissed', permission: 'default' });
     const service = TestBed.inject(CompetitionNotificationSettingsService);

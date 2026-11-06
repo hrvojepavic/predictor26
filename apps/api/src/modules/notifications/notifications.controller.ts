@@ -1,8 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { SavePushSubscriptionRequest, UpdateNotificationSettingsRequest } from './notifications.interfaces.js';
+import { SavePushSubscriptionRequest, SavePushSubscriptionResponse, UpdateNotificationSettingsRequest } from './notifications.interfaces.js';
 import {
   getNotificationConfig,
+  isCompetitionClosed,
   getNotificationSettings,
   getUserNotificationPreferences,
   removeUserNotificationBrowser,
@@ -34,14 +35,14 @@ export async function savePushSubscriptionController(
   next: NextFunction
 ): Promise<void> {
   try {
-    const saved = await savePushSubscription(req.authUser!.id, req.body, req.get('user-agent') ?? null);
+    const saved = await savePushSubscription(req.authUser!.id, req.body, req.get('user-agent') ?? null, undefined, req.get('sec-ch-ua') ?? null);
 
     if (!saved) {
       res.status(400).json({ message: 'Invalid push subscription.' });
       return;
     }
 
-    res.status(201).json({ subscribed: true });
+    res.status(201).json({ subscribed: true } satisfies SavePushSubscriptionResponse);
   } catch (error) {
     next(error);
   }
@@ -131,6 +132,7 @@ export async function sendTestNotificationController(req: Request, res: Response
       res.status(403).json({ message: 'Competition admin access is required.' });
       return;
     }
+    if (isCompetitionClosed(competitionId)) { res.status(409).json({ message: 'Notifications are disabled because this competition is closed.' }); return; }
     res.json(await sendTestNotification(req.authUser!.id, competitionId));
   } catch (error) {
     next(error);
@@ -156,6 +158,7 @@ export async function updateNotificationPreferencesController(req: Request, res:
   try {
     const id = await resolvePreferenceCompetition(req);
     if (id === null) { res.status(403).json({ message: 'Competition access is required.' }); return; }
+    if (isCompetitionClosed(id)) { res.status(409).json({ message: 'Notifications are disabled because this competition is closed.' }); return; }
     const result = updateUserNotificationPreferences(req.authUser!.id, id, req.body);
     if (!result) { res.status(400).json({ message: 'Notification preferences must be boolean values.' }); return; }
     res.json(result);
@@ -166,7 +169,8 @@ export async function addNotificationBrowserController(req: Request, res: Respon
   try {
     const id = await resolvePreferenceCompetition(req);
     if (id === null) { res.status(403).json({ message: 'Competition access is required.' }); return; }
-    const saved = await savePushSubscription(req.authUser!.id, req.body, req.get('user-agent') ?? null, id);
+    if (isCompetitionClosed(id)) { res.status(409).json({ message: 'Notifications are disabled because this competition is closed.' }); return; }
+    const saved = await savePushSubscription(req.authUser!.id, req.body, req.get('user-agent') ?? null, id, req.get('sec-ch-ua') ?? null);
     if (!saved) { res.status(400).json({ message: 'Invalid push subscription.' }); return; }
     res.status(201).json(getUserNotificationPreferences(req.authUser!.id, id));
   } catch (error) { next(error); }

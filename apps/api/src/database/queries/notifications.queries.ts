@@ -25,6 +25,7 @@ export interface ReminderCandidateRow {
   readonly endpoint: string;
   readonly subscription_json: string;
   readonly user_agent: string | null;
+  readonly browser_brand: string | null;
 }
 
 export interface ReminderDeliveryRow {
@@ -44,6 +45,7 @@ export interface ReminderAttemptRow {
   readonly reminder_hours: 1 | 9;
   readonly subscription_id: number | null;
   readonly user_agent: string | null;
+  readonly browser_brand: string | null;
   readonly status: 'accepted' | 'failed' | 'disabled';
   readonly status_code: number | null;
   readonly error_message: string | null;
@@ -54,6 +56,7 @@ export interface PushSubscriptionInput {
   readonly endpoint: string;
   readonly subscriptionJson: string;
   readonly userAgent: string | null;
+  readonly browserBrand?: string | null;
 }
 
 export interface ReminderAttemptInput {
@@ -74,16 +77,17 @@ export function upsertNotificationSubscription(userId: number, input: PushSubscr
     db.transaction(() => {
     db.prepare(
       `
-        INSERT INTO notification_subscriptions (user_id, endpoint, subscription_json, user_agent, is_enabled)
-        VALUES (?, ?, ?, ?, 1)
+        INSERT INTO notification_subscriptions (user_id, endpoint, subscription_json, user_agent, browser_brand, is_enabled)
+        VALUES (?, ?, ?, ?, ?, 1)
         ON CONFLICT(endpoint) DO UPDATE SET
           user_id = excluded.user_id,
           subscription_json = excluded.subscription_json,
           user_agent = excluded.user_agent,
+          browser_brand = COALESCE(excluded.browser_brand, notification_subscriptions.browser_brand),
           is_enabled = 1,
           updated_at = CURRENT_TIMESTAMP
       `
-    ).run(userId, input.endpoint, input.subscriptionJson, input.userAgent);
+    ).run(userId, input.endpoint, input.subscriptionJson, input.userAgent, input.browserBrand ?? null);
       if (competitionId !== undefined) {
         db.prepare(`INSERT OR IGNORE INTO competition_notification_browsers (competition_id, user_id, subscription_id)
           SELECT ?, ?, id FROM notification_subscriptions WHERE endpoint = ? AND user_id = ?`).run(competitionId, userId, input.endpoint, userId);
@@ -177,6 +181,7 @@ export function listRecentReminderAttempts(competitionId: number, limit: number)
             notification_reminder_attempts.reminder_hours,
             notification_reminder_attempts.subscription_id,
             notification_subscriptions.user_agent,
+            notification_subscriptions.browser_brand,
             notification_reminder_attempts.status,
             notification_reminder_attempts.status_code,
             notification_reminder_attempts.error_message,
@@ -241,7 +246,7 @@ export function listReminderCandidates(competitionId: number): ReminderCandidate
             notification_subscriptions.id AS subscription_id,
             notification_subscriptions.endpoint,
             notification_subscriptions.subscription_json,
-            notification_subscriptions.user_agent
+            notification_subscriptions.user_agent, notification_subscriptions.browser_brand
           FROM users
           INNER JOIN competitions ON competitions.id = ?
           INNER JOIN competition_notification_browsers browsers
@@ -319,7 +324,7 @@ export function listReminderCandidates(competitionId: number): ReminderCandidate
             notification_subscriptions.id,
             notification_subscriptions.endpoint,
             notification_subscriptions.subscription_json,
-            notification_subscriptions.user_agent
+            notification_subscriptions.user_agent, notification_subscriptions.browser_brand
           ORDER BY round_summaries.deadline_at ASC, reminder_windows.reminder_hours DESC
         `
       )
@@ -383,16 +388,18 @@ export function getNotificationPreferences(userId: number, competitionId: number
   try {
     const row = db.prepare(`SELECT
         COALESCE(p.enabled, 0) AS enabled, COALESCE(p.reminder_9h, 0) AS reminder9h,
-        COALESCE(p.reminder_1h, 0) AS reminder1h,
+        COALESCE(p.reminder_1h, 0) AS reminder1h, COALESCE(p.round_opened, 0) AS roundOpened,
         (c.notification_reminders_enabled = 1 AND c.is_finished = 0 AND c.is_archived = 0) AS competitionEnabled,
+        (c.is_finished = 1 OR c.is_archived = 1) AS competitionClosed,
         COALESCE(cu.is_verified, 0) AS eligible
       FROM competitions c
       LEFT JOIN competition_users cu ON cu.competition_id = c.id AND cu.user_id = ?
       LEFT JOIN competition_notification_preferences p ON p.competition_id = c.id AND p.user_id = ?
       WHERE c.id = ?`).get(userId, userId, competitionId) as Record<string, number> | undefined;
     return {
-      preferences: { enabled: row?.enabled === 1, reminder9h: row?.reminder9h === 1, reminder1h: row?.reminder1h === 1 },
+      preferences: { enabled: row?.enabled === 1, reminder9h: row?.reminder9h === 1, reminder1h: row?.reminder1h === 1, roundOpened: row?.roundOpened === 1 },
       competitionEnabled: row?.competitionEnabled === 1,
+      competitionClosed: row?.competitionClosed === 1,
       eligible: row?.eligible === 1
     };
   } finally { db.close(); }
@@ -402,11 +409,11 @@ export function upsertNotificationPreferences(userId: number, competitionId: num
   const db = openDatabase();
   try {
     db.transaction(() => {
-      db.prepare(`INSERT INTO competition_notification_preferences (user_id, competition_id, enabled, reminder_9h, reminder_1h)
-        VALUES (?, ?, ?, ?, ?) ON CONFLICT(competition_id, user_id) DO UPDATE SET
-          enabled = excluded.enabled, reminder_9h = excluded.reminder_9h, reminder_1h = excluded.reminder_1h,
-          updated_at = CURRENT_TIMESTAMP`).run(userId, competitionId, Number(input.enabled), Number(input.reminder9h), Number(input.reminder1h));
-      if (!input.reminder9h && !input.reminder1h) {
+      db.prepare(`INSERT INTO competition_notification_preferences (user_id, competition_id, enabled, reminder_9h, reminder_1h, round_opened)
+        VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(competition_id, user_id) DO UPDATE SET
+          enabled = excluded.enabled, reminder_9h = excluded.reminder_9h, reminder_1h = excluded.reminder_1h, round_opened = excluded.round_opened,
+          updated_at = CURRENT_TIMESTAMP`).run(userId, competitionId, Number(input.enabled), Number(input.reminder9h), Number(input.reminder1h), Number(input.roundOpened ?? false));
+      if (!input.reminder9h && !input.reminder1h && !input.roundOpened) {
         db.prepare('DELETE FROM competition_notification_browsers WHERE user_id = ? AND competition_id = ?').run(userId, competitionId);
       }
     }).immediate();
@@ -416,10 +423,10 @@ export function upsertNotificationPreferences(userId: number, competitionId: num
 export function listCompetitionNotificationBrowsers(userId: number, competitionId: number) {
   const db = openDatabase();
   try {
-    return db.prepare(`SELECT s.id, s.endpoint, s.user_agent FROM competition_notification_browsers b
+    return db.prepare(`SELECT s.id, s.endpoint, s.user_agent, s.browser_brand FROM competition_notification_browsers b
       JOIN notification_subscriptions s ON s.id = b.subscription_id
       WHERE b.user_id = ? AND b.competition_id = ? AND s.is_enabled = 1
-      ORDER BY b.created_at, s.id`).all(userId, competitionId) as Array<{ id: number; endpoint: string; user_agent: string | null }>;
+      ORDER BY b.created_at, s.id`).all(userId, competitionId) as Array<{ id: number; endpoint: string; user_agent: string | null; browser_brand: string | null }>;
   } finally { db.close(); }
 }
 
@@ -438,29 +445,29 @@ export function removeCompetitionNotificationBrowser(userId: number, competition
   } finally { db.close(); }
 }
 
-export function listCompetitionNotificationMembers(competitionId: number): Array<Omit<AdminNotificationMember, 'browsers'> & { browserUserAgents: Array<string | null> }> {
+export function listCompetitionNotificationMembers(competitionId: number): Array<Omit<AdminNotificationMember, 'browsers'> & { browserUserAgents: Array<{userAgent: string | null; browserBrand: string | null}> }> {
   const db = openDatabase();
   try {
     const rows = db.prepare(`SELECT u.id AS userId, u.username,
-        COALESCE(p.reminder_1h, 0) AS reminder1h, COALESCE(p.reminder_9h, 0) AS reminder9h
+        COALESCE(p.reminder_1h, 0) AS reminder1h, COALESCE(p.round_opened, 0) AS roundOpened, COALESCE(p.reminder_9h, 0) AS reminder9h
       FROM competition_users cu JOIN users u ON u.id = cu.user_id
       LEFT JOIN competition_notification_preferences p ON p.user_id = cu.user_id AND p.competition_id = cu.competition_id
       WHERE cu.competition_id = ? ORDER BY u.username COLLATE NOCASE, u.id`).all(competitionId) as Array<{
-        userId: number; username: string; reminder1h: number; reminder9h: number;
+        userId: number; username: string; reminder1h: number; reminder9h: number; roundOpened: number;
       }>;
-    const registrations = db.prepare(`SELECT b.user_id AS userId, s.user_agent AS userAgent
+    const registrations = db.prepare(`SELECT b.user_id AS userId, s.user_agent AS userAgent, s.browser_brand AS browserBrand
       FROM competition_notification_browsers b
       JOIN notification_subscriptions s ON s.id = b.subscription_id AND s.is_enabled = 1
       JOIN competition_notification_preferences p ON p.competition_id = b.competition_id AND p.user_id = b.user_id
-      WHERE b.competition_id = ? AND p.enabled = 1 AND (p.reminder_1h = 1 OR p.reminder_9h = 1)
-      ORDER BY b.created_at, s.id`).all(competitionId) as Array<{userId: number; userAgent: string | null}>;
-    const browsers = new Map<number, Array<string | null>>();
+      WHERE b.competition_id = ? AND p.enabled = 1 AND (p.reminder_1h = 1 OR p.reminder_9h = 1 OR p.round_opened = 1)
+      ORDER BY b.created_at, s.id`).all(competitionId) as Array<{userId: number; userAgent: string | null; browserBrand: string | null}>;
+    const browsers = new Map<number, Array<{userAgent: string | null; browserBrand: string | null}>>();
     for (const registration of registrations) {
       const agents = browsers.get(registration.userId) ?? [];
-      agents.push(registration.userAgent);
+      agents.push({userAgent: registration.userAgent, browserBrand: registration.browserBrand});
       browsers.set(registration.userId, agents);
     }
-    return rows.map(row => ({ ...row, reminder1h: row.reminder1h === 1, reminder9h: row.reminder9h === 1,
+    return rows.map(row => ({ ...row, reminder1h: row.reminder1h === 1, reminder9h: row.reminder9h === 1, roundOpened: row.roundOpened === 1,
       browserUserAgents: browsers.get(row.userId) ?? [] }));
   } finally { db.close(); }
 }

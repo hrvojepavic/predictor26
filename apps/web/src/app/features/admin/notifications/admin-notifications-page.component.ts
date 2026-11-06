@@ -26,6 +26,7 @@ export class AdminNotificationsPageComponent {
   protected readonly enablingBrowser = signal(false);
   protected readonly testing = signal(false);
   protected readonly remindersEnabled = signal(false);
+  protected readonly competitionClosed = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly successMessage = signal<string | null>(null);
   protected readonly secretCodeErrorMessage = signal<string | null>(null);
@@ -36,7 +37,7 @@ export class AdminNotificationsPageComponent {
   }
 
   protected toggleReminders(): void {
-    if (this.saving()) {
+    if (this.saving() || this.competitionClosed()) {
       return;
     }
 
@@ -56,7 +57,7 @@ export class AdminNotificationsPageComponent {
   protected confirmSecretCode(secretCode: string): void {
     const nextEnabled = this.pendingRemindersEnabled();
 
-    if (nextEnabled === null || this.saving()) {
+    if (nextEnabled === null || this.saving() || this.competitionClosed()) {
       return;
     }
 
@@ -91,7 +92,7 @@ export class AdminNotificationsPageComponent {
   }
 
   protected sendTestNotification(): void {
-    if (this.testing()) {
+    if (this.testing() || this.competitionClosed()) {
       return;
     }
 
@@ -112,7 +113,7 @@ export class AdminNotificationsPageComponent {
   }
 
   protected async enableThisBrowser(): Promise<void> {
-    if (this.enablingBrowser()) {
+    if (this.enablingBrowser() || this.competitionClosed()) {
       return;
     }
 
@@ -140,6 +141,7 @@ export class AdminNotificationsPageComponent {
       next: (settings) => {
         this.remindersEnabled.set(settings.remindersEnabled);
         this.members.set(settings.members.map(member => ({ ...member, browsersLabel: member.browsers.join(', ') || '\u2014' })));
+        this.competitionClosed.set(settings.competitionClosed);
         this.membersLoaded.set(true);
         this.loading.set(false);
       },

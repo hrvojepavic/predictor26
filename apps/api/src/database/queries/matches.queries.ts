@@ -1,3 +1,4 @@
+import { queueRoundOpenings } from './round-opening-notifications.queries.js';
 import { openDatabase } from '../index.js';
 import { defaultCompetitionSlug } from '../../shared/constants/default-competition.constants.js';
 
@@ -649,57 +650,31 @@ export function deleteMatchesAfterMatchNumber(matchNumber: number, competitionId
 
 export function releaseMatchesForRound(competitionId: number, roundLabel: string): number {
   const db = openDatabase();
-
   try {
-    const result = db
-      .prepare(
-        `
-          UPDATE matches
-          SET released_for_predictions = 1,
-              updated_at = CURRENT_TIMESTAMP
-          WHERE competition_id = ?
-            AND round_label = ?
-        `
-      )
-      .run(competitionId, roundLabel);
-
-    return result.changes;
-  } finally {
-    db.close();
-  }
+    return db.transaction(() => {
+      const before = db.prepare('SELECT * FROM matches WHERE competition_id = ?').all(competitionId) as MatchRow[];
+      const result = db.prepare(`UPDATE matches SET released_for_predictions = 1, updated_at = CURRENT_TIMESTAMP
+        WHERE competition_id = ? AND round_label = ? AND released_for_predictions = 0`).run(competitionId, roundLabel);
+      if (result.changes) queueRoundOpenings(db, competitionId, before);
+      return result.changes;
+    }).immediate();
+  } finally { db.close(); }
 }
 
 export function releaseMatchesByIds(competitionId: number, matchIds: readonly number[]): number {
-  if (matchIds.length === 0) {
-    return 0;
-  }
-
+  if (!matchIds.length) return 0;
   const db = openDatabase();
-
   try {
-    const update = db.prepare(
-      `
-        UPDATE matches
-        SET released_for_predictions = 1,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE competition_id = ?
-          AND id = ?
-      `
-    );
-    const transaction = db.transaction((ids: readonly number[]) => {
+    return db.transaction(() => {
+      const before = db.prepare('SELECT * FROM matches WHERE competition_id = ?').all(competitionId) as MatchRow[];
+      const update = db.prepare(`UPDATE matches SET released_for_predictions = 1, updated_at = CURRENT_TIMESTAMP
+        WHERE competition_id = ? AND id = ? AND released_for_predictions = 0`);
       let changes = 0;
-
-      for (const matchId of ids) {
-        changes += update.run(competitionId, matchId).changes;
-      }
-
+      for (const id of matchIds) changes += update.run(competitionId, id).changes;
+      if (changes) queueRoundOpenings(db, competitionId, before);
       return changes;
-    });
-
-    return transaction(matchIds) as number;
-  } finally {
-    db.close();
-  }
+    }).immediate();
+  } finally { db.close(); }
 }
 
 export function updateFinalScore(

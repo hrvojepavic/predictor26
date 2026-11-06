@@ -41,7 +41,7 @@ describe('Competition settings navigation', () => {
         { provide: CompetitionNotificationSettingsService, useValue: {
           settings: preferences, loading: signal(false), saving: signal(false), error: signal(null),
           save, addBrowser, removeBrowser,
-          load: async () => { preferences.set({ browsers: [], preferences: { enabled: false, reminder9h: false, reminder1h: false }, competitionEnabled: true, eligible: true }); }
+          load: async () => { preferences.set({ browsers: [], preferences: { enabled: false, reminder9h: false, roundOpened: false, reminder1h: false }, competitionEnabled: true, competitionClosed: false, eligible: true }); }
         } },
         { provide: NotificationRemindersService, useValue: {
           supported: true, fingerprint, refreshBrowserState: async () => {},
@@ -69,29 +69,61 @@ describe('Competition settings navigation', () => {
     expect(activeCompetition()).toEqual(competition);
   });
 
-  it('has only two toggles and saves each change without a save button', async () => {
+  it('has three toggles and saves each change without a save button', async () => {
     loggedIn.set(true);
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/competition/league/settings', CompetitionSettingsPageComponent);
     await harness.fixture.whenStable();
     const root=harness.routeNativeElement!;
     const toggles=Array.from(root.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
-    expect(toggles).toHaveLength(2);
+    expect(toggles).toHaveLength(3);
     expect(toggles.every(toggle=>!toggle.checked)).toBe(true);
     expect(root.textContent).not.toContain('Save preferences');
     expect(root.textContent).not.toContain('Enable all');
     toggles[0].click();
     await harness.fixture.whenStable();
-    expect(save).toHaveBeenLastCalledWith(1,{enabled:true,reminder1h:true,reminder9h:false},true);
+    expect(save).toHaveBeenLastCalledWith(1,{enabled:true,reminder1h:true,reminder9h:false, roundOpened: false},true);
     toggles[1].click();
     await harness.fixture.whenStable();
-    expect(save).toHaveBeenLastCalledWith(1,{enabled:true,reminder1h:true,reminder9h:true},true);
+    expect(save).toHaveBeenLastCalledWith(1,{enabled:true,reminder1h:true,reminder9h:true, roundOpened: false},true);
     toggles[0].click();
     await harness.fixture.whenStable();
-    expect(save).toHaveBeenLastCalledWith(1,{enabled:true,reminder1h:false,reminder9h:true},false);
+    expect(save).toHaveBeenLastCalledWith(1,{enabled:true,reminder1h:false,reminder9h:true, roundOpened: false},false);
     toggles[1].click();
     await harness.fixture.whenStable();
-    expect(save).toHaveBeenLastCalledWith(1,{enabled:false,reminder1h:false,reminder9h:false},false);
+    expect(save).toHaveBeenLastCalledWith(1,{enabled:false,reminder1h:false,reminder9h:false, roundOpened: false},false);
+    toggles[2].click();
+    await harness.fixture.whenStable();
+    expect(save).toHaveBeenLastCalledWith(1,{enabled:true,reminder1h:false,reminder9h:false,roundOpened:true},true);
+    expect(root.querySelector('.add-browser')).not.toBeNull();
+    toggles[0].click();
+    await harness.fixture.whenStable();
+    toggles[0].click();
+    await harness.fixture.whenStable();
+    expect(save).toHaveBeenLastCalledWith(1,{enabled:true,reminder1h:false,reminder9h:false,roundOpened:true},false);
+    toggles[2].click();
+    await harness.fixture.whenStable();
+    expect(save).toHaveBeenLastCalledWith(1,{enabled:false,reminder1h:false,reminder9h:false,roundOpened:false},false);
+  });
+
+  it('disables all notification controls for a closed competition even with saved opt-ins', async () => {
+    loggedIn.set(true);
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/competition/league/settings', CompetitionSettingsPageComponent);
+    await harness.fixture.whenStable();
+    preferences.set({ ...preferences()!, competitionClosed:true, competitionEnabled:false,
+      preferences:{enabled:true,reminder1h:true,reminder9h:true,roundOpened:true},
+      browsers:[{id:1,name:'Safari on iOS',fingerprint:'safari'}] });
+    await harness.fixture.whenStable();
+    const root=harness.routeNativeElement!;
+    expect(root.textContent).toContain('Notifications are disabled because this competition is closed.');
+    expect(root.querySelector('fieldset')!.disabled).toBe(true);
+    const toggles=Array.from(root.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+    expect(toggles.every(toggle=>!toggle.checked)).toBe(true);
+    expect(root.querySelector('.add-browser')).toBeNull();
+    expect(root.querySelector('.browser-list')).toBeNull();
+    expect(save).not.toHaveBeenCalled();
+    expect(preferences()!.preferences.roundOpened).toBe(true);
   });
 
   it('shows browsers, only offers adding a different browser, and never offers removing the last', async () => {
@@ -99,7 +131,7 @@ describe('Competition settings navigation', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/competition/league/settings', CompetitionSettingsPageComponent);
     await harness.fixture.whenStable();
-    preferences.set({ ...preferences()!, preferences:{enabled:true,reminder1h:true,reminder9h:false}, browsers:[{id:1,name:'Chrome on Windows',fingerprint:'chrome'}] });
+    preferences.set({ ...preferences()!, preferences:{enabled:true,reminder1h:true,reminder9h:false, roundOpened: false}, browsers:[{id:1,name:'Chrome on Windows',fingerprint:'chrome'}] });
     await harness.fixture.whenStable();
     const root=harness.routeNativeElement!;
     expect(root.querySelector('.remove-browser')).toBeNull();
