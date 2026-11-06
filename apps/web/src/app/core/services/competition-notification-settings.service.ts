@@ -84,7 +84,7 @@ export class CompetitionNotificationSettingsService {
       }
     } catch (error) {
       if (isCurrent()) this.errorSignal.set(error instanceof HttpErrorResponse
-        ? (error.status === 409 ? 'Keep at least one browser.' : 'Changes were not saved. Please try again.')
+        ? (error.status === 409 ? (typeof error.error?.message === 'string' ? error.error.message : 'Keep at least one browser.') : 'Changes were not saved. Please try again.')
         : error instanceof Error ? error.message : 'Changes were not saved. Please try again.');
     } finally {
       if (generation === this.generation) this.savingSignal.set(false);

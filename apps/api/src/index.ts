@@ -16,7 +16,7 @@ import { healthRoutes } from './modules/health/health.routes.js';
 import { leaderboardRoutes } from './modules/leaderboard/leaderboard.routes.js';
 import { matchesRoutes } from './modules/matches/matches.routes.js';
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js';
-import { startNotificationReminderScheduler } from './modules/notifications/notifications.service.js';
+import { sendRoundOpeningNotifications, startNotificationReminderScheduler } from './modules/notifications/notifications.service.js';
 import { startLiveScoreScheduler } from './modules/live-scores/live-scores.service.js';
 import { startAutoMatchImportScheduler } from './modules/admin-matches/admin-matches.service.js';
 import { paymentsRoutes } from './modules/payments/payments.routes.js';
@@ -46,5 +46,6 @@ app.listen(config.port, () => {
 });
 
 startNotificationReminderScheduler();
+void sendRoundOpeningNotifications();
 startLiveScoreScheduler();
 startAutoMatchImportScheduler();

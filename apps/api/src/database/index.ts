@@ -229,6 +229,34 @@ function initializeDatabase(db: Database.Database) {
     );
   `);
 
+  const subscriptionColumns = db.prepare('PRAGMA table_info(notification_subscriptions)').all() as Array<{ name: string }>;
+  if (!subscriptionColumns.some(column => column.name === 'browser_brand')) {
+    db.exec('ALTER TABLE notification_subscriptions ADD COLUMN browser_brand TEXT');
+  }
+  const preferenceColumns = db.prepare('PRAGMA table_info(competition_notification_preferences)').all() as Array<{ name: string }>;
+  if (!preferenceColumns.some(column => column.name === 'round_opened')) {
+    db.exec('ALTER TABLE competition_notification_preferences ADD COLUMN round_opened INTEGER NOT NULL DEFAULT 0 CHECK(round_opened IN (0, 1))');
+  }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS notification_round_openings (
+      id INTEGER PRIMARY KEY,
+      competition_id INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+      prediction_round TEXT NOT NULL,
+      deadline_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(competition_id, prediction_round)
+    );
+    CREATE TABLE IF NOT EXISTS notification_round_opening_attempts (
+      opening_id INTEGER NOT NULL REFERENCES notification_round_openings(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      subscription_id INTEGER NOT NULL REFERENCES notification_subscriptions(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','sending','accepted','failed','disabled','skipped')),
+      status_code INTEGER,
+      error_message TEXT,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY(opening_id, user_id, subscription_id)
+    );
+  `);
   ensureCompetitionNotificationBrowsers(db);
   ensureCompetitionTeamsTableSupportsName(db);
   ensureSuperAdminPredictionsBlocked(db);

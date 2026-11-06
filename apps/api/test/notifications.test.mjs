@@ -18,6 +18,8 @@ process.env.VAPID_PRIVATE_KEY = keys.privateKey;
 const { openDatabase } = await import('../dist/database/index.js');
 const queries = await import('../dist/database/queries/notifications.queries.js');
 const service = await import('../dist/modules/notifications/notifications.service.js');
+const { browserBrandFromHints, formatBrowserLabel } = await import('../dist/shared/utils/notification-browser.js');
+const releaseQueries = await import('../dist/database/queries/matches.queries.js');
 const { notificationsRoutes } = await import('../dist/modules/notifications/notifications.routes.js');
 const { createAuthToken } = await import('../dist/shared/utils/auth-token.js');
 const db = openDatabase();
@@ -29,15 +31,15 @@ for (const id of [101,102]) {
     VALUES (?,?,1,'league','Week 1',?,'UTC','Home','Away','Ground','City')`).run(id,id,new Date(Date.now()+58*60000).toISOString());
 }
 queries.upsertNotificationSubscription(101, { endpoint: 'https://push.example.test/101', subscriptionJson: '{}', userAgent: 'Test' });
-const off = { enabled: false, reminder9h: false, reminder1h: false };
-const all = { enabled: true, reminder9h: true, reminder1h: true };
+const off = { enabled: false, reminder9h: false, roundOpened: false, reminder1h: false };
+const all = { enabled: true, reminder9h: true, roundOpened: false, reminder1h: true };
 let payloads = [];
 const originalSend = webPush.sendNotification;
 
 beforeEach(() => {
-  db.exec(`DELETE FROM competition_notification_preferences; DELETE FROM notification_reminder_deliveries;
+  db.exec(`DELETE FROM notification_round_openings; DELETE FROM competition_notification_preferences; DELETE FROM notification_reminder_deliveries;
     DELETE FROM notification_reminder_attempts; DELETE FROM notification_reminder_skips; DELETE FROM predictions; DELETE FROM competition_notification_browsers;
-    UPDATE notification_subscriptions SET is_enabled = 1;
+    UPDATE notification_subscriptions SET is_enabled = 1, browser_brand = NULL;
     UPDATE competitions SET notification_reminders_enabled = 1,is_finished = 0,is_archived = 0;
     UPDATE competition_users SET is_verified = 1;
     DELETE FROM matches WHERE id > 102;`);
@@ -53,6 +55,174 @@ function restartDatabase() {
   const result = spawnSync(process.execPath, ['--input-type=module', '-e', `const {openDatabase}=await import(${JSON.stringify(moduleUrl)}); openDatabase().close();`], { env: process.env, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
 }
+
+test('browser labels prefer specific client hint brands and retain honest User-Agent fallbacks', () => {
+  const android='Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36';
+  for (const brand of ['Google Chrome','Brave','Microsoft Edge','Opera','Vivaldi','Samsung Internet']) {
+    const hints=`"Chromium";v="140", "Not A Brand";v="99", "${brand}";v="140"`;
+    assert.equal(formatBrowserLabel(android,browserBrandFromHints(hints)),brand);
+  }
+  assert.equal(browserBrandFromHints('"Chromium";v="140", "Not A Brand";v="99"'),null);
+  assert.equal(browserBrandFromHints('anything malformed'),null);
+  assert.equal(formatBrowserLabel(android),'Chrome/Chromium');
+  assert.equal(formatBrowserLabel(android+' SamsungBrowser/27.0'),'Samsung Internet');
+  assert.equal(formatBrowserLabel(android+' EdgA/140.0'),'Edge');
+  assert.equal(formatBrowserLabel('Mozilla/5.0 (iPhone) CriOS/140.0 Mobile Safari/604.1'),'Google Chrome');
+  assert.equal(formatBrowserLabel('Mozilla/5.0 (iPhone) Version/18.0 Mobile Safari/604.1'),'Safari');
+  assert.equal(formatBrowserLabel(null),'Unknown browser');
+});
+
+test('browser brand persists during subscription sync and appears in settings, admin grid and attempts', async () => {
+  const input={endpoint:'https://push.example.test/101',keys:{p256dh:'test',auth:'test'}};
+  const android='Mozilla/5.0 (Linux; Android 10; K) Chrome/140.0.0.0 Mobile Safari/537.36';
+  await service.savePushSubscription(101,input,android,101,'"Chromium";v="140", "Brave";v="140"');
+  assert.equal(service.getUserNotificationPreferences(101,101).browsers[0].name,'Brave on Android');
+  queries.upsertNotificationPreferences(101,101,all);
+  assert.deepEqual((await service.getNotificationSettings(101)).members[0].browsers,['Brave on Android']);
+  // Missing hints on a later request must not erase the previously identified brand.
+  await service.savePushSubscription(101,input,android);
+  restartDatabase();
+  assert.equal(service.getUserNotificationPreferences(101,101).browsers[0].name,'Brave on Android');
+  queries.recordReminderAttempt({competitionId:101,userId:101,subscriptionId:1,predictionRound:'Week 1',reminderHours:1,status:'accepted',statusCode:null,errorMessage:null});
+  assert.equal((await service.getNotificationReminderJobSnapshot(101)).recentAttempts[0].browser,'Brave');
+});
+
+test('closed competitions disable notification setup and admin tests without deleting saved choices or other competitions', async () => {
+  queries.upsertNotificationPreferences(101,101,{...all,roundOpened:true});
+  for (const column of ['is_finished','is_archived']) {
+    db.exec('UPDATE competitions SET is_finished=0,is_archived=0');
+    db.prepare(`UPDATE competitions SET ${column}=1 WHERE id=101`).run();
+    const settings=service.getUserNotificationPreferences(101,101);
+    assert.equal(settings.competitionClosed,true);
+    assert.equal(settings.competitionEnabled,false);
+    assert.equal(settings.preferences.roundOpened,true);
+    assert.equal(settings.browsers.length,1);
+    const admin=await service.getNotificationSettings(101);
+    assert.equal(admin.competitionClosed,true);
+    assert.equal(admin.remindersEnabled,false);
+    assert.equal(service.updateUserNotificationPreferences(101,101,all),null);
+    assert.equal(await service.savePushSubscription(101,{endpoint:'https://push.example.test/closed',keys:{p256dh:'test',auth:'test'}},'Safari',101),false);
+    assert.deepEqual(await service.sendTestNotification(101,101),{sent:0,subscriptions:0});
+    assert.equal(payloads.length,0);
+    assert.equal(service.getUserNotificationPreferences(101,102).competitionClosed,false);
+  }
+});
+
+test('opening-only preferences retain browsers, derive enabled, and survive old clients and restart', async () => {
+  const opening = { ...off, roundOpened: true };
+  const result = service.updateUserNotificationPreferences(101,101,opening);
+  assert.equal(result.preferences.enabled,true);
+  assert.equal(result.browsers.length,1);
+  const overview = await service.getNotificationSettings(101);
+  assert.equal(overview.members[0].roundOpened,true);
+  assert.equal(overview.members[0].browsers.length,1);
+  assert.equal(queries.listReminderCandidates(101).length,0);
+  const legacy = service.updateUserNotificationPreferences(101,101,{enabled:false,reminder1h:false,reminder9h:false});
+  assert.equal(legacy.preferences.roundOpened,true);
+  assert.equal(legacy.browsers.length,1);
+  restartDatabase();
+  assert.equal(queries.getNotificationPreferences(101,101).preferences.roundOpened,true);
+  assert.equal(service.updateUserNotificationPreferences(101,101,{...off,roundOpened:'yes'}),null);
+  service.updateUserNotificationPreferences(101,101,off);
+  assert.equal(queries.listCompetitionNotificationBrowsers(101,101).length,0);
+  assert.equal(queries.listCompetitionNotificationBrowsers(101,102).length,1);
+});
+
+test('adding the opening preference to an existing database preserves prior reminder opt-ins', () => {
+  queries.upsertNotificationPreferences(101,101,all);
+  db.exec('ALTER TABLE competition_notification_preferences DROP COLUMN round_opened');
+  restartDatabase();
+  assert.deepEqual(queries.getNotificationPreferences(101,101).preferences,all);
+  assert.equal(queries.listCompetitionNotificationBrowsers(101,101).length,1);
+});
+
+test('release rolls back if its opening event cannot be recorded', () => {
+  db.exec(`UPDATE matches SET released_for_predictions=0;
+    CREATE TRIGGER fail_opening BEFORE INSERT ON notification_round_openings
+    BEGIN SELECT RAISE(ABORT, 'test rollback'); END;`);
+  try {
+    assert.throws(() => releaseQueries.releaseMatchesForRound(101,'Week 1'),/test rollback/);
+    assert.equal(db.prepare('SELECT released_for_predictions FROM matches WHERE id=101').get().released_for_predictions,0);
+  } finally { db.exec('DROP TRIGGER fail_opening'); }
+});
+
+test('adding matches to an already released round never backfills an opening notification', async () => {
+  queries.upsertNotificationPreferences(101,101,{...all,roundOpened:true});
+  db.prepare(`INSERT INTO matches (id,competition_id,match_number,stage,round_label,kickoff_at,source_time_zone,
+    home_team_name,away_team_name,venue,city,released_for_predictions)
+    VALUES (103,101,2,'league','Week 1',?,'UTC','Home','Away','Ground','City',0)`)
+    .run(new Date(Date.now()+3600000).toISOString());
+  releaseQueries.releaseMatchesForRound(101,'Week 1');
+  await service.sendRoundOpeningNotifications();
+  assert.equal(payloads.length,0);
+});
+
+test('both release query paths queue only a newly opened round and dispatch once, even concurrently', async () => {
+  for (const id of [101,102]) queries.upsertNotificationPreferences(101,id,{...off,enabled:true,roundOpened:true});
+  db.exec('UPDATE matches SET released_for_predictions=0');
+  await service.sendRoundOpeningNotifications();
+  assert.equal(payloads.length,0);
+  assert.equal(releaseQueries.releaseMatchesForRound(101,'Week 1'),1);
+  assert.equal(releaseQueries.releaseMatchesByIds(102,[102]),1);
+  assert.equal(payloads.length,0); // Sending happens after release commits.
+  await Promise.all([service.sendRoundOpeningNotifications(),service.sendRoundOpeningNotifications()]);
+  assert.equal(payloads.length,2);
+  assert.equal(payloads[0].data.url,'/competition/league-a/predictions');
+  assert.equal(payloads[0].data.userId,101);
+  assert.match(payloads[0].title,/Week 1/);
+  assert.notEqual(payloads[0].tag,payloads[1].tag);
+  assert.equal(releaseQueries.releaseMatchesForRound(101,'Week 1'),0);
+  restartDatabase();
+  await service.sendRoundOpeningNotifications();
+  assert.equal(payloads.length,2);
+});
+
+test('opening queue respects release-time opt-in and current recipient, membership and competition gates', async () => {
+  queries.upsertNotificationPreferences(101,101,{...all,roundOpened:true});
+  db.exec('UPDATE matches SET released_for_predictions=0');
+  releaseQueries.releaseMatchesForRound(101,'Week 1');
+  releaseQueries.releaseMatchesForRound(102,'Week 1'); // No opt-in at release time.
+  queries.upsertNotificationPreferences(101,102,{...all,roundOpened:true});
+  queries.upsertNotificationSubscription(102,{endpoint:'https://push.example.test/101',subscriptionJson:'{}',userAgent:'Safari'});
+  await service.sendRoundOpeningNotifications();
+  assert.equal(payloads.length,0);
+  queries.upsertNotificationSubscription(101,{endpoint:'https://push.example.test/101',subscriptionJson:'{}',userAgent:'Safari'});
+  await service.sendRoundOpeningNotifications();
+  assert.equal(payloads.length,0); // Account switches cannot replay an opening.
+});
+
+test('opening delivery rechecks opt-out, expired deadline, removed browser and competition/member eligibility', async () => {
+  for (const change of [
+    'UPDATE competition_notification_preferences SET round_opened=0',
+    'UPDATE competitions SET notification_reminders_enabled=0',
+    'UPDATE competitions SET is_archived=1',
+    'UPDATE competitions SET is_finished=1',
+    'UPDATE competition_users SET is_verified=0',
+    'DELETE FROM competition_notification_browsers',
+    "UPDATE notification_round_openings SET deadline_at='2000-01-01T00:00:00Z'"
+  ]) {
+    db.exec('DELETE FROM notification_round_openings; UPDATE matches SET released_for_predictions=0; UPDATE competitions SET notification_reminders_enabled=1,is_finished=0,is_archived=0; UPDATE competition_users SET is_verified=1');
+    queries.upsertNotificationSubscription(101,{endpoint:'https://push.example.test/101',subscriptionJson:'{}',userAgent:'Safari'},101);
+    queries.upsertNotificationPreferences(101,101,{...all,roundOpened:true});
+    releaseQueries.releaseMatchesForRound(101,'Week 1');
+    db.exec(change);
+    await service.sendRoundOpeningNotifications();
+    assert.equal(payloads.length,0,change);
+  }
+});
+
+test('push failures do not undo a release, disable expired endpoints and do not repeat attempts', async () => {
+  queries.upsertNotificationPreferences(101,101,{...all,roundOpened:true});
+  db.exec('UPDATE matches SET released_for_predictions=0');
+  releaseQueries.releaseMatchesForRound(101,'Week 1');
+  let calls=0;
+  webPush.sendNotification=async () => {calls++; throw {statusCode:410,body:'Expired'};};
+  await service.sendRoundOpeningNotifications();
+  await service.sendRoundOpeningNotifications();
+  assert.equal(calls,1);
+  assert.equal(db.prepare('SELECT released_for_predictions FROM matches WHERE id=101').get().released_for_predictions,1);
+  assert.equal(db.prepare('SELECT status FROM notification_round_opening_attempts').get().status,'disabled');
+});
 
 test('existing browser subscriptions do not opt anyone into either competition; migration is repeatable', () => {
   db.exec('DROP TABLE competition_notification_preferences');
@@ -70,7 +240,7 @@ test('existing browser subscriptions do not opt anyone into either competition; 
 test('admin notification overview includes all members, defaults off, and isolates competition choices', async (t) => {
   db.prepare('INSERT INTO competition_users (competition_id,user_id,is_verified) VALUES (101,102,0)').run();
   t.after(() => db.prepare('DELETE FROM competition_users WHERE competition_id=101 AND user_id=102').run());
-  queries.upsertNotificationPreferences(101,101,{ ...all, reminder9h:false });
+  queries.upsertNotificationPreferences(101,101,{ ...all, reminder9h:false, roundOpened: false });
   queries.upsertNotificationPreferences(101,102,{ ...all, reminder1h:false });
   queries.upsertNotificationSubscription(101,{endpoint:'https://push.example.test/overview',subscriptionJson:'{}',userAgent:'Firefox/120'},101);
   t.after(() => db.prepare("DELETE FROM notification_subscriptions WHERE endpoint='https://push.example.test/overview'").run());
@@ -80,11 +250,11 @@ test('admin notification overview includes all members, defaults off, and isolat
   const overview = await service.getNotificationSettings(101);
   assert.equal(overview.remindersEnabled,false);
   assert.deepEqual(overview.members,[
-    {userId:102,username:'other',reminder1h:false,reminder9h:false,browsers:[]},
-    {userId:101,username:'player',reminder1h:true,reminder9h:false,browsers:['Chrome/Chromium on Windows','Firefox']}
+    {userId:102,username:'other',reminder1h:false,reminder9h:false, roundOpened: false,browsers:[]},
+    {userId:101,username:'player',reminder1h:true,reminder9h:false, roundOpened: false,browsers:['Chrome/Chromium on Windows','Firefox']}
   ]);
   assert.deepEqual((await service.getNotificationSettings(102)).members,[
-    {userId:101,username:'player',reminder1h:false,reminder9h:true,browsers:['Chrome/Chromium on Windows']}
+    {userId:101,username:'player',reminder1h:false,reminder9h:true, roundOpened: false,browsers:['Chrome/Chromium on Windows']}
   ]);
 });
 
@@ -93,7 +263,7 @@ test('turning both reminders off clears only this competition browsers and re-en
   queries.upsertNotificationSubscription(101, { endpoint: 'https://push.example.test/second', subscriptionJson: '{}', userAgent: 'Firefox/120' }, 101);
   queries.upsertNotificationPreferences(101,101,all);
   assert.equal(service.getUserNotificationPreferences(101,101).browsers.length,2);
-  service.updateUserNotificationPreferences(101,101,{ ...all, reminder9h:false });
+  service.updateUserNotificationPreferences(101,101,{ ...all, reminder9h:false, roundOpened: false });
   assert.equal(service.getUserNotificationPreferences(101,101).browsers.length,2);
   const result = service.updateUserNotificationPreferences(101,101,off);
   assert.deepEqual(result.browsers,[]);
@@ -101,14 +271,14 @@ test('turning both reminders off clears only this competition browsers and re-en
   restartDatabase();
   assert.deepEqual(service.getUserNotificationPreferences(101,101).browsers,[]);
   queries.upsertNotificationSubscription(101, { endpoint: 'https://push.example.test/second', subscriptionJson: '{}', userAgent: 'Firefox/120' }, 101);
-  service.updateUserNotificationPreferences(101,101,{ ...all, reminder9h:false });
+  service.updateUserNotificationPreferences(101,101,{ ...all, reminder9h:false, roundOpened: false });
   assert.equal(service.getUserNotificationPreferences(101,101).browsers.length,1);
   assert.equal(service.getUserNotificationPreferences(101,101).browsers[0].name,'Firefox');
   assert.equal(db.prepare("SELECT is_enabled FROM notification_subscriptions WHERE endpoint='https://push.example.test/101'").get().is_enabled,1);
 });
 
 test('choices are independent by competition and timing; master off preserves timing selections', () => {
-  queries.upsertNotificationPreferences(101,101,{ ...all, reminder9h: false });
+  queries.upsertNotificationPreferences(101,101,{ ...all, reminder9h: false, roundOpened: false });
   assert.deepEqual(queries.listReminderCandidates(101).map(x=>x.reminder_hours),[1]);
   assert.equal(queries.listReminderCandidates(102).length,0);
   queries.upsertNotificationPreferences(101,102,{ ...all, reminder1h: false });
@@ -178,7 +348,7 @@ test('delivery carries competition identity and does not repeat; both competitio
 });
 
 test('failed sends can retry with a cooldown and a three-attempt cap; dead endpoints are disabled', async () => {
-  queries.upsertNotificationPreferences(101,101,{ ...all, reminder9h: false });
+  queries.upsertNotificationPreferences(101,101,{ ...all, reminder9h: false, roundOpened: false });
   webPush.sendNotification = async () => { throw { statusCode:503 }; };
   for (let i=0;i<3;i++) {
     assert.equal((await service.sendDuePredictionRemindersForCompetition(101)).failedCount,1);
@@ -204,9 +374,9 @@ test('completed predictions still get the chosen reminder; expired deadlines do 
 
 test('only the selected nine-hour reminder sends during its window', async () => {
   db.prepare('UPDATE matches SET kickoff_at=? WHERE id=101').run(new Date(Date.now()+538*60000).toISOString());
-  queries.upsertNotificationPreferences(101,101,{ enabled:true,reminder9h:false,reminder1h:true });
+  queries.upsertNotificationPreferences(101,101,{ enabled:true,reminder9h:false, roundOpened: false,reminder1h:true });
   assert.equal((await service.sendDuePredictionRemindersForCompetition(101)).sentCount,0);
-  queries.upsertNotificationPreferences(101,101,{ enabled:true,reminder9h:true,reminder1h:false });
+  queries.upsertNotificationPreferences(101,101,{ enabled:true,reminder9h:true, roundOpened: false,reminder1h:false });
   assert.equal((await service.sendDuePredictionRemindersForCompetition(101)).sentCount,1);
   assert.equal(payloads[0].data.reminderHours,9);
 });

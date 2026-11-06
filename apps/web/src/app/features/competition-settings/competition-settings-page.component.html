@@ -3,6 +3,9 @@
   <p class="competition-name">{{ competition()?.name }}</p>
   <section class="settings-panel" aria-labelledby="notifications-title">
     <h2 id="notifications-title">Notifications</h2>
+    @if (competitionClosed()) {
+      <p role="status">Notifications are disabled because this competition is closed.</p>
+    }
     @if (settings.error(); as error) {
       <p class="error" role="alert">{{ error }}</p>
       @if (!settings.settings()) { <button type="button" (click)="reload()">Try again</button> }
@@ -11,7 +14,7 @@
       <p role="status">Loading...</p>
     } @else if (settings.settings()) {
       <form [formGroup]="form">
-        <fieldset [disabled]="settings.saving()">
+        <fieldset [disabled]="settings.saving() || competitionClosed()">
           <label class="toggle-row">
             <span id="reminder-1h-label">1 hour before prediction round closes</span>
             <span class="toggle-control">
@@ -24,6 +27,13 @@
             <span class="toggle-control">
               <span class="saving" [class.is-saving]="savingTiming() === 'reminder9h'" [attr.aria-hidden]="savingTiming() !== 'reminder9h'" role="status">Saving...</span>
               <input type="checkbox" role="switch" aria-labelledby="reminder-9h-label" formControlName="reminder9h" (change)="toggle('reminder9h')" />
+            </span>
+          </label>
+          <label class="toggle-row">
+            <span id="round-opened-label">When a prediction round opens</span>
+            <span class="toggle-control">
+              <span class="saving" [class.is-saving]="savingTiming() === 'roundOpened'" [attr.aria-hidden]="savingTiming() !== 'roundOpened'" role="status">Saving...</span>
+              <input type="checkbox" role="switch" aria-labelledby="round-opened-label" formControlName="roundOpened" (change)="toggle('roundOpened')" />
             </span>
           </label>
         </fieldset>

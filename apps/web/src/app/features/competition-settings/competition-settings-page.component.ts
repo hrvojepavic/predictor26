@@ -15,11 +15,12 @@ export class CompetitionSettingsPageComponent {
   private readonly browser = inject(NotificationRemindersService);
   protected readonly competition = inject(AppStateService).activeCompetition;
   private readonly browserChecked = signal(false);
-  protected readonly savingTiming = signal<'reminder1h' | 'reminder9h' | null>(null);
-  protected readonly form = inject(FormBuilder).nonNullable.group({ reminder1h: false, reminder9h: false });
+  protected readonly competitionClosed = computed(() => this.settings.settings()?.competitionClosed === true || this.competition()?.isFinished === true);
+  protected readonly savingTiming = signal<'reminder1h' | 'reminder9h' | 'roundOpened' | null>(null);
+  protected readonly form = inject(FormBuilder).nonNullable.group({ reminder1h: false, reminder9h: false, roundOpened: false });
   protected readonly notificationsEnabled = computed(() => {
     const preferences = this.settings.settings()?.preferences;
-    return !!preferences?.enabled && (preferences.reminder1h || preferences.reminder9h);
+    return !this.competitionClosed() && !!preferences?.enabled && (preferences.reminder1h || preferences.reminder9h || preferences.roundOpened);
   });
   protected readonly browsers = computed(() => (this.settings.settings()?.browsers ?? []).map(browser => ({
     ...browser, current: browser.fingerprint === this.browser.fingerprint()
@@ -41,13 +42,13 @@ export class CompetitionSettingsPageComponent {
     void this.browser.refreshBrowserState().finally(() => this.browserChecked.set(true));
   }
 
-  protected async toggle(timing: 'reminder1h' | 'reminder9h'): Promise<void> {
+  protected async toggle(timing: 'reminder1h' | 'reminder9h' | 'roundOpened'): Promise<void> {
     const id = this.competition()?.id;
-    if (!id || this.settings.saving()) { this.restoreForm(); return; }
+    if (!id || this.settings.saving() || this.competitionClosed()) { this.restoreForm(); return; }
     const value = this.form.getRawValue();
     this.savingTiming.set(timing);
     try {
-      await this.settings.save(id, { ...value, enabled: value.reminder1h || value.reminder9h }, value[timing]);
+      await this.settings.save(id, { ...value, enabled: value.reminder1h || value.reminder9h || value.roundOpened }, value[timing]);
     } finally {
       this.savingTiming.set(null);
       this.restoreForm();
@@ -56,7 +57,7 @@ export class CompetitionSettingsPageComponent {
 
   protected async addBrowser(): Promise<void> {
     const id = this.competition()?.id;
-    if (id) await this.settings.addBrowser(id);
+    if (id && !this.competitionClosed()) await this.settings.addBrowser(id);
   }
 
   protected async removeBrowser(browserId: number): Promise<void> {
@@ -71,9 +72,11 @@ export class CompetitionSettingsPageComponent {
 
   private restoreForm(): void {
     const preferences = this.settings.settings()?.preferences;
+    const enabled = !this.competitionClosed() && !!preferences?.enabled;
     this.form.reset({
-      reminder1h: !!preferences?.enabled && preferences.reminder1h,
-      reminder9h: !!preferences?.enabled && preferences.reminder9h
+      reminder1h: enabled && !!preferences?.reminder1h,
+      reminder9h: enabled && !!preferences?.reminder9h,
+      roundOpened: enabled && !!preferences?.roundOpened
     }, { emitEvent: false });
   }
 }

@@ -1,3 +1,4 @@
+import { sendRoundOpeningNotifications } from '../notifications/notifications.service.js';
 import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -388,6 +389,7 @@ export async function importScheduleWithOdds(
 
   if (validation.complete) {
     releaseImportedMatches(competitionId, findAdminMatches(competitionId).filter((match) => match.round_label === validation.roundLabel).map((match) => match.id));
+    await sendRoundOpeningNotifications(competitionId);
   }
 
   const finalValidation = validation.complete
@@ -447,6 +449,7 @@ export async function runAutoMatchImportForCompetition(
 
   if (validation.complete) {
     releaseImportedMatches(competitionId, findAdminMatches(competitionId).filter((match) => match.round_label === validation.roundLabel).map((match) => match.id));
+    await sendRoundOpeningNotifications(competitionId);
   }
 
   return {
@@ -818,6 +821,7 @@ export async function releaseMatchRound(
   const roundLabel = input.roundLabel.trim();
   const validation = validateImportedRound(competitionId, roundLabel);
   const released = releaseRoundMatches(competitionId, roundLabel);
+  await sendRoundOpeningNotifications(competitionId);
 
   return {
     status: 'released',

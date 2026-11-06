@@ -1,3 +1,4 @@
+import { browserBrandFromHints, formatBrowserLabel } from '../../shared/utils/notification-browser.js';
 import { createHash } from 'node:crypto';
 import webPush, { PushSubscription } from 'web-push';
 
@@ -5,9 +6,12 @@ import { config } from '../../config/index.js';
 import { getAppMetadataValue, setAppMetadataValue } from '../../database/queries/app-metadata.queries.js';
 import { getSuperAdminUser } from '../../database/queries/users.queries.js';
 import { verifyPassword } from '../../shared/utils/password.js';
-import { AdminNotificationSettingsResponse, NotificationPreferences, NotificationPreferencesResponse, SavePushSubscriptionRequest, UpdateNotificationSettingsRequest } from './notifications.interfaces.js';
+import { AdminNotificationSettingsResponse, NotificationConfigResponse, NotificationPreferences, NotificationPreferencesResponse, SavePushSubscriptionRequest, SendTestNotificationResponse, UpdateNotificationSettingsRequest } from './notifications.interfaces.js';
 import {
   findNotificationPreferences,
+  listPendingRoundOpenings,
+  claimRoundOpening,
+  finishRoundOpening,
   isNotificationRecipient,
   skipNotificationReminder,
   listCompetitionNotificationMembers,
@@ -30,6 +34,45 @@ import {
 } from '../competitions/competitions.repository.js';
 
 webPush.setVapidDetails(config.vapidSubject, config.vapidPublicKey, config.vapidPrivateKey);
+
+// Release-driven delivery. Failures never turn a committed release into an API
+// failure. Durable claims prevent concurrent releases from sending duplicates.
+export async function sendRoundOpeningNotifications(competitionId?: number): Promise<void> {
+  try {
+    for (const attempt of listPendingRoundOpenings(competitionId)) {
+      if (!claimRoundOpening(attempt)) continue;
+      try {
+        const settings = findNotificationPreferences(attempt.user_id, attempt.competition_id);
+        const registered = listCompetitionNotificationBrowsers(attempt.user_id, attempt.competition_id)
+          .some(browser => browser.id === attempt.subscription_id);
+        const ttl = Math.floor((Date.parse(attempt.deadline_at) - Date.now()) / 1000);
+        if (!settings.competitionEnabled || !settings.eligible || !settings.preferences.enabled ||
+            !settings.preferences.roundOpened || !registered || ttl <= 0 ||
+            !isNotificationRecipient(attempt.subscription_id, attempt.user_id)) {
+          finishRoundOpening(attempt, 'skipped');
+          continue;
+        }
+        await webPush.sendNotification(JSON.parse(attempt.subscription_json) as PushSubscription, JSON.stringify({
+          title: `${attempt.prediction_round}: predictions are open`,
+          body: `A new prediction round is ready in ${attempt.name}. Make your predictions before it closes.`,
+          icon: '/icons/predictor26-icon.svg', badge: '/icons/predictor26-icon.svg',
+          tag: `prediction-round-opened:${attempt.competition_id}:${attempt.user_id}:${attempt.prediction_round}`,
+          data: { url: `/competition/${attempt.slug}/predictions`, competitionId: attempt.competition_id, userId: attempt.user_id,
+            predictionRound: attempt.prediction_round, deadlineAt: attempt.deadline_at }
+        }), { TTL: ttl, timeout: 10000 });
+        finishRoundOpening(attempt, 'accepted');
+      } catch (error) {
+        const code = readWebPushStatusCode(error);
+        const disabled = code === 404 || code === 410;
+        finishRoundOpening(attempt, disabled ? 'disabled' : 'failed', code, readWebPushErrorMessage(error));
+        if (disabled) disableUserNotificationSubscription(attempt.endpoint);
+        console.error('Round opening notification failed', { competitionId: attempt.competition_id, userId: attempt.user_id, statusCode: code });
+      }
+    }
+  } catch (error) {
+    console.error('Round opening notification delivery failed', error);
+  }
+}
 
 const notificationReminderLastRunKey = 'notification_reminder_last_run';
 const secretCodeMaxLength = 128;
@@ -68,7 +111,7 @@ export type UpdateNotificationSettingsResult =
       readonly status: 'invalid_secret';
     };
 
-export async function getNotificationConfig(competitionId: number) {
+export async function getNotificationConfig(competitionId: number): Promise<NotificationConfigResponse> {
   return {
     vapidPublicKey: config.vapidPublicKey,
     remindersEnabled: await areNotificationRemindersEnabled(competitionId)
@@ -77,9 +120,10 @@ export async function getNotificationConfig(competitionId: number) {
 
 export async function getNotificationSettings(competitionId: number): Promise<AdminNotificationSettingsResponse> {
   return {
+    competitionClosed: isCompetitionClosed(competitionId),
     members: listCompetitionNotificationMembers(competitionId).map(({ browserUserAgents, ...member }) => ({
       ...member,
-      browsers: browserUserAgents.map(agent => `${formatBrowserLabel(agent)}${browserPlatform(agent)}`)
+      browsers: browserUserAgents.map(browser => `${formatBrowserLabel(browser.userAgent, browser.browserBrand)}${browserPlatform(browser.userAgent)}`)
     })),
     remindersEnabled: await areNotificationRemindersEnabled(competitionId)
   };
@@ -111,7 +155,7 @@ export async function getNotificationReminderJobSnapshot(competitionId: number) 
       predictionRound: attempt.prediction_round,
       reminderHours: attempt.reminder_hours,
       subscriptionId: attempt.subscription_id,
-      browser: formatBrowserLabel(attempt.user_agent),
+      browser: formatBrowserLabel(attempt.user_agent, attempt.browser_brand),
       status: attempt.status,
       statusCode: attempt.status_code,
       errorMessage: attempt.error_message,
@@ -169,7 +213,7 @@ export async function updateNotificationSettings(
 
   const remindersEnabled = input.remindersEnabled === true;
   const competition = findCompetitionForAdmin(competitionId);
-  const nextRemindersEnabled = remindersEnabled && competition?.is_finished === 0;
+  const nextRemindersEnabled = remindersEnabled && competition?.is_finished === 0 && competition.is_archived === 0;
 
   setCompetitionJobSettings(competitionId, { notificationRemindersEnabled: nextRemindersEnabled });
 
@@ -185,16 +229,18 @@ export async function savePushSubscription(
   userId: number,
   input: Partial<SavePushSubscriptionRequest> | undefined,
   userAgent: string | null,
-  competitionId?: number
+  competitionId?: number,
+  clientHints: string | null = null
 ): Promise<boolean> {
-  if (!isValidSubscriptionRequest(input)) {
+  if ((competitionId !== undefined && isCompetitionClosed(competitionId)) || !isValidSubscriptionRequest(input)) {
     return false;
   }
 
   saveUserNotificationSubscription(userId, {
     endpoint: input.endpoint,
     subscriptionJson: JSON.stringify(input),
-    userAgent
+    userAgent,
+    browserBrand: browserBrandFromHints(clientHints)
   }, competitionId);
 
   return true;
@@ -408,7 +454,8 @@ function groupReminderCandidatesByUser(candidates: ReminderCandidate[]) {
   return [...groups.values()];
 }
 
-export async function sendTestNotification(userId: number, competitionId: number): Promise<{ readonly sent: number; readonly subscriptions: number }> {
+export async function sendTestNotification(userId: number, competitionId: number): Promise<SendTestNotificationResponse> {
+  if (isCompetitionClosed(competitionId)) return { sent: 0, subscriptions: 0 };
   const subscriptions = findUserNotificationSubscriptions(userId);
   let sent = 0;
 
@@ -458,17 +505,23 @@ export function getUserNotificationPreferences(userId: number, competitionId: nu
     ...findNotificationPreferences(userId, competitionId),
     browsers: listCompetitionNotificationBrowsers(userId, competitionId).map(browser => ({
       id: browser.id,
-      name: `${formatBrowserLabel(browser.user_agent)}${browserPlatform(browser.user_agent)}`,
+      name: `${formatBrowserLabel(browser.user_agent, browser.browser_brand)}${browserPlatform(browser.user_agent)}`,
       fingerprint: createHash('sha256').update(browser.endpoint).digest('hex')
     }))
   };
 }
 
 export function updateUserNotificationPreferences(userId: number, competitionId: number, input: unknown): NotificationPreferencesResponse | null {
-  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  if (isCompetitionClosed(competitionId) || !input || typeof input !== 'object' || Array.isArray(input)) return null;
   const value = input as Partial<NotificationPreferences>;
   if (typeof value.enabled !== 'boolean' || typeof value.reminder9h !== 'boolean' || typeof value.reminder1h !== 'boolean') return null;
-  saveNotificationPreferences(userId, competitionId, value as NotificationPreferences);
+  if (value.roundOpened !== undefined && typeof value.roundOpened !== 'boolean') return null;
+  // Older open tabs omit the new field: preserve the saved choice.
+  const roundOpened = value.roundOpened ?? findNotificationPreferences(userId, competitionId).preferences.roundOpened;
+  saveNotificationPreferences(userId, competitionId, {
+    reminder1h: value.reminder1h, reminder9h: value.reminder9h, roundOpened,
+    enabled: value.reminder1h || value.reminder9h || roundOpened
+  });
   return getUserNotificationPreferences(userId, competitionId);
 }
 
@@ -592,34 +645,6 @@ function toUtcIsoTimestamp(value: string): string {
   return new Date(`${value.replace(' ', 'T')}Z`).toISOString();
 }
 
-function formatBrowserLabel(userAgent: string | null): string {
-  if (!userAgent) {
-    return 'Unknown browser';
-  }
-
-  if (/Edg\/|EdgiOS\/|EdgA\//.test(userAgent)) {
-    return 'Edge';
-  }
-
-  if (userAgent.includes('OPR/') || userAgent.includes('Opera')) {
-    return 'Opera';
-  }
-
-  if (/Firefox\/|FxiOS\//.test(userAgent)) {
-    return 'Firefox';
-  }
-
-  if (/Chrome\/|CriOS\//.test(userAgent)) {
-    return 'Chrome/Chromium';
-  }
-
-  if (userAgent.includes('Safari/') && userAgent.includes('Version/')) {
-    return 'Safari';
-  }
-
-  return 'Unknown browser';
-}
-
 function browserPlatform(agent: string | null): string {
   if (!agent) return '';
   if (/iPhone|iPad/.test(agent)) return ' on iOS';
@@ -632,4 +657,9 @@ function browserPlatform(agent: string | null): string {
 
 export function removeUserNotificationBrowser(userId: number, competitionId: number, subscriptionId: number) {
   return removeCompetitionNotificationBrowser(userId, competitionId, subscriptionId);
+}
+
+export function isCompetitionClosed(competitionId: number): boolean {
+  const competition = findCompetitionForAdmin(competitionId);
+  return !competition || competition.is_finished === 1 || competition.is_archived === 1;
 }
