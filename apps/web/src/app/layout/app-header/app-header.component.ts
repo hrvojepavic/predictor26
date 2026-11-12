@@ -1,5 +1,5 @@
 import { Component, computed, DestroyRef, effect, ElementRef, inject, signal, untracked, viewChild } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, UpperCasePipe } from '@angular/common';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
@@ -9,14 +9,13 @@ import { FinalResultsService } from '@services/final-results.service';
 import { CompetitionsService } from '@services/competitions.service';
 import { MatchesService } from '@services/matches.service';
 import { PredictionSummaryService } from '@services/prediction-summary.service';
-import { PredictionActionIconComponent } from '@shared/components/prediction-action-icon/prediction-action-icon.component';
 import { PredictionCountBadgeComponent } from '@shared/components/prediction-count-badge/prediction-count-badge.component';
 import { TooltipComponent } from '@shared/components/tooltip/tooltip.component';
 import { ModalShellComponent } from '@shared/components/modal-shell/modal-shell.component';
 
 @Component({
   selector: 'app-header',
-  imports: [RouterLink, TooltipComponent, ModalShellComponent, PredictionActionIconComponent, PredictionCountBadgeComponent],
+  imports: [RouterLink, UpperCasePipe, TooltipComponent, ModalShellComponent, PredictionCountBadgeComponent],
   host: { '(document:keydown)': 'onMenuKeydown($event)' },
   templateUrl: './app-header.component.html',
   styleUrl: './app-header.component.scss'
