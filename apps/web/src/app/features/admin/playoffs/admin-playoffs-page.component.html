@@ -1,42 +1,42 @@
 <section class="admin-playoffs-page" aria-labelledby="admin-playoffs-title">
   <header class="page-header">
     <div>
-      <p class="section-label">Admin</p>
-      <h1 id="admin-playoffs-title">Playoffs</h1>
-      <a class="back-link" routerLink="../">Back to admin competition</a>
+      <p class="section-label">{{ 'ui.admin' | translate }}</p>
+      <h1 id="admin-playoffs-title">{{ 'ui.playoffs' | translate }}</h1>
+      <a class="back-link" routerLink="../">{{ 'ui.back_to_admin_competition' | translate }}</a>
     </div>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (successMessage(); as message) {
-    <p class="status-message">{{ message }}</p>
+    <p class="status-message">{{ (message) }}</p>
   }
 
   @if (!playoffsEnabled()) {
-    <p class="status-message">Playoffs are disabled for this competition.</p>
+    <p class="status-message">{{ 'ui.playoffs_are_disabled_for_this_competition' | translate }}</p>
   } @else if (loading()) {
-    <p class="status-message">Loading playoff mappings...</p>
+    <p class="status-message">{{ 'ui.loading_playoff_mappings' | translate }}</p>
   } @else {
     <div class="mapping-list">
       @for (match of playoffMatches(); track match.id) {
         <article class="match-card">
           <div class="match-meta">
-            <span>Match {{ match.matchNumber }}</span>
-            <span>{{ match.roundLabel }}</span>
-            <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'EEE, MMM d, HH:mm' }}</time>
+            <span>{{ 'ui.match_p0' | translate: { p0: (match.matchNumber) } }}</span>
+            <span>{{ (match.roundLabel)  }}</span>
+            <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | localizedDate: 'EEE, MMM d, HH:mm' }}</time>
           </div>
 
           <div class="slot-grid">
             @for (context of contextsByMatch()[match.id]; track context.side) {
               <label class="slot-field">
                 <span class="slot-label">
-                  <span class="slot-side">{{ context.side === 'home' ? 'Home' : 'Away' }}</span>
-                  <span class="placeholder">{{ context.placeholder }}</span>
+                  <span class="slot-side">{{ context.side === 'home' ? ('ui.home' | translate) : ('ui.away' | translate) }}</span>
+                  <span class="placeholder">{{ (context.placeholder) }}</span>
                   @if (context.sourceLabel) {
-                    <span class="group-badge">{{ context.sourceLabel }}</span>
+                    <span class="group-badge">{{ (context.sourceLabel)  }}</span>
                   }
                 </span>
 
@@ -45,19 +45,19 @@
                   [disabled]="isSaving(context)"
                   (change)="updateMapping(context, $any($event.target).value)"
                 >
-                  <option value="">Keep placeholder</option>
+                  <option value="">{{ 'ui.keep_placeholder' | translate }}</option>
                   @for (team of context.options; track team.groupName + team.name) {
-                    <option [value]="team.name">{{ teamOptionLabel(team) }}</option>
+                    <option [value]="team.name">{{ (teamOptionLabel(team)) }}</option>
                   }
                 </select>
 
-                <span class="save-state">{{ isSaving(context) ? 'Saving...' : '' }}</span>
+                <span class="save-state">{{ isSaving(context) ? ('ui.saving' | translate) : '' }}</span>
               </label>
             }
           </div>
         </article>
       } @empty {
-        <p class="status-message">No playoff matches found.</p>
+        <p class="status-message">{{ 'ui.no_playoff_matches_found' | translate }}</p>
       }
     </div>
   }

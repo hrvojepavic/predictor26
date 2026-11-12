@@ -1,9 +1,8 @@
 <details class="sort-menu">
-  <summary class="sort-button">Sorted by {{ currentLabel() }}</summary>
+  <summary class="sort-button">{{ 'ui.sorted_by_p0' | translate: { p0: (currentLabel()) } }}</summary>
 
   <div class="sort-options" role="menu">
     <button type="button" role="menuitem" (click)="selectMode(alternateMode(), $event)">
-      Sort by {{ alternateLabel() }}
-    </button>
+      {{ 'ui.sort_by_p0' | translate: { p0: (alternateLabel()) } }}</button>
   </div>
 </details>

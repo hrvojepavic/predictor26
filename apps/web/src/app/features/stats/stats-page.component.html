@@ -1,37 +1,32 @@
-<section class="stats-page" aria-label="Stats">
-  <p class="section-label">Stats</p>
+<section class="stats-page" [attr.aria-label]="'ui.stats' | translate">
+  <p class="section-label">{{ 'ui.stats' | translate }}</p>
 
   @if (loading()) {
-    <div class="stats-grid stats-skeleton" role="status" aria-label="Loading stats">
+    <div class="stats-grid stats-skeleton" role="status" [attr.aria-label]="'ui.loading_stats' | translate">
       <span></span>
       <span></span>
       <span></span>
     </div>
   } @else if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   } @else if (stats(); as loadedStats) {
     @if (hasStats()) {
       @if (loadedStats.biggestOddsWin; as oddsWin) {
         <article class="hero-stat">
           <div>
-            <span class="stat-kicker">Biggest odds hit</span>
+            <span class="stat-kicker">{{ 'ui.biggest_odds_hit' | translate }}</span>
             <h2>{{ oddsWin.odds | oddsFormat }}</h2>
             <p>
               @switch (oddsWin.outcome) {
                 @case ('1') {
                   <strong>{{ oddsWin.username }}</strong>
-                  backed {{ teamLabel(oddsWin.homeTeam) }} to win against
-                  {{ teamLabel(oddsWin.awayTeam) }}.
-                }
+                  {{ 'ui.backed_p0_to_win_against_p1' | translate: { p0: (teamLabel(oddsWin.homeTeam)), p1: (teamLabel(oddsWin.awayTeam)) } }}}
                 @case ('X') {
                   <strong>{{ oddsWin.username }}</strong>
-                  backed {{ teamLabel(oddsWin.homeTeam) }} and {{ teamLabel(oddsWin.awayTeam) }} to draw.
-                }
+                  {{ 'ui.backed_p0_and_p1_to_draw' | translate: { p0: (teamLabel(oddsWin.homeTeam)), p1: (teamLabel(oddsWin.awayTeam)) } }}}
                 @case ('2') {
                   <strong>{{ oddsWin.username }}</strong>
-                  backed {{ teamLabel(oddsWin.awayTeam) }} to win against
-                  {{ teamLabel(oddsWin.homeTeam) }}.
-                }
+                  {{ 'ui.backed_p0_to_win_against_p1' | translate: { p0: (teamLabel(oddsWin.awayTeam)), p1: (teamLabel(oddsWin.homeTeam)) } }}}
               }
             </p>
           </div>
@@ -41,7 +36,7 @@
       <div class="summary-grid">
         <section class="stat-panel" aria-labelledby="exact-score-title">
           <header class="panel-header">
-            <h2 id="exact-score-title">Correct scores</h2>
+            <h2 id="exact-score-title">{{ 'ui.correct_scores' | translate }}</h2>
           </header>
           <div class="rank-list">
             @for (leader of loadedStats.exactScoreLeaders; track leader.userId; let rank = $index) {
@@ -57,11 +52,11 @@
                   <span class="rank-name">
                     {{ leader.username }}
                     @if (leader.userId === currentUserId()) {
-                      <span class="current-user-star" aria-label="Your row">★</span>
+                      <span class="current-user-star" [attr.aria-label]="'ui.your_row' | translate">★</span>
                     }
                   </span>
                   <span class="rank-value rank-value-expand">
-                    <span>{{ leader.exactScores }}</span>
+                    <span>{{ (leader.exactScores) }}</span>
                     <span class="expand-arrow" [class.expand-arrow-open]="expandedExactScoreUserId() === leader.userId">
                       ▾
                     </span>
@@ -72,7 +67,7 @@
                     @for (match of leader.matches; track match.matchNumber) {
                       <div class="exact-score-row">
                         <span class="exact-score-teams">
-                          {{ teamLabel(match.homeTeam) }} - {{ teamLabel(match.awayTeam) }}
+                          {{ (teamLabel(match.homeTeam)) }} - {{ (teamLabel(match.awayTeam)) }}
                         </span>
                         <span class="exact-score-value">{{ match.finalScore.home }}:{{ match.finalScore.away }}</span>
                       </div>
@@ -81,14 +76,14 @@
                 }
               </article>
             } @empty {
-              <p class="empty-message">No correct scores yet.</p>
+              <p class="empty-message">{{ 'ui.no_correct_scores_yet' | translate }}</p>
             }
           </div>
         </section>
 
         <section class="stat-panel" aria-labelledby="outcome-title">
           <header class="panel-header">
-            <h2 id="outcome-title">Correct outcomes</h2>
+            <h2 id="outcome-title">{{ 'ui.correct_outcomes' | translate }}</h2>
           </header>
           <div class="rank-list">
             @for (leader of loadedStats.outcomeLeaders; track leader.userId; let rank = $index) {
@@ -104,11 +99,11 @@
                   <span class="rank-name">
                     {{ leader.username }}
                     @if (leader.userId === currentUserId()) {
-                      <span class="current-user-star" aria-label="Your row">★</span>
+                      <span class="current-user-star" [attr.aria-label]="'ui.your_row' | translate">★</span>
                     }
                   </span>
                   <span class="rank-value rank-value-expand">
-                    <span>{{ leader.correctOutcomes }}</span>
+                    <span>{{ (leader.correctOutcomes) }}</span>
                     <span class="expand-arrow" [class.expand-arrow-open]="expandedOutcomeUserId() === leader.userId">
                       ▾
                     </span>
@@ -119,16 +114,16 @@
                     @for (match of leader.matches; track match.matchNumber) {
                       <div class="exact-score-row">
                         <span class="exact-score-teams">
-                          {{ teamLabel(match.homeTeam) }} - {{ teamLabel(match.awayTeam) }}
+                          {{ (teamLabel(match.homeTeam)) }} - {{ (teamLabel(match.awayTeam)) }}
                         </span>
-                        <span class="exact-score-value">{{ match.outcome }}</span>
+                        <span class="exact-score-value">{{ (match.outcome) }}</span>
                       </div>
                     }
                   </div>
                 }
               </article>
             } @empty {
-              <p class="empty-message">No correct outcomes yet.</p>
+              <p class="empty-message">{{ 'ui.no_correct_outcomes_yet' | translate }}</p>
             }
           </div>
         </section>
@@ -136,13 +131,13 @@
 
       <section class="groups-section" aria-labelledby="group-points-title">
         <header class="section-header">
-          <h2 id="group-points-title">Group point leaders</h2>
+          <h2 id="group-points-title">{{ 'ui.group_point_leaders' | translate }}</h2>
         </header>
         <div class="group-grid">
           @for (group of loadedStats.groupLeaders; track group.groupName) {
             <article class="group-card">
               <header class="group-card-header">
-                <span class="group-badge">{{ group.groupName }}</span>
+                <span class="group-badge">{{ (group.groupName) }}</span>
               </header>
               <div class="rank-list">
                 @for (leader of group.leaders; track leader.userId; let rank = $index) {
@@ -151,13 +146,13 @@
                     <span class="rank-name">
                       {{ leader.username }}
                       @if (leader.userId === currentUserId()) {
-                        <span class="current-user-star" aria-label="Your row">★</span>
+                        <span class="current-user-star" [attr.aria-label]="'ui.your_row' | translate">★</span>
                       }
                     </span>
                     <span class="rank-value">{{ leader.points | number: '1.0-2' }}</span>
                   </article>
                 } @empty {
-                  <p class="empty-message">No points yet.</p>
+                  <p class="empty-message">{{ 'ui.no_points_yet' | translate }}</p>
                 }
               </div>
             </article>
@@ -165,7 +160,7 @@
         </div>
       </section>
     } @else {
-      <p class="status-message">Stats will appear after finished matches have winning tips.</p>
+      <p class="status-message">{{ 'ui.stats_will_appear_after_finished_matches_have_winning_tips' | translate }}</p>
     }
   }
 </section>

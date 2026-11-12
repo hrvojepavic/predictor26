@@ -1,18 +1,18 @@
 <header class="modal-header">
-  <h2 id="rules-title">Rules</h2>
-  <button class="icon-button" type="button" aria-label="Close rules" (click)="close()">×</button>
+  <h2 id="rules-title">{{ 'ui.rules' | translate }}</h2>
+  <button class="icon-button" type="button" [attr.aria-label]="'ui.close_rules' | translate" [title]="'ui.close_rules' | translate" (click)="close()">×</button>
 </header>
 
 <div class="modal-content">
   <ul>
     @for (rule of rules(); track rule) {
-      <li>{{ rule }}</li>
+      <li>{{ (rule) }}</li>
     } @empty {
-      <li>Rules could not be loaded.</li>
+      <li>{{ 'ui.rules_could_not_be_loaded' | translate }}</li>
     }
   </ul>
 </div>
 
 <footer class="modal-footer">
-  <button class="close-button" type="button" (click)="close()">Close</button>
+  <button class="close-button" type="button" (click)="close()">{{ 'ui.close' | translate }}</button>
 </footer>

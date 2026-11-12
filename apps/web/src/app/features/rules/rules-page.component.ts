@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -6,11 +8,12 @@ import { CompetitionsApiProvider } from '@services/providers/competitions-api.pr
 
 @Component({
   selector: 'app-rules-page',
-  imports: [RouterLink],
+  imports: [TranslatePipe, RouterLink],
   templateUrl: './rules-page.component.html',
   styleUrl: './rules-page.component.scss'
 })
 export class RulesPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly appState = inject(AppStateService);
   private readonly competitionsApi = inject(CompetitionsApiProvider);
 
@@ -26,7 +29,7 @@ export class RulesPageComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Competition rules could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.competition_rules_could_not_be_loaded"));
         this.loading.set(false);
       }
     });

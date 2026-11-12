@@ -1,64 +1,64 @@
 <section class="admin-payments-page" aria-labelledby="admin-payments-title">
   <header class="page-header">
     <div>
-      <p class="section-label">Admin</p>
-      <h1 id="admin-payments-title">Payment settings</h1>
-      <a class="back-link" routerLink="../">Back to admin competition</a>
+      <p class="section-label">{{ 'ui.admin' | translate }}</p>
+      <h1 id="admin-payments-title">{{ 'ui.payment_settings' | translate }}</h1>
+      <a class="back-link" routerLink="../">{{ 'ui.back_to_admin_competition' | translate }}</a>
     </div>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (successMessage(); as message) {
-    <p class="status-message status-success">{{ message }}</p>
+    <p class="status-message status-success">{{ (message) }}</p>
   }
 
   @if (loading()) {
-    <p class="status-message">Loading payment settings...</p>
+    <p class="status-message">{{ 'ui.loading_payment_settings' | translate }}</p>
   } @else {
     <form class="payment-form" [formGroup]="paymentForm" (ngSubmit)="savePaymentSettings()">
       <section class="payment-method" aria-labelledby="iban-label">
         <label class="field">
-          <span id="iban-label">IBAN</span>
+          <span id="iban-label">{{ 'ui.iban' | translate }}</span>
           <input type="text" formControlName="iban" autocomplete="off" maxlength="200" />
         </label>
 
         <label class="field">
-          <span>Name and last name</span>
+          <span>{{ 'ui.name_and_last_name' | translate }}</span>
           <input type="text" formControlName="ibanHolderName" autocomplete="name" maxlength="200" />
         </label>
       </section>
 
       <section class="payment-method" aria-labelledby="keks-label">
         <label class="field">
-          <span id="keks-label">KEKS info</span>
+          <span id="keks-label">{{ 'ui.keks_info' | translate }}</span>
           <input type="text" formControlName="keks" autocomplete="off" maxlength="200" />
         </label>
 
         <label class="field">
-          <span>KEKS fast-pay link</span>
+          <span>{{ 'ui.keks_fast_pay_link' | translate }}</span>
           <input type="url" formControlName="keksFastPayUrl" autocomplete="off" maxlength="500" />
         </label>
       </section>
 
       <section class="payment-method" aria-labelledby="revolut-label">
         <label class="field">
-          <span id="revolut-label">Revolut info</span>
+          <span id="revolut-label">{{ 'ui.revolut_info' | translate }}</span>
           <input type="text" formControlName="revolut" autocomplete="off" maxlength="200" />
         </label>
 
         <label class="field">
-          <span>Revolut fast-pay link</span>
+          <span>{{ 'ui.revolut_fast_pay_link' | translate }}</span>
           <input type="url" formControlName="revolutFastPayUrl" autocomplete="off" maxlength="500" />
         </label>
       </section>
 
       <label class="cash-toggle">
         <span class="toggle-copy">
-          <span>Cash</span>
-          <span>Accept cash payments</span>
+          <span>{{ 'ui.cash' | translate }}</span>
+          <span>{{ 'ui.accept_cash_payments' | translate }}</span>
         </span>
         <input type="checkbox" formControlName="cashEnabled" />
         <span class="switch-track" aria-hidden="true">
@@ -68,8 +68,8 @@
 
       <label class="cash-toggle payment-info-toggle">
         <span class="toggle-copy">
-          <span>Show payment info</span>
-          <span>Display payment instructions to users who are not verified.</span>
+          <span>{{ 'ui.show_payment_info' | translate }}</span>
+          <span>{{ 'ui.display_payment_instructions_to_users_who_are_not_verified' | translate }}</span>
         </span>
         <input type="checkbox" formControlName="showPaymentInfo" />
         <span class="switch-track" aria-hidden="true">
@@ -79,7 +79,7 @@
 
       <div class="form-actions">
         <button class="save-button" type="submit" [disabled]="saving() || paymentForm.invalid">
-          {{ saving() ? 'Saving...' : 'Save payment settings' }}
+          {{ saving() ? ('ui.saving' | translate) : ('ui.save_payment_settings' | translate) }}
         </button>
       </div>
     </form>
@@ -95,10 +95,10 @@
       (closeModal)="cancelSecretCode()"
     >
       <app-secret-code-modal
-        title="Confirm payment settings"
-        label="What is the secret code?"
-        confirmLabel="Save settings"
-        [errorMessage]="secretCodeErrorMessage()"
+        [title]="'ui.confirm_payment_settings' | translate"
+        [label]="'ui.what_is_the_secret_code' | translate"
+        [confirmLabel]="'ui.save_settings' | translate"
+        [errorMessage]="(secretCodeErrorMessage())"
         [isSubmitting]="saving()"
         (confirmSecretCode)="confirmSecretCode($event)"
         (cancelModal)="cancelSecretCode()"

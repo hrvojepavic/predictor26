@@ -1,4 +1,6 @@
-import { DatePipe } from '@angular/common';
+import { TranslationService } from '@services/translation.service';
+import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -19,11 +21,12 @@ interface TeamSlotContext {
 
 @Component({
   selector: 'app-admin-playoffs-page',
-  imports: [DatePipe, RouterLink],
+  imports: [TranslatePipe, LocalizedDatePipe, RouterLink],
   templateUrl: './admin-playoffs-page.component.html',
   styleUrl: './admin-playoffs-page.component.scss'
 })
 export class AdminPlayoffsPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly appState = inject(AppStateService);
   private readonly adminMatchesApi = inject(AdminMatchesApiProvider);
   private readonly competitionsApi = inject(CompetitionsApiProvider);
@@ -64,7 +67,7 @@ export class AdminPlayoffsPageComponent {
 
     this.setSaving(key, true);
     this.errorMessage.set(null);
-    this.successMessage.set(`Saving match ${context.match.matchNumber} ${context.side} slot...`);
+    this.successMessage.set(this.translations.translate('ui.saving_match_p0_p1_slot', { p0: context.match.matchNumber, p1: context.side === 'home' ? this.translations.translate('ui.home') : this.translations.translate('ui.away') }));
 
     this.adminMatchesApi
       .updatePlayoffMapping(context.match.id, {
@@ -75,11 +78,11 @@ export class AdminPlayoffsPageComponent {
       .subscribe({
         next: ({ match }) => {
           this.matches.update((matches) => matches.map((currentMatch) => (currentMatch.id === match.id ? match : currentMatch)));
-          this.successMessage.set(`Match ${match.matchNumber} ${context.side} slot saved.`);
+          this.successMessage.set(this.translations.translate('ui.match_p0_p1_slot_saved', { p0: match.matchNumber, p1: context.side === 'home' ? this.translations.translate('ui.home') : this.translations.translate('ui.away') }));
           this.setSaving(key, false);
         },
         error: () => {
-          this.errorMessage.set('Playoff mapping could not be saved.');
+          this.errorMessage.set(this.translations.translate("ui.playoff_mapping_could_not_be_saved"));
           this.setSaving(key, false);
         }
       });
@@ -108,13 +111,13 @@ export class AdminPlayoffsPageComponent {
             this.loading.set(false);
           },
           error: () => {
-            this.errorMessage.set('Teams could not be loaded.');
+            this.errorMessage.set(this.translations.translate("ui.teams_could_not_be_loaded"));
             this.loading.set(false);
           }
         });
       },
       error: () => {
-        this.errorMessage.set('Playoff matches could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.playoff_matches_could_not_be_loaded"));
         this.loading.set(false);
       }
     });

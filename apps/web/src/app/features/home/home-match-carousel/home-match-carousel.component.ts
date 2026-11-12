@@ -1,4 +1,6 @@
-import { DatePipe } from '@angular/common';
+import { TranslationService } from '@services/translation.service';
+import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 
 import {
@@ -26,11 +28,12 @@ interface MatchCardView extends LeaderboardDayMatch {
 
 @Component({
   selector: 'app-home-match-carousel',
-  imports: [DatePipe, MatchPredictionsModalComponent, ModalShellComponent, OddsFormatPipe, TeamNameComponent],
+  imports: [TranslatePipe, LocalizedDatePipe, MatchPredictionsModalComponent, ModalShellComponent, OddsFormatPipe, TeamNameComponent],
   templateUrl: './home-match-carousel.component.html',
   styleUrl: './home-match-carousel.component.scss'
 })
 export class HomeMatchCarouselComponent {
+  private readonly translations = inject(TranslationService);
   private readonly appState = inject(AppStateService);
   private readonly leaderboardService = inject(LeaderboardService);
   private readonly minimumModalSkeletonMs = 500;
@@ -44,12 +47,12 @@ export class HomeMatchCarouselComponent {
   protected readonly selectedMatchDetails = signal<LeaderboardMatchPredictionsResponse | null>(null);
   protected readonly selectedMatchError = signal<string | null>(null);
   protected readonly modalSkeletonVisible = signal(false);
-  protected readonly fallbackDayLabel = signal(getDayLabel(getLocalDateKey(new Date())));
+  protected readonly fallbackDayLabel = computed(() => getDayLabel(getLocalDateKey(new Date()), this.translations.language()));
   protected readonly skeletonUserCount = computed(() => this.selectedMatchDetails()?.users.length ?? this.leaderboardService.leaderboard()?.totalUsers ?? 7);
   protected readonly days = computed<MatchDayView[]>(() =>
     (this.leaderboardService.matchDays() ?? []).map((day) => ({
       ...day,
-      label: getDayLabel(day.date)
+      label: getDayLabel(day.date, this.translations.language())
     }))
   );
   protected readonly selectedDay = computed(() => this.days()[this.selectedDayIndex()] ?? null);
@@ -58,7 +61,7 @@ export class HomeMatchCarouselComponent {
     (this.selectedDay()?.matches ?? [])
       .map((match) => ({
         ...match,
-        statusLabel: getStatusLabel(match.status),
+        statusLabel: getStatusLabel(match.status, this.translations),
         winningOutcome: match.finalScore ? getScoreOutcome(match.finalScore.home, match.finalScore.away) : null,
         canOpenDetails: this.isLoggedIn() && match.roundLocked && !match.isPostponed
       }))
@@ -104,7 +107,7 @@ export class HomeMatchCarouselComponent {
       },
       error: () => {
         this.finishModalLoad(openedAt, match.matchId, () => {
-          this.selectedMatchError.set('Match tips could not be loaded.');
+          this.selectedMatchError.set(this.translations.translate("ui.match_tips_could_not_be_loaded"));
         });
       }
     });
@@ -136,7 +139,7 @@ export class HomeMatchCarouselComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Match schedule could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.match_schedule_could_not_be_loaded"));
         this.loading.set(false);
       }
     });
@@ -150,7 +153,6 @@ export class HomeMatchCarouselComponent {
     const selectedIndex = todayIndex >= 0 ? todayIndex : Math.max(nextIndex, 0);
 
     this.selectedDayIndex.set(selectedIndex);
-    this.fallbackDayLabel.set(days[selectedIndex]?.label ?? this.fallbackDayLabel());
   }
 
   private finishModalLoad(openedAt: number, matchId: number, update: () => void): void {
@@ -168,8 +170,8 @@ export class HomeMatchCarouselComponent {
   }
 }
 
-function getDayLabel(date: string): string {
-  return new Intl.DateTimeFormat('en-US', {
+function getDayLabel(date: string, language: string): string {
+  return new Intl.DateTimeFormat(language, {
     weekday: 'short',
     month: 'short',
     day: 'numeric'
@@ -184,13 +186,13 @@ function getLocalDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function getStatusLabel(status: LeaderboardMatchStatus): string {
+function getStatusLabel(status: LeaderboardMatchStatus, translations: TranslationService): string {
   const labels: Record<LeaderboardMatchStatus, string> = {
-    postponed: 'Postponed',
-    finished: 'Finished',
-    live: 'Live',
-    coming_up: 'Coming up',
-    undecided: 'Undecided'
+    postponed: translations.translate("ui.postponed"),
+    finished: translations.translate("ui.finished"),
+    live: translations.translate("ui.live"),
+    coming_up: translations.translate("ui.coming_up"),
+    undecided: translations.translate("ui.undecided")
   };
 
   return labels[status];

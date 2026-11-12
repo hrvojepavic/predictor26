@@ -1,3 +1,4 @@
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, effect, inject, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -10,7 +11,7 @@ export interface UsernameChangeConfirmation {
 
 @Component({
   selector: 'app-admin-username-modal',
-  imports: [ReactiveFormsModule, FormFieldStateDirective],
+  imports: [TranslatePipe, ReactiveFormsModule, FormFieldStateDirective],
   templateUrl: './admin-username-modal.component.html',
   styleUrl: './admin-username-modal.component.scss'
 })

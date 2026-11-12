@@ -1,12 +1,12 @@
 @if (points(); as result) {
   <span
     class="points-value"
-    [attr.aria-label]="title()"
-    [attr.title]="title()"
+    [attr.aria-label]="(title())"
+    [attr.title]="(title())"
     [style.color]="color()"
   >
     @if (result.state === 'void') {
-      VOID
+      {{ 'ui.void_2' | translate }}
     } @else if (result.earned === null) {
       ?
     } @else {

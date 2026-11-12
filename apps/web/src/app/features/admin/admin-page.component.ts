@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -13,11 +15,12 @@ import { SecretCodeModalComponent } from '@shared/components/secret-code-modal/s
 
 @Component({
   selector: 'app-admin-page',
-  imports: [ModalShellComponent, ReactiveFormsModule, RouterLink, SecretCodeModalComponent],
+  imports: [TranslatePipe, ModalShellComponent, ReactiveFormsModule, RouterLink, SecretCodeModalComponent],
   templateUrl: './admin-page.component.html',
   styleUrl: './admin-page.component.scss'
 })
 export class AdminPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly appState = inject(AppStateService);
   private readonly competitionsApi = inject(CompetitionsApiProvider);
   private readonly competitionsService = inject(CompetitionsService);
@@ -60,7 +63,7 @@ export class AdminPageComponent {
         this.loadingCompetitions.set(false);
       },
       error: () => {
-        this.competitionErrorMessage.set('Competitions could not be loaded.');
+        this.competitionErrorMessage.set(this.translations.translate("ui.competitions_could_not_be_loaded"));
         this.loadingCompetitions.set(false);
       }
     });
@@ -76,7 +79,7 @@ export class AdminPageComponent {
           this.loadingRuleTemplates.set(false);
         },
         error: () => {
-          this.competitionErrorMessage.set('Rule templates could not be loaded.');
+          this.competitionErrorMessage.set(this.translations.translate("ui.rule_templates_could_not_be_loaded"));
           this.loadingRuleTemplates.set(false);
         }
       });
@@ -112,7 +115,7 @@ export class AdminPageComponent {
 
   protected openCreateSecretCode(): void {
     if (this.createForm.invalid || this.creatingCompetition()) {
-      this.competitionErrorMessage.set('Please check the competition details and selected rule values.');
+      this.competitionErrorMessage.set(this.translations.translate("ui.please_check_the_competition_details_and_selected_rule_values"));
       return;
     }
 
@@ -173,7 +176,7 @@ export class AdminPageComponent {
           });
           this.createLogoPreview.set(null);
           this.resetRuleDefaults();
-          this.createSuccessMessage.set(`${competition.name} created.`);
+          this.createSuccessMessage.set(this.translations.translate('ui.p0_created', { p0: competition.name }));
           this.createCompetitionModalOpen.set(false);
           this.createSecretPromptOpen.set(false);
           this.creatingCompetition.set(false);
@@ -182,7 +185,7 @@ export class AdminPageComponent {
           const message =
             error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
               ? error.error.message
-              : 'Competition could not be created.';
+              : this.translations.translate("ui.competition_could_not_be_created");
 
           if (error instanceof HttpErrorResponse && error.status === 403) {
             this.createSecretCodeErrorMessage.set(message);
@@ -205,7 +208,7 @@ export class AdminPageComponent {
     }
 
     if (!file.type.startsWith('image/') || file.size > 150000) {
-      this.competitionErrorMessage.set('Logo must be an image smaller than 150 KB.');
+      this.competitionErrorMessage.set(this.translations.translate("ui.logo_must_be_an_image_smaller_than_150_kb"));
       input.value = '';
       return;
     }

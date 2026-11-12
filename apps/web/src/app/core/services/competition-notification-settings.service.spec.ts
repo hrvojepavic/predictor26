@@ -1,3 +1,4 @@
+import { testTranslationsProvider, initializeTestTranslations } from '../../../../testing/translations';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NotificationRemindersService } from './notification-reminders.service';
 import { signal } from '@angular/core';
@@ -17,14 +18,15 @@ describe('Competition notification settings state', () => {
   const enableReminders = vi.fn();
   const getPreferences = vi.fn();
   const savePreferences = vi.fn();
-  beforeEach(() => {
+  beforeEach(async () => {
     enableReminders.mockReset();
     getPreferences.mockReset(); savePreferences.mockReset();
-    TestBed.configureTestingModule({ providers: [
+    TestBed.configureTestingModule({ providers: [testTranslationsProvider,
       { provide: NotificationRemindersService, useValue: { enableReminders } },
       { provide: AppStateService, useValue: { token: signal('test') } },
       { provide: NotificationsApiProvider, useValue: { getPreferences, savePreferences } }
     ] });
+    await initializeTestTranslations();
   });
 
   it('ignores a stale response after switching competitions', async () => {

@@ -1,8 +1,9 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { AdminNotificationMember } from '@models/notification.models';
 import { RouterLink } from '@angular/router';
-import { notificationSetupMessages } from '@core/constants/notification-setup-messages';
 
 import { NotificationRemindersService } from '@services/notification-reminders.service';
 import { NotificationsApiProvider } from '@services/providers/notifications-api.provider';
@@ -11,11 +12,12 @@ import { SecretCodeModalComponent } from '@shared/components/secret-code-modal/s
 
 @Component({
   selector: 'app-admin-notifications-page',
-  imports: [ModalShellComponent, RouterLink, SecretCodeModalComponent],
+  imports: [TranslatePipe, ModalShellComponent, RouterLink, SecretCodeModalComponent],
   templateUrl: './admin-notifications-page.component.html',
   styleUrl: './admin-notifications-page.component.scss'
 })
 export class AdminNotificationsPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly notificationsApi = inject(NotificationsApiProvider);
   private readonly notificationRemindersService = inject(NotificationRemindersService);
 
@@ -69,7 +71,7 @@ export class AdminNotificationsPageComponent {
     this.notificationsApi.updateAdminSettings({ remindersEnabled: nextEnabled, secretCode }).subscribe({
       next: (settings) => {
         this.remindersEnabled.set(settings.remindersEnabled);
-        this.successMessage.set(settings.remindersEnabled ? 'Notification reminders enabled.' : 'Notification reminders disabled.');
+        this.successMessage.set(settings.remindersEnabled ? this.translations.translate("ui.notification_reminders_enabled") : this.translations.translate("ui.notification_reminders_disabled"));
         this.pendingRemindersEnabled.set(null);
         this.saving.set(false);
       },
@@ -77,7 +79,7 @@ export class AdminNotificationsPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Notification settings could not be saved.';
+            : this.translations.translate("ui.notification_settings_could_not_be_saved");
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.secretCodeErrorMessage.set(message);
@@ -102,11 +104,11 @@ export class AdminNotificationsPageComponent {
 
     this.notificationsApi.sendTestNotification().subscribe({
       next: ({ sent, subscriptions }) => {
-        this.successMessage.set(`Test notification sent to ${sent}/${subscriptions} active subscriptions.`);
+        this.successMessage.set(this.translations.translate('ui.test_notification_sent_to_p0_p1_active_subscriptions', { p0: sent, p1: subscriptions }));
         this.testing.set(false);
       },
       error: () => {
-        this.errorMessage.set('Test notification could not be sent.');
+        this.errorMessage.set(this.translations.translate("ui.test_notification_could_not_be_sent"));
         this.testing.set(false);
       }
     });
@@ -124,9 +126,9 @@ export class AdminNotificationsPageComponent {
     const result = await this.notificationRemindersService.enableCurrentBrowserForAdminTest();
 
     if (result.status === 'subscribed') {
-      this.successMessage.set('This browser is ready for admin test notifications.');
+      this.successMessage.set(this.translations.translate("ui.this_browser_is_ready_for_admin_test_notifications"));
     } else {
-      this.errorMessage.set(notificationSetupMessages[result.status]);
+      this.errorMessage.set(this.translations.translate(`notifications.setup.${result.status}`));
     }
 
     this.enablingBrowser.set(false);
@@ -146,7 +148,7 @@ export class AdminNotificationsPageComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Notification settings could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.notification_settings_could_not_be_loaded"));
         this.loading.set(false);
       }
     });

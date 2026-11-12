@@ -1,8 +1,10 @@
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, inject, output, signal } from '@angular/core';
 
 import { CompetitionsApiProvider } from '@services/providers/competitions-api.provider';
 
 @Component({
+  imports: [TranslatePipe],
   selector: 'app-rules-modal',
   templateUrl: './rules-modal.component.html',
   styleUrl: './rules-modal.component.scss'

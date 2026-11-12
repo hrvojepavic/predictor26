@@ -1,24 +1,24 @@
 <section class="admin-competition-page" aria-labelledby="admin-competition-title">
   <header class="page-header">
     <div>
-      <p class="section-label">Admin competition</p>
-      <h1 id="admin-competition-title">{{ activeCompetition()?.name || 'Competition' }}</h1>
-      <a class="back-link" routerLink="/admin">Back to admin panel</a>
+      <p class="section-label">{{ 'ui.admin_competition' | translate }}</p>
+      <h1 id="admin-competition-title">{{ activeCompetition()?.name || ('ui.competition' | translate) }}</h1>
+      <a class="back-link" routerLink="/admin">{{ 'ui.back_to_admin_panel' | translate }}</a>
     </div>
   </header>
 
   @if (!activeCompetition()) {
-    <p class="status-message status-error">Choose a competition from Admin first.</p>
+    <p class="status-message status-error">{{ 'ui.choose_a_competition_from_admin_first' | translate }}</p>
   } @else {
-    <nav class="admin-tool-grid" aria-label="Competition admin tools">
+    <nav class="admin-tool-grid" [attr.aria-label]="'ui.competition_admin_tools' | translate">
       <a class="tool-card" [routerLink]="setupRouterLink()">
         <span class="tool-icon tool-icon-settings" aria-hidden="true">
           <span></span>
           <span></span>
         </span>
         <span class="tool-content">
-          <span class="tool-title">Competition setup</span>
-          <span class="tool-description">Configure the OddsPortal source URL, rules, and competition status.</span>
+          <span class="tool-title">{{ 'ui.competition_setup' | translate }}</span>
+          <span class="tool-description">{{ 'ui.configure_the_oddsportal_source_url_rules_and_competition_status' | translate }}</span>
         </span>
       </a>
 
@@ -28,8 +28,8 @@
           <span></span>
         </span>
         <span class="tool-content">
-          <span class="tool-title">Matches</span>
-          <span class="tool-description">Import fixtures and enter final scores.</span>
+          <span class="tool-title">{{ 'ui.matches' | translate }}</span>
+          <span class="tool-description">{{ 'ui.import_fixtures_and_enter_final_scores' | translate }}</span>
         </span>
       </a>
 
@@ -39,8 +39,8 @@
           <span></span>
         </span>
         <span class="tool-content">
-          <span class="tool-title">Users</span>
-          <span class="tool-description">Manage competition users, payment status, and app roles.</span>
+          <span class="tool-title">{{ 'ui.users' | translate }}</span>
+          <span class="tool-description">{{ 'ui.manage_competition_users_payment_status_and_app_roles' | translate }}</span>
         </span>
       </a>
 
@@ -50,8 +50,8 @@
           <span></span>
         </span>
         <span class="tool-content">
-          <span class="tool-title">Teams</span>
-          <span class="tool-description">Review imported teams and manage display names.</span>
+          <span class="tool-title">{{ 'ui.teams' | translate }}</span>
+          <span class="tool-description">{{ 'ui.review_imported_teams_and_manage_display_names' | translate }}</span>
         </span>
       </a>
 
@@ -62,8 +62,8 @@
             <span></span>
           </span>
           <span class="tool-content">
-            <span class="tool-title">Playoffs</span>
-            <span class="tool-description">Map knockout placeholders to qualified teams.</span>
+            <span class="tool-title">{{ 'ui.playoffs' | translate }}</span>
+            <span class="tool-description">{{ 'ui.map_knockout_placeholders_to_qualified_teams' | translate }}</span>
           </span>
         </a>
       }
@@ -74,8 +74,8 @@
           <span></span>
         </span>
         <span class="tool-content">
-          <span class="tool-title">Payments</span>
-          <span class="tool-description">Manage IBAN, KEKS, Revolut, and cash payment options.</span>
+          <span class="tool-title">{{ 'ui.payments' | translate }}</span>
+          <span class="tool-description">{{ 'ui.manage_iban_keks_revolut_and_cash_payment_options' | translate }}</span>
         </span>
       </a>
 
@@ -85,8 +85,8 @@
           <span></span>
         </span>
         <span class="tool-content">
-          <span class="tool-title">Notifications</span>
-          <span class="tool-description">Enable reminders and send test push notifications.</span>
+          <span class="tool-title">{{ 'ui.notifications' | translate }}</span>
+          <span class="tool-description">{{ 'ui.enable_reminders_and_send_test_push_notifications' | translate }}</span>
         </span>
       </a>
 
@@ -96,8 +96,8 @@
           <span></span>
         </span>
         <span class="tool-content">
-          <span class="tool-title">Scheduled jobs</span>
-          <span class="tool-description">Monitor reminder runs, due work, and recent deliveries.</span>
+          <span class="tool-title">{{ 'ui.scheduled_jobs' | translate }}</span>
+          <span class="tool-description">{{ 'ui.monitor_reminder_runs_due_work_and_recent_deliveries' | translate }}</span>
         </span>
       </a>
     </nav>

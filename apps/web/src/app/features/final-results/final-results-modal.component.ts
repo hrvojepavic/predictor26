@@ -1,15 +1,18 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 
 import { FinalResults, FinalResultsWinner } from '@services/final-results.service';
 
 @Component({
   selector: 'app-final-results-modal',
-  imports: [DecimalPipe],
+  imports: [TranslatePipe, DecimalPipe],
   templateUrl: './final-results-modal.component.html',
   styleUrl: './final-results-modal.component.scss'
 })
 export class FinalResultsModalComponent {
+  private readonly translations = inject(TranslationService);
   readonly results = input.required<FinalResults>();
   readonly closeModal = output<void>();
 
@@ -22,15 +25,15 @@ export class FinalResultsModalComponent {
   });
 
   protected readonly poolLabel = computed(() => this.formatCurrency(this.results().totalPrizePool));
-  protected readonly sectionLabel = computed(() => (this.results().isCompetitionFinished ? 'Competition Complete' : 'As it stands'));
+  protected readonly sectionLabel = computed(() => (this.results().isCompetitionFinished ? this.translations.translate("ui.competition_complete") : this.translations.translate("ui.as_it_stands")));
   protected readonly title = computed(() => {
     const results = this.results();
 
-    return results.isCompetitionFinished ? 'Final Rankings' : `Rankings After ${results.roundLabel ?? 'Current Week'}`;
+    return results.isCompetitionFinished ? this.translations.translate("ui.final_rankings") : this.translations.translate('ui.rankings_after_p0', { p0: results.roundLabel ?? this.translations.translate('ui.current_week') });
   });
 
   protected formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en', {
+    return new Intl.NumberFormat(this.translations.language(), {
       style: 'currency',
       currency: 'EUR',
       maximumFractionDigits: value % 1 === 0 ? 0 : 2
@@ -38,13 +41,7 @@ export class FinalResultsModalComponent {
   }
 
   protected placeLabel(place: FinalResultsWinner['place']): string {
-    const labels = new Map<FinalResultsWinner['place'], string>([
-      [1, '1st'],
-      [2, '2nd'],
-      [3, '3rd']
-    ]);
-
-    return labels.get(place) ?? `${place}`;
+    return this.translations.translate('ordinal.' + ({ 1: 'one', 2: 'two', 3: 'three' } as Record<number, string>)[place], { count: place });
   }
 }
 

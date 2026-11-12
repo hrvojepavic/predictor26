@@ -1,10 +1,10 @@
 <section class="auth-page" aria-labelledby="login-title">
   <div class="auth-panel">
-    <h1 id="login-title">Login</h1>
+    <h1 id="login-title">{{ 'ui.login' | translate }}</h1>
 
     <form class="auth-form" [formGroup]="loginForm" (ngSubmit)="login()">
       <label class="field">
-        <span>Username</span>
+        <span>{{ 'ui.username' | translate }}</span>
         <input
           #usernameInput
           appFormFieldState="required"
@@ -20,7 +20,7 @@
       </label>
 
       <label class="field">
-        <span>Password</span>
+        <span>{{ 'ui.password' | translate }}</span>
         <input
           #passwordInput
           appFormFieldState="required"
@@ -32,10 +32,10 @@
         />
       </label>
 
-      <p class="form-error" [class.form-error-visible]="errorMessage()">{{ errorMessage() || '&nbsp;' }}</p>
+      <p class="form-error" [class.form-error-visible]="errorMessage()">{{ (errorMessage() || ' ') }}</p>
 
       <button class="submit-button" type="submit" [disabled]="isSubmitting()">
-        {{ isSubmitting() ? 'Logging in...' : 'Login' }}
+        {{ isSubmitting() ? ('ui.logging_in' | translate) : ('ui.login' | translate) }}
       </button>
     </form>
   </div>

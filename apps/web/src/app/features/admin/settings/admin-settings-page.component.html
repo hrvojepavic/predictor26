@@ -1,27 +1,27 @@
 <section class="admin-settings-page" aria-labelledby="admin-settings-title">
   <header class="page-header">
     <div>
-      <p class="section-label">Admin</p>
-      <h1 id="admin-settings-title">Settings</h1>
-      <a class="back-link" routerLink="/admin">Back to admin</a>
+      <p class="section-label">{{ 'ui.admin' | translate }}</p>
+      <h1 id="admin-settings-title">{{ 'ui.settings' | translate }}</h1>
+      <a class="back-link" routerLink="/admin">{{ 'ui.back_to_admin' | translate }}</a>
     </div>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (successMessage(); as message) {
-    <p class="status-message status-success">{{ message }}</p>
+    <p class="status-message status-success">{{ (message) }}</p>
   }
 
   @if (loading()) {
-    <p class="status-message">Loading registration settings...</p>
+    <p class="status-message">{{ 'ui.loading_registration_settings' | translate }}</p>
   } @else {
     <section class="settings-panel" aria-labelledby="registrations-title">
       <div class="settings-copy">
-        <h2 id="registrations-title">Registrations</h2>
-        <p>Registrations are enabled by default. Disable them when new account creation should be closed.</p>
+        <h2 id="registrations-title">{{ 'ui.registrations' | translate }}</h2>
+        <p>{{ 'ui.registrations_are_enabled_by_default_disable_them_when_new_account_creation_should_be_clos' | translate }}</p>
       </div>
 
       <button
@@ -31,7 +31,7 @@
         [disabled]="saving()"
         (click)="toggleRegistrations()"
       >
-        {{ saving() ? 'Saving...' : registrationsDisabled() ? 'Disabled' : 'Enabled' }}
+        {{ saving() ? ('ui.saving' | translate) : registrationsDisabled() ? ('ui.disabled' | translate) : ('ui.enabled' | translate) }}
       </button>
     </section>
   }
@@ -46,10 +46,10 @@
       (closeModal)="cancelSecretCode()"
     >
       <app-secret-code-modal
-        title="Confirm registration settings"
-        label="What is the secret code?"
-        [confirmLabel]="pendingRegistrationsDisabled() ? 'Disable registrations' : 'Enable registrations'"
-        [errorMessage]="secretCodeErrorMessage()"
+        [title]="'ui.confirm_registration_settings' | translate"
+        [label]="'ui.what_is_the_secret_code' | translate"
+        [confirmLabel]="pendingRegistrationsDisabled() ? ('ui.disable_registrations' | translate) : ('ui.enable_registrations' | translate)"
+        [errorMessage]="(secretCodeErrorMessage())"
         [isSubmitting]="saving()"
         (confirmSecretCode)="confirmSecretCode($event)"
         (cancelModal)="cancelSecretCode()"

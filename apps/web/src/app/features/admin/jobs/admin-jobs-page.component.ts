@@ -1,5 +1,8 @@
+import { TranslationService } from '@services/translation.service';
+import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -19,11 +22,12 @@ const liveScoreRunColors = ['#eff6ff', '#f0fdf4', '#fff7ed', '#fdf2f8', '#f5f3ff
 
 @Component({
   selector: 'app-admin-jobs-page',
-  imports: [DatePipe, DecimalPipe, ModalShellComponent, ReactiveFormsModule, RouterLink, SecretCodeModalComponent],
+  imports: [TranslatePipe, LocalizedDatePipe, DecimalPipe, ModalShellComponent, ReactiveFormsModule, RouterLink, SecretCodeModalComponent],
   templateUrl: './admin-jobs-page.component.html',
   styleUrl: './admin-jobs-page.component.scss'
 })
 export class AdminJobsPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly adminJobsApi = inject(AdminJobsApiProvider);
   private readonly formBuilder = inject(FormBuilder);
   private readonly notificationReminderJobId = 'prediction-reminders' as const;
@@ -105,7 +109,7 @@ export class AdminJobsPageComponent {
     return job ? job.intervalMs / 60_000 : null;
   });
 
-  protected readonly autoImportWeekdayLabel = computed(() => weekdayLabel(this.autoMatchImportJob()?.weekday ?? 2));
+  protected readonly autoImportWeekdayLabel = computed(() => weekdayLabel(this.autoMatchImportJob()?.weekday ?? 2, this.translations));
 
   constructor() {
     this.loadJob();
@@ -176,7 +180,7 @@ export class AdminJobsPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Scheduled job could not be run.';
+            : this.translations.translate("ui.scheduled_job_could_not_be_run");
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.secretCodeErrorMessage.set(message);
@@ -213,7 +217,7 @@ export class AdminJobsPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Scheduled job setting could not be updated.';
+            : this.translations.translate("ui.scheduled_job_setting_could_not_be_updated");
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.secretCodeErrorMessage.set(message);
@@ -241,7 +245,7 @@ export class AdminJobsPageComponent {
       next: ({ job }) => {
         this.upsertJob(job);
         this.patchAutoImportForm(job);
-        this.successMessage.set(`${job.name} settings saved.`);
+        this.successMessage.set(this.translations.translate('ui.p0_settings_saved', { p0: job.name }));
         this.confirmingAutoImportSettings.set(false);
         this.runningJobId.set(null);
       },
@@ -249,7 +253,7 @@ export class AdminJobsPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Auto import settings could not be saved.';
+            : this.translations.translate("ui.auto_import_settings_could_not_be_saved");
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.secretCodeErrorMessage.set(message);
@@ -278,7 +282,7 @@ export class AdminJobsPageComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Scheduled job details could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.scheduled_job_details_could_not_be_loaded"));
         this.loading.set(false);
       }
     });
@@ -293,18 +297,18 @@ export class AdminJobsPageComponent {
 
   private getRunSuccessMessage(job: AdminJob, run: unknown): string {
     if (isNotificationJob(job) && isNotificationRun(run)) {
-      return `Reminder job finished. Sent ${run.sentCount}/${run.candidateCount} due reminders.`;
+      return this.translations.translate('ui.reminder_job_finished_sent_p0_p1_due_reminders', { p0: run.sentCount, p1: run.candidateCount });
     }
 
     if (isLiveScoreJob(job) && isLiveScoreRun(run)) {
-      return `Live score sync finished. Checked ${run.checkedMatches}, updated ${run.updatedMatches}.`;
+      return this.translations.translate('ui.live_score_sync_finished_checked_p0_updated_p1', { p0: run.checkedMatches, p1: run.updatedMatches });
     }
 
     if (isAutoMatchImportJob(job) && isAutoMatchImportRun(run)) {
-      return `Match import finished with ${run.status}. Imported ${run.imported}, synced odds for ${run.oddsSynced}.`;
+      return this.translations.translate('ui.match_import_finished_with_p0_imported_p1_synced_odds_for_p2', { p0: run.status, p1: run.imported, p2: run.oddsSynced });
     }
 
-    return 'Scheduled job finished.';
+    return this.translations.translate("ui.scheduled_job_finished");
   }
 
   private patchAutoImportForm(job: AdminJob): void {
@@ -345,6 +349,6 @@ function isAutoMatchImportRun(run: unknown): run is AdminAutoMatchImportJob['las
   return typeof run === 'object' && run !== null && 'imported' in run && 'oddsSynced' in run;
 }
 
-function weekdayLabel(weekday: number): string {
-  return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][weekday] ?? 'Tuesday';
+function weekdayLabel(weekday: number, translations: TranslationService): string {
+  return [translations.translate('ui.sunday'), translations.translate("ui.monday"), translations.translate("ui.tuesday"), translations.translate("ui.wednesday"), translations.translate("ui.thursday"), translations.translate("ui.friday"), translations.translate("ui.saturday")][weekday] ?? translations.translate('ui.tuesday');
 }

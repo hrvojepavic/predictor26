@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -23,11 +25,12 @@ interface TeamRow extends AdminTeam {
 
 @Component({
   selector: 'app-admin-teams-page',
-  imports: [AdminTeamLogoModalComponent, ModalShellComponent, RouterLink, SecretCodeModalComponent],
+  imports: [TranslatePipe, AdminTeamLogoModalComponent, ModalShellComponent, RouterLink, SecretCodeModalComponent],
   templateUrl: './admin-teams-page.component.html',
   styleUrl: './admin-teams-page.component.scss'
 })
 export class AdminTeamsPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly adminTeamsApi = inject(AdminTeamsApiProvider);
 
   protected readonly teams = signal<AdminTeam[]>([]);
@@ -126,7 +129,7 @@ export class AdminTeamsPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Team display name could not be updated.';
+            : this.translations.translate("ui.team_display_name_could_not_be_updated");
 
         if (error instanceof HttpErrorResponse && [400, 403, 404].includes(error.status)) {
           this.displayNameErrorMessage.set(message);
@@ -178,7 +181,7 @@ export class AdminTeamsPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Team icon could not be updated.';
+            : this.translations.translate("ui.team_icon_could_not_be_updated");
 
         if (error instanceof HttpErrorResponse && [400, 403, 404].includes(error.status)) {
           this.logoErrorMessage.set(message);
@@ -207,7 +210,7 @@ export class AdminTeamsPageComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Teams could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.teams_could_not_be_loaded"));
         this.loading.set(false);
       }
     });

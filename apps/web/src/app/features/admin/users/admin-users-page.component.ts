@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
@@ -21,11 +23,12 @@ interface PendingVerificationChange {
 
 @Component({
   selector: 'app-admin-users-page',
-  imports: [RouterLink, AdminUsernameModalComponent, ModalShellComponent, SecretCodeModalComponent],
+  imports: [TranslatePipe, RouterLink, AdminUsernameModalComponent, ModalShellComponent, SecretCodeModalComponent],
   templateUrl: './admin-users-page.component.html',
   styleUrl: './admin-users-page.component.scss'
 })
 export class AdminUsersPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly adminUsersApi = inject(AdminUsersApiProvider);
   private readonly appState = inject(AppStateService);
   private readonly router = inject(Router);
@@ -112,7 +115,7 @@ export class AdminUsersPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Role update failed. Please try again.';
+            : this.translations.translate("ui.role_update_failed_please_try_again");
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.secretCodeErrorMessage.set(message);
@@ -164,7 +167,7 @@ export class AdminUsersPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Verification update failed. Please try again.';
+            : this.translations.translate("ui.verification_update_failed_please_try_again");
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.verificationSecretCodeErrorMessage.set(message);
@@ -215,7 +218,7 @@ export class AdminUsersPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Username could not be changed.';
+            : this.translations.translate("ui.username_could_not_be_changed");
 
         if (error instanceof HttpErrorResponse && [400, 403, 409].includes(error.status)) {
           this.usernameErrorMessage.set(message);
@@ -245,7 +248,7 @@ export class AdminUsersPageComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Users could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.users_could_not_be_loaded"));
         this.loading.set(false);
       }
     });

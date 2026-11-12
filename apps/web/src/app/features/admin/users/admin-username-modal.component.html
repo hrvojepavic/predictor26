@@ -1,12 +1,12 @@
 <form class="username-form" [formGroup]="usernameForm" (ngSubmit)="confirm()">
   <header class="modal-header">
-    <h2 id="username-modal-title">Edit username</h2>
-    <button class="icon-button" type="button" aria-label="Close" [disabled]="isSubmitting()" (click)="cancel()">×</button>
+    <h2 id="username-modal-title">{{ 'ui.edit_username' | translate }}</h2>
+    <button class="icon-button" type="button" [attr.aria-label]="'ui.close' | translate" [title]="'ui.close' | translate" [disabled]="isSubmitting()" (click)="cancel()">×</button>
   </header>
 
   <div class="modal-content">
     <label class="field">
-      <span>Username</span>
+      <span>{{ 'ui.username' | translate }}</span>
       <input
         type="text"
         name="username"
@@ -23,7 +23,7 @@
     </label>
 
     <label class="field">
-      <span>What is the secret code?</span>
+      <span>{{ 'ui.what_is_the_secret_code' | translate }}</span>
       <input
         type="password"
         autocomplete="current-password"
@@ -34,13 +34,13 @@
       />
     </label>
 
-    <p class="form-error" [class.form-error-visible]="errorMessage()">{{ errorMessage() || '&nbsp;' }}</p>
+    <p class="form-error" [class.form-error-visible]="errorMessage()">{{ (errorMessage() || ' ') }}</p>
   </div>
 
   <footer class="modal-footer">
-    <button class="secondary-button" type="button" [disabled]="isSubmitting()" (click)="cancel()">Cancel</button>
+    <button class="secondary-button" type="button" [disabled]="isSubmitting()" (click)="cancel()">{{ 'ui.cancel' | translate }}</button>
     <button class="confirm-button" type="submit" [disabled]="isSubmitting() || usernameForm.invalid">
-      {{ isSubmitting() ? 'Saving...' : 'Save username' }}
+      {{ isSubmitting() ? ('ui.saving' | translate) : ('ui.save_username' | translate) }}
     </button>
   </footer>
 </form>

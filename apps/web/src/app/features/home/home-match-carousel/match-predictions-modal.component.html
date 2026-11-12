@@ -5,20 +5,20 @@
       -
       <app-team-name [name]="match().awayTeam.name" [flag]="match().awayTeam.flag" />
     </h2>
-    <p>{{ lockedLabel() }} · {{ submittedCount() }}/{{ userCount() }}</p>
+    <p>{{ (lockedLabel()) }} · {{ (submittedCount()) }}/{{ (userCount()) }}</p>
   </div>
-  <button class="icon-button" type="button" aria-label="Close match tips" (click)="close()">×</button>
+  <button class="icon-button" type="button" [attr.aria-label]="'ui.close_match_tips' | translate" [title]="'ui.close_match_tips' | translate" (click)="close()">×</button>
 </header>
 
 <div class="modal-content">
   @if (loading()) {
-    <div class="modal-skeleton-list" role="status" aria-label="Loading match tips">
+    <div class="modal-skeleton-list" role="status" [attr.aria-label]="'ui.loading_match_tips' | translate">
       @for (item of skeletonItems(); track item) {
         <span class="modal-skeleton-row" aria-hidden="true"></span>
       }
     </div>
   } @else if (errorMessage(); as message) {
-    <p class="modal-error">{{ message }}</p>
+    <p class="modal-error">{{ (message) }}</p>
   } @else if (details(); as loadedDetails) {
     @for (user of loadedDetails.users; track user.userId) {
       <article class="tip-row">
@@ -47,5 +47,5 @@
 </div>
 
 <footer class="modal-footer">
-  <button class="close-button" type="button" (click)="close()">Close</button>
+  <button class="close-button" type="button" (click)="close()">{{ 'ui.close' | translate }}</button>
 </footer>

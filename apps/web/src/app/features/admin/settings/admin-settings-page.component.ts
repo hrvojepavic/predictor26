@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -8,11 +10,12 @@ import { SecretCodeModalComponent } from '@shared/components/secret-code-modal/s
 
 @Component({
   selector: 'app-admin-settings-page',
-  imports: [ModalShellComponent, RouterLink, SecretCodeModalComponent],
+  imports: [TranslatePipe, ModalShellComponent, RouterLink, SecretCodeModalComponent],
   templateUrl: './admin-settings-page.component.html',
   styleUrl: './admin-settings-page.component.scss'
 })
 export class AdminSettingsPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly competitionSettingsApi = inject(CompetitionSettingsApiProvider);
 
   protected readonly loading = signal(true);
@@ -60,7 +63,7 @@ export class AdminSettingsPageComponent {
     this.competitionSettingsApi.updateAdminSettings({ registrationsDisabled: nextDisabled, secretCode }).subscribe({
       next: (settings) => {
         this.registrationsDisabled.set(settings.registrationsDisabled);
-        this.successMessage.set(settings.registrationsDisabled ? 'Registrations disabled.' : 'Registrations enabled.');
+        this.successMessage.set(settings.registrationsDisabled ? this.translations.translate("ui.registrations_disabled") : this.translations.translate("ui.registrations_enabled"));
         this.pendingRegistrationsDisabled.set(null);
         this.saving.set(false);
       },
@@ -68,7 +71,7 @@ export class AdminSettingsPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Registration settings could not be saved.';
+            : this.translations.translate("ui.registration_settings_could_not_be_saved");
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.secretCodeErrorMessage.set(message);
@@ -93,7 +96,7 @@ export class AdminSettingsPageComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Registration settings could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.registration_settings_could_not_be_loaded"));
         this.loading.set(false);
       }
     });

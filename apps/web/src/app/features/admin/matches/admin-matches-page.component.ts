@@ -1,5 +1,7 @@
+import { TranslationService } from '@services/translation.service';
+import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -24,10 +26,10 @@ type PendingSecretAction = 'schedule' | 'odds' | 'schedule-with-odds' | 'release
 
 @Component({
   selector: 'app-admin-matches-page',
-  imports: [
+  imports: [TranslatePipe,
     AdminManualMatchModalComponent,
     AdminMatchKickoffModalComponent,
-    DatePipe,
+    LocalizedDatePipe,
     ModalShellComponent,
     OddsFormatPipe,
     RouterLink,
@@ -38,6 +40,7 @@ type PendingSecretAction = 'schedule' | 'odds' | 'schedule-with-odds' | 'release
   styleUrl: './admin-matches-page.component.scss'
 })
 export class AdminMatchesPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly adminMatchesApi = inject(AdminMatchesApiProvider);
 
   protected readonly matches = signal<Match[]>([]);
@@ -71,18 +74,18 @@ export class AdminMatchesPageComponent {
         ? 'Syncing...'
         : 'Importing...'
       : this.matches().length > 0
-        ? 'Sync fixtures'
-        : 'Import fixtures'
+        ? this.translations.translate("ui.sync_fixtures")
+        : this.translations.translate("ui.import_fixtures")
   );
-  protected readonly oddsActionLabel = computed(() => (this.syncingOdds() ? 'Syncing odds...' : 'Sync odds'));
+  protected readonly oddsActionLabel = computed(() => (this.syncingOdds() ? this.translations.translate("ui.syncing_odds") : this.translations.translate("ui.sync_odds")));
   protected readonly combinedImportActionLabel = computed(() =>
     this.importingWithOdds()
       ? this.matches().length > 0
         ? 'Syncing...'
         : 'Importing...'
       : this.matches().length > 0
-        ? 'Sync fixtures and odds'
-        : 'Import fixtures and odds'
+        ? this.translations.translate("ui.sync_fixtures_and_odds")
+        : this.translations.translate("ui.import_fixtures_and_odds")
   );
   private readonly saveTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
@@ -178,7 +181,7 @@ export class AdminMatchesPageComponent {
     this.adminMatchesApi.createMatch(match).subscribe({
       next: ({ match: createdMatch, matches }) => {
         this.setMatches(matches);
-        this.importMessage.set(`Match ${createdMatch.matchNumber} added.`);
+        this.importMessage.set(this.translations.translate('ui.match_p0_added', { p0: createdMatch.matchNumber }));
         this.addMatchModalOpen.set(false);
         this.addingMatch.set(false);
         this.ensureSelectedFilterHasResults();
@@ -187,7 +190,7 @@ export class AdminMatchesPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Match could not be added.';
+            : this.translations.translate("ui.match_could_not_be_added");
 
         if (error instanceof HttpErrorResponse && [400, 403].includes(error.status)) {
           this.addMatchErrorMessage.set(message);
@@ -239,8 +242,8 @@ export class AdminMatchesPageComponent {
         this.editingKickoffMatch.set(null);
         this.importMessage.set(
           !match.odds && updatedMatch.odds
-            ? `Match ${updatedMatch.matchNumber} details and odds saved.`
-            : `Match ${updatedMatch.matchNumber} details saved.`
+            ? this.translations.translate('ui.match_p0_details_and_odds_saved', { p0: updatedMatch.matchNumber })
+            : this.translations.translate('ui.match_p0_details_saved', { p0: updatedMatch.matchNumber })
         );
         this.ensureSelectedFilterHasResults();
         this.setSaving(match.id, false);
@@ -249,7 +252,7 @@ export class AdminMatchesPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Match details could not be saved.';
+            : this.translations.translate("ui.match_details_could_not_be_saved");
 
         if (error instanceof HttpErrorResponse && [400, 403].includes(error.status)) {
           this.kickoffErrorMessage.set(message);
@@ -322,36 +325,36 @@ export class AdminMatchesPageComponent {
     const pendingAction = this.pendingSecretAction();
 
     if (pendingAction === 'odds') {
-      return 'Confirm odds sync';
+      return this.translations.translate("ui.confirm_odds_sync");
     }
 
     if (pendingAction === 'schedule-with-odds') {
-      return 'Confirm fixture and odds sync';
+      return this.translations.translate("ui.confirm_fixture_and_odds_sync");
     }
 
     if (pendingAction === 'release-round') {
-      return 'Confirm week release';
+      return this.translations.translate("ui.confirm_week_release");
     }
 
     if (pendingAction === 'postponed') {
-      return this.pendingPostponedMatch()?.isPostponed ? 'Confirm match restore' : 'Confirm match postponement';
+      return this.pendingPostponedMatch()?.isPostponed ? this.translations.translate("ui.confirm_match_restore") : this.translations.translate("ui.confirm_match_postponement");
     }
 
-    return 'Confirm schedule sync';
+    return this.translations.translate("ui.confirm_schedule_sync");
   }
 
   protected secretActionConfirmLabel(): string {
     const pendingAction = this.pendingSecretAction();
 
     if (pendingAction === 'postponed') {
-      return this.pendingPostponedMatch()?.isPostponed ? 'Restore match' : 'Mark postponed';
+      return this.pendingPostponedMatch()?.isPostponed ? this.translations.translate("ui.restore_match") : this.translations.translate("ui.mark_postponed");
     }
 
     if (pendingAction === 'release-round') {
-      return 'Release week';
+      return this.translations.translate("ui.release_week");
     }
 
-    return 'Start sync';
+    return this.translations.translate("ui.start_sync");
   }
 
   private importMatches(secretCode: string): void {
@@ -367,12 +370,12 @@ export class AdminMatchesPageComponent {
     this.adminMatchesApi.importMatches({ secretCode }).subscribe({
       next: ({ imported, validation, matches }) => {
         this.setMatches(matches);
-        this.importMessage.set([`${imported} matches imported.`, validation ? validationMessage(validation) : null].filter(Boolean).join(' '));
+        this.importMessage.set([this.translations.translate('ui.p0_matches_imported', { p0: imported }), validation ? validationMessage(validation, this.translations) : null].filter(Boolean).join(' '));
         this.pendingSecretAction.set(null);
         this.importing.set(false);
       },
       error: (error: unknown) => {
-        this.handleSecretActionError(error, 'Matches could not be imported.');
+        this.handleSecretActionError(error, this.translations.translate("ui.matches_could_not_be_imported"));
         this.importing.set(false);
       }
     });
@@ -393,20 +396,19 @@ export class AdminMatchesPageComponent {
         this.setMatches(matches);
         this.importMessage.set(
           [
-            `${synced} new match odds synced.`,
-            skippedExisting > 0 ? `${skippedExisting} skipped because odds already exist.` : null,
-            skippedFinished > 0 ? `${skippedFinished} skipped because matches are finished.` : null,
-            skippedUnresolved > 0 ? `${skippedUnresolved} skipped because teams are still placeholders.` : null,
-            unmatched > 0 ? `${unmatched} eligible matches were not found in the odds source.` : null
+            this.translations.translate('ui.p0_new_match_odds_synced', { p0: synced }),
+            skippedExisting > 0 ? this.translations.translate('ui.p0_skipped_because_odds_already_exist', { p0: skippedExisting }) : null,
+            skippedFinished > 0 ? this.translations.translate('ui.p0_skipped_because_matches_are_finished', { p0: skippedFinished }) : null,
+            skippedUnresolved > 0 ? this.translations.translate('ui.p0_skipped_because_teams_are_still_placeholders', { p0: skippedUnresolved }) : null,
+            unmatched > 0 ? this.translations.translate('ui.p0_eligible_matches_were_not_found_in_the_odds_source', { p0: unmatched }) : null
           ]
-            .filter((message): message is string => message !== null)
-            .join(' ')
+            .filter(message => message !== null).join(' ')
         );
         this.pendingSecretAction.set(null);
         this.syncingOdds.set(false);
       },
       error: (error: unknown) => {
-        this.handleSecretActionError(error, 'Odds could not be synced from Game-365.');
+        this.handleSecretActionError(error, this.translations.translate("ui.odds_could_not_be_synced_from_game_365"));
         this.syncingOdds.set(false);
       }
     });
@@ -427,22 +429,21 @@ export class AdminMatchesPageComponent {
         this.setMatches(matches);
         this.importMessage.set(
           [
-            `${imported} matches imported.`,
-            `${odds.synced} new match odds synced.`,
-            odds.skippedExisting > 0 ? `${odds.skippedExisting} skipped because odds already exist.` : null,
-            odds.skippedFinished > 0 ? `${odds.skippedFinished} skipped because matches are finished.` : null,
-            odds.skippedUnresolved > 0 ? `${odds.skippedUnresolved} skipped because teams are still placeholders.` : null,
-            odds.unmatched > 0 ? `${odds.unmatched} eligible matches were not found in the odds source.` : null,
-            validationMessage(validation)
+            this.translations.translate('ui.p0_matches_imported', { p0: imported }),
+            this.translations.translate('ui.p0_new_match_odds_synced', { p0: odds.synced }),
+            odds.skippedExisting > 0 ? this.translations.translate('ui.p0_skipped_because_odds_already_exist', { p0: odds.skippedExisting }) : null,
+            odds.skippedFinished > 0 ? this.translations.translate('ui.p0_skipped_because_matches_are_finished', { p0: odds.skippedFinished }) : null,
+            odds.skippedUnresolved > 0 ? this.translations.translate('ui.p0_skipped_because_teams_are_still_placeholders', { p0: odds.skippedUnresolved }) : null,
+            odds.unmatched > 0 ? this.translations.translate('ui.p0_eligible_matches_were_not_found_in_the_odds_source', { p0: odds.unmatched }) : null,
+            validationMessage(validation, this.translations)
           ]
-            .filter((message): message is string => message !== null)
-            .join(' ')
+            .filter(message => message !== null).join(' ')
         );
         this.pendingSecretAction.set(null);
         this.importingWithOdds.set(false);
       },
       error: (error: unknown) => {
-        this.handleSecretActionError(error, 'Matches and odds could not be synced from Game-365.');
+        this.handleSecretActionError(error, this.translations.translate("ui.matches_and_odds_could_not_be_synced_from_game_365"));
         this.importingWithOdds.set(false);
       }
     });
@@ -463,7 +464,7 @@ export class AdminMatchesPageComponent {
     this.adminMatchesApi.releaseRound({ roundLabel, secretCode }).subscribe({
       next: ({ released, validation, matches }) => {
         this.setMatches(matches);
-        this.importMessage.set(`${released} matches released for predictions. ${validationMessage(validation)}`);
+        this.importMessage.set(this.translations.translate('ui.p0_matches_released_for_predictions_p1', { p0: released, p1: validationMessage(validation, this.translations) }));
         this.pendingSecretAction.set(null);
         this.pendingReleaseRoundLabel.set(null);
         this.releasingRound.set(false);
@@ -472,7 +473,7 @@ export class AdminMatchesPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Week could not be released.';
+            : this.translations.translate("ui.week_could_not_be_released");
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.secretCodeErrorMessage.set(message);
@@ -481,7 +482,7 @@ export class AdminMatchesPageComponent {
         }
 
         if (error instanceof HttpErrorResponse && error.status === 409 && error.error?.validation) {
-          this.errorMessage.set(`${message} ${validationMessage(error.error.validation as MatchImportValidation)}`);
+          this.errorMessage.set(`${message} ${validationMessage(error.error.validation as MatchImportValidation, this.translations)}`);
         } else {
           this.errorMessage.set(message);
         }
@@ -508,7 +509,7 @@ export class AdminMatchesPageComponent {
     this.adminMatchesApi.updatePostponed(match.id, { isPostponed: !match.isPostponed, secretCode }).subscribe({
       next: ({ match: updatedMatch }) => {
         this.matches.update((matches) => matches.map((currentMatch) => (currentMatch.id === updatedMatch.id ? updatedMatch : currentMatch)));
-        this.importMessage.set(`Match ${updatedMatch.matchNumber} ${updatedMatch.isPostponed ? 'marked as postponed' : 'restored'}.`);
+        this.importMessage.set(this.translations.translate('ui.match_p0_p1', { p0: updatedMatch.matchNumber, p1: updatedMatch.isPostponed ? this.translations.translate("ui.marked_as_postponed") : this.translations.translate('ui.restored') }));
         this.pendingSecretAction.set(null);
         this.pendingPostponedMatch.set(null);
         this.ensureSelectedFilterHasResults();
@@ -518,7 +519,7 @@ export class AdminMatchesPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Match postponed status could not be updated.';
+            : this.translations.translate("ui.match_postponed_status_could_not_be_updated");
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.secretCodeErrorMessage.set(message);
@@ -594,7 +595,7 @@ export class AdminMatchesPageComponent {
         this.setSaving(match.id, false);
       },
       error: () => {
-        this.errorMessage.set('Final score could not be saved.');
+        this.errorMessage.set(this.translations.translate("ui.final_score_could_not_be_saved"));
         this.setSaving(match.id, false);
       }
     });
@@ -612,7 +613,7 @@ export class AdminMatchesPageComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Matches could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.matches_could_not_be_loaded"));
         this.loading.set(false);
       }
     });
@@ -686,20 +687,20 @@ function groupMatches(matches: readonly Match[]): MatchGroup[] {
   }));
 }
 
-function validationMessage(validation: MatchImportValidation): string {
+function validationMessage(validation: MatchImportValidation, translations: TranslationService): string {
   if (validation.complete && validation.released) {
-    return `${validation.roundLabel} is complete and released.`;
+    return translations.translate('ui.p0_is_complete_and_released', { p0: validation.roundLabel });
   }
 
   const issues = [
-    validation.incompleteMatchNumbers.length > 0 ? `Incomplete matches: ${validation.incompleteMatchNumbers.join(', ')}.` : null,
-    validation.missingOddsMatchNumbers.length > 0 ? `Missing odds: ${validation.missingOddsMatchNumbers.join(', ')}.` : null,
-    validation.missingTeamNames.length > 0 ? `Missing teams: ${validation.missingTeamNames.join(', ')}.` : null
-  ].filter((message): message is string => message !== null);
+    validation.incompleteMatchNumbers.length > 0 ? translations.translate('ui.incomplete_matches_p0', { p0: validation.incompleteMatchNumbers.join(', ') }) : null,
+    validation.missingOddsMatchNumbers.length > 0 ? translations.translate('ui.missing_odds_p0', { p0: validation.missingOddsMatchNumbers.join(', ') }) : null,
+    validation.missingTeamNames.length > 0 ? translations.translate('ui.missing_teams_p0', { p0: validation.missingTeamNames.join(', ') }) : null
+  ].filter(message => message !== null);
 
   return issues.length > 0
-    ? `${validation.roundLabel} is not released. ${issues.join(' ')}`
-    : `${validation.roundLabel} is ready to release.`;
+    ? translations.translate('ui.p0_is_not_released_p1', { p0: validation.roundLabel, p1: issues.join(' ') })
+    : translations.translate('ui.p0_is_ready_to_release', { p0: validation.roundLabel });
 }
 
 function getExistingTeamNames(matches: readonly Match[]): string[] {
