@@ -1,3 +1,4 @@
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { AppStateService } from '@core/state/app-state.service';
@@ -6,7 +7,7 @@ import { NotificationRemindersService } from '@services/notification-reminders.s
 
 @Component({
   selector: 'app-competition-settings-page',
-  imports: [ReactiveFormsModule],
+  imports: [TranslatePipe, ReactiveFormsModule],
   templateUrl: './competition-settings-page.component.html',
   styleUrl: './competition-settings-page.component.scss'
 })

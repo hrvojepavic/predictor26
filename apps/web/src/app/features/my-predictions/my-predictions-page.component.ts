@@ -1,4 +1,6 @@
-import { DatePipe } from '@angular/common';
+import { TranslationService } from '@services/translation.service';
+import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -26,11 +28,12 @@ interface TipSection {
 
 @Component({
   selector: 'app-my-predictions-page',
-  imports: [DatePipe, MatchSortMenuComponent, OddsFormatPipe, PredictionPointsComponent, RouterLink, TeamNameComponent],
+  imports: [TranslatePipe, LocalizedDatePipe, MatchSortMenuComponent, OddsFormatPipe, PredictionPointsComponent, RouterLink, TeamNameComponent],
   templateUrl: './my-predictions-page.component.html',
   styleUrl: './my-predictions-page.component.scss'
 })
 export class MyPredictionsPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly matchesService = inject(MatchesService);
   private readonly route = inject(ActivatedRoute);
   private readonly routeCompetitionSlug = toSignal(this.route.paramMap.pipe(map((params) => params.get('slug'))), {
@@ -57,14 +60,14 @@ export class MyPredictionsPageComponent {
 
   protected matchStatus(match: MatchWithPrediction): string {
     if (match.finalScore) {
-      return 'Finished';
+      return this.translations.translate("ui.finished");
     }
 
     if (Date.parse(match.kickoffAt) <= Date.now()) {
-      return 'Ongoing';
+      return this.translations.translate("ui.ongoing");
     }
 
-    return 'Upcoming';
+    return this.translations.translate("ui.upcoming");
   }
 
   protected predictionStateColor(match: MatchWithPrediction): string | null {
@@ -91,7 +94,7 @@ export class MyPredictionsPageComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Your tips could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.your_tips_could_not_be_loaded"));
         this.loading.set(false);
       }
     });

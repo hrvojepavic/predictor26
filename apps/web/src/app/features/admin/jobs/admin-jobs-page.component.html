@@ -1,38 +1,38 @@
 <section class="admin-jobs-page" aria-labelledby="admin-jobs-title">
   <header class="page-header">
     <div>
-      <p class="section-label">Admin</p>
-      <h1 id="admin-jobs-title">Scheduled jobs</h1>
-      <a class="back-link" routerLink="../">Back to admin competition</a>
+      <p class="section-label">{{ 'ui.admin' | translate }}</p>
+      <h1 id="admin-jobs-title">{{ 'ui.scheduled_jobs' | translate }}</h1>
+      <a class="back-link" routerLink="../">{{ 'ui.back_to_admin_competition' | translate }}</a>
     </div>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (successMessage(); as message) {
-    <p class="status-message status-success">{{ message }}</p>
+    <p class="status-message status-success">{{ (message) }}</p>
   }
 
   @if (loading()) {
-    <p class="status-message">Loading scheduled job details...</p>
+    <p class="status-message">{{ 'ui.loading_scheduled_job_details' | translate }}</p>
   } @else {
     @if (autoMatchImportJob(); as autoJob) {
       <section class="job-panel" aria-labelledby="auto-match-import-title">
         <div class="job-heading">
           <div>
-            <p class="job-kicker">Competition job</p>
+            <p class="job-kicker">{{ 'ui.competition_job' | translate }}</p>
             <h2 id="auto-match-import-title">{{ autoJob.name }}</h2>
             <p>{{ autoJob.description }}</p>
           </div>
 
           <div class="job-actions">
             <span class="status-pill" [class.status-pill-on]="autoJob.enabled">
-              {{ autoJob.enabled ? 'Enabled' : 'Disabled' }}
+              {{ autoJob.enabled ? ('ui.enabled' | translate) : ('ui.disabled' | translate) }}
             </span>
             <button class="primary-button" type="button" [disabled]="runningJobId()" (click)="runNow(autoJob.id)">
-              {{ runningJobId() === autoJob.id ? 'Running...' : 'Run now' }}
+              {{ runningJobId() === autoJob.id ? ('ui.running' | translate) : ('ui.run_now' | translate) }}
             </button>
           </div>
         </div>
@@ -40,30 +40,30 @@
         <form class="job-settings-form" [formGroup]="autoImportForm" (ngSubmit)="saveAutoImportSettings()">
           <label class="toggle-row">
             <input type="checkbox" formControlName="enabled" />
-            <span>Enabled</span>
+            <span>{{ 'ui.enabled' | translate }}</span>
           </label>
 
           <div class="settings-grid">
             <label>
-              <span>Weekday</span>
+              <span>{{ 'ui.weekday' | translate }}</span>
               <select formControlName="weekday">
-                <option [ngValue]="1">Monday</option>
-                <option [ngValue]="2">Tuesday</option>
-                <option [ngValue]="3">Wednesday</option>
-                <option [ngValue]="4">Thursday</option>
-                <option [ngValue]="5">Friday</option>
-                <option [ngValue]="6">Saturday</option>
-                <option [ngValue]="0">Sunday</option>
+                <option [ngValue]="1">{{ 'ui.monday' | translate }}</option>
+                <option [ngValue]="2">{{ 'ui.tuesday' | translate }}</option>
+                <option [ngValue]="3">{{ 'ui.wednesday' | translate }}</option>
+                <option [ngValue]="4">{{ 'ui.thursday' | translate }}</option>
+                <option [ngValue]="5">{{ 'ui.friday' | translate }}</option>
+                <option [ngValue]="6">{{ 'ui.saturday' | translate }}</option>
+                <option [ngValue]="0">{{ 'ui.sunday' | translate }}</option>
               </select>
             </label>
 
             <label>
-              <span>Local time</span>
+              <span>{{ 'ui.local_time' | translate }}</span>
               <input type="time" formControlName="time" />
             </label>
 
             <label>
-              <span>Time zone</span>
+              <span>{{ 'ui.time_zone' | translate }}</span>
               <select formControlName="timeZone">
                 <option value="Europe/Zagreb">Europe/Zagreb</option>
                 <option value="Europe/Belgrade">Europe/Belgrade</option>
@@ -71,56 +71,56 @@
             </label>
           </div>
 
-          <button class="secondary-button" type="submit" [disabled]="runningJobId() || autoImportForm.invalid">Save schedule</button>
+          <button class="secondary-button" type="submit" [disabled]="runningJobId() || autoImportForm.invalid">{{ 'ui.save_schedule' | translate }}</button>
         </form>
 
-        <div class="metrics-grid" aria-label="Match import job summary">
+        <div class="metrics-grid" [attr.aria-label]="'ui.match_import_job_summary' | translate">
           <div class="metric">
-            <span class="metric-label">Schedule</span>
-            <strong>{{ autoImportWeekdayLabel() }} {{ autoJob.time }} {{ autoJob.timeZone }}</strong>
+            <span class="metric-label">{{ 'ui.schedule' | translate }}</span>
+            <strong>{{ (autoImportWeekdayLabel()) }} {{ (autoJob.time) }} {{ (autoJob.timeZone) }}</strong>
           </div>
           <div class="metric">
-            <span class="metric-label">Next run</span>
-            <strong>{{ autoJob.nextRunAt ? (autoJob.nextRunAt | date: 'medium' : adminTimeZone) : 'None' }}</strong>
+            <span class="metric-label">{{ 'ui.next_run' | translate }}</span>
+            <strong>{{ autoJob.nextRunAt ? (autoJob.nextRunAt | localizedDate: 'medium' : adminTimeZone) : ('ui.none' | translate) }}</strong>
           </div>
         </div>
 
         <section class="details-section" aria-labelledby="auto-import-last-run-title">
-          <h3 id="auto-import-last-run-title">Last run</h3>
+          <h3 id="auto-import-last-run-title">{{ 'ui.last_run' | translate }}</h3>
 
           @if (autoJob.lastRun; as lastRun) {
             <dl class="run-details">
               <div>
-                <dt>Started</dt>
-                <dd>{{ lastRun.startedAt | date: 'medium' : adminTimeZone }}</dd>
+                <dt>{{ 'ui.started' | translate }}</dt>
+                <dd>{{ lastRun.startedAt | localizedDate: 'medium' : adminTimeZone }}</dd>
               </div>
               <div>
-                <dt>Status</dt>
-                <dd>{{ lastRun.status }}</dd>
+                <dt>{{ 'ui.status' | translate }}</dt>
+                <dd>{{ (lastRun.status) }}</dd>
               </div>
               <div>
-                <dt>Imported</dt>
-                <dd>{{ lastRun.imported }}</dd>
+                <dt>{{ 'ui.imported' | translate }}</dt>
+                <dd>{{ (lastRun.imported) }}</dd>
               </div>
               <div>
-                <dt>Odds synced</dt>
-                <dd>{{ lastRun.oddsSynced }}</dd>
+                <dt>{{ 'ui.odds_synced' | translate }}</dt>
+                <dd>{{ (lastRun.oddsSynced) }}</dd>
               </div>
               <div>
-                <dt>Round</dt>
-                <dd>{{ lastRun.roundLabel || '-' }}</dd>
+                <dt>{{ 'ui.round' | translate }}</dt>
+                <dd>{{ (lastRun.roundLabel || '-') }}</dd>
               </div>
               <div>
-                <dt>Released</dt>
-                <dd>{{ lastRun.released ? 'Yes' : 'No' }}</dd>
+                <dt>{{ 'ui.released' | translate }}</dt>
+                <dd>{{ lastRun.released ? ('ui.yes' | translate) : ('ui.no' | translate) }}</dd>
               </div>
             </dl>
 
             @if (lastRun.errorMessage) {
-              <p class="status-message status-error">{{ lastRun.errorMessage }}</p>
+              <p class="status-message status-error">{{ (lastRun.errorMessage) }}</p>
             }
           } @else {
-            <p class="empty-message">This job has not recorded a run yet.</p>
+            <p class="empty-message">{{ 'ui.this_job_has_not_recorded_a_run_yet' | translate }}</p>
           }
         </section>
       </section>
@@ -130,179 +130,179 @@
     <section class="job-panel" aria-labelledby="notification-reminders-title">
       <div class="job-heading">
         <div>
-          <p class="job-kicker">Current job</p>
+          <p class="job-kicker">{{ 'ui.current_job' | translate }}</p>
           <h2 id="notification-reminders-title">{{ notificationJob.name }}</h2>
           <p>{{ notificationJob.description }}</p>
         </div>
 
         <div class="job-actions">
           <span class="status-pill" [class.status-pill-on]="notificationJob.enabled">
-            {{ notificationJob.enabled ? 'Enabled' : 'Disabled' }}
+            {{ notificationJob.enabled ? ('ui.enabled' | translate) : ('ui.disabled' | translate) }}
           </span>
           <button class="primary-button" type="button" [disabled]="runningJobId()" (click)="runNow(notificationJob.id)">
-            {{ runningJobId() === notificationJob.id ? 'Running...' : 'Run now' }}
+            {{ runningJobId() === notificationJob.id ? ('ui.running' | translate) : ('ui.run_now' | translate) }}
           </button>
         </div>
       </div>
 
-      <div class="metrics-grid" aria-label="Prediction reminder job summary">
+      <div class="metrics-grid" [attr.aria-label]="'ui.prediction_reminder_job_summary' | translate">
         <div class="metric">
-          <span class="metric-label">Interval</span>
-          <strong>{{ notificationIntervalMinutes() | number: '1.0-0' }} min</strong>
+          <span class="metric-label">{{ 'ui.interval' | translate }}</span>
+          <strong>{{ 'ui.p0_min' | translate: { p0: (notificationIntervalMinutes() | number: '1.0-0') ?? '' } }}</strong>
         </div>
         <div class="metric">
-          <span class="metric-label">Users to notify now</span>
-          <strong>{{ notificationJob.usersToNotifyNowCount }}</strong>
+          <span class="metric-label">{{ 'ui.users_to_notify_now' | translate }}</span>
+          <strong>{{ (notificationJob.usersToNotifyNowCount) }}</strong>
         </div>
       </div>
 
       <section class="details-section" aria-labelledby="last-run-title">
-        <h3 id="last-run-title">Last run</h3>
+        <h3 id="last-run-title">{{ 'ui.last_run' | translate }}</h3>
 
         @if (notificationJob.lastRun; as lastRun) {
           <dl class="run-details">
             <div>
-              <dt>Started</dt>
-              <dd>{{ lastRun.startedAt | date: 'medium' : adminTimeZone }}</dd>
+              <dt>{{ 'ui.started' | translate }}</dt>
+              <dd>{{ lastRun.startedAt | localizedDate: 'medium' : adminTimeZone }}</dd>
             </div>
             <div>
-              <dt>Finished</dt>
-              <dd>{{ lastRun.finishedAt | date: 'medium' : adminTimeZone }}</dd>
+              <dt>{{ 'ui.finished' | translate }}</dt>
+              <dd>{{ lastRun.finishedAt | localizedDate: 'medium' : adminTimeZone }}</dd>
             </div>
             <div>
-              <dt>Candidates</dt>
-              <dd>{{ lastRun.candidateCount }}</dd>
+              <dt>{{ 'ui.candidates' | translate }}</dt>
+              <dd>{{ (lastRun.candidateCount) }}</dd>
             </div>
             <div>
-              <dt>Subscriptions checked</dt>
-              <dd>{{ lastRun.attemptedSubscriptionCount ?? lastRun.candidateCount }}</dd>
+              <dt>{{ 'ui.subscriptions_checked' | translate }}</dt>
+              <dd>{{ (lastRun.attemptedSubscriptionCount ?? lastRun.candidateCount) }}</dd>
             </div>
             <div>
-              <dt>Sent</dt>
-              <dd>{{ lastRun.sentCount }}</dd>
+              <dt>{{ 'ui.sent' | translate }}</dt>
+              <dd>{{ (lastRun.sentCount) }}</dd>
             </div>
             <div>
-              <dt>Accepted subscriptions</dt>
-              <dd>{{ lastRun.acceptedSubscriptionCount ?? lastRun.sentCount }}</dd>
+              <dt>{{ 'ui.accepted_subscriptions' | translate }}</dt>
+              <dd>{{ (lastRun.acceptedSubscriptionCount ?? lastRun.sentCount) }}</dd>
             </div>
             <div>
-              <dt>Failed</dt>
-              <dd>{{ lastRun.failedCount }}</dd>
+              <dt>{{ 'ui.failed' | translate }}</dt>
+              <dd>{{ (lastRun.failedCount) }}</dd>
             </div>
             <div>
-              <dt>Disabled</dt>
-              <dd>{{ lastRun.disabledSubscriptionCount }}</dd>
+              <dt>{{ 'ui.disabled' | translate }}</dt>
+              <dd>{{ (lastRun.disabledSubscriptionCount) }}</dd>
             </div>
           </dl>
 
           @if (lastRun.errorMessage) {
-            <p class="status-message status-error">{{ lastRun.errorMessage }}</p>
+            <p class="status-message status-error">{{ (lastRun.errorMessage) }}</p>
           }
         } @else {
-          <p class="empty-message">This job has not recorded a run yet.</p>
+          <p class="empty-message">{{ 'ui.this_job_has_not_recorded_a_run_yet' | translate }}</p>
         }
       </section>
 
       <section class="details-section" aria-labelledby="due-candidates-title">
-        <h3 id="due-candidates-title">Users to notify if run now</h3>
+        <h3 id="due-candidates-title">{{ 'ui.users_to_notify_if_run_now' | translate }}</h3>
 
         @if (notificationJob.dueUsers.length > 0) {
           <div class="deliveries-table-shell">
             <table class="deliveries-table">
               <thead>
                 <tr>
-                  <th scope="col">User</th>
-                  <th scope="col">Round</th>
-                  <th scope="col">Lock time</th>
-                  <th scope="col">Tips</th>
-                  <th scope="col">Window</th>
+                  <th scope="col">{{ 'ui.user' | translate }}</th>
+                  <th scope="col">{{ 'ui.round' | translate }}</th>
+                  <th scope="col">{{ 'ui.lock_time' | translate }}</th>
+                  <th scope="col">{{ 'ui.tips' | translate }}</th>
+                  <th scope="col">{{ 'ui.window' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
                 @for (candidate of notificationJob.dueUsers; track candidate.userId + ':' + candidate.predictionRound + ':' + candidate.reminderHours) {
                   <tr>
                     <td>{{ candidate.username }}</td>
-                    <td>{{ candidate.predictionRound }}</td>
-                    <td>{{ candidate.deadlineAt | date: 'medium' : adminTimeZone }}</td>
+                    <td>{{ (candidate.predictionRound) }}</td>
+                    <td>{{ candidate.deadlineAt | localizedDate: 'medium' : adminTimeZone }}</td>
                     <td>{{ candidate.submittedCount }}/{{ candidate.expectedCount }}</td>
-                    <td>{{ candidate.reminderHours }}h before lock</td>
+                    <td>{{ 'ui.p0_h_before_lock' | translate: { p0: (candidate.reminderHours) } }}</td>
                   </tr>
                 }
               </tbody>
             </table>
           </div>
         } @else {
-          <p class="empty-message">No users are due for a reminder in the current interval window.</p>
+          <p class="empty-message">{{ 'ui.no_users_are_due_for_a_reminder_in_the_current_interval_window' | translate }}</p>
         }
       </section>
 
       <section class="details-section" aria-labelledby="recent-deliveries-title">
-        <h3 id="recent-deliveries-title">Recent reminder deliveries</h3>
+        <h3 id="recent-deliveries-title">{{ 'ui.recent_reminder_deliveries' | translate }}</h3>
 
         @if (notificationJob.recentDeliveries.length > 0) {
           <div class="deliveries-table-shell">
             <table class="deliveries-table">
               <thead>
                 <tr>
-                  <th scope="col">Time</th>
-                  <th scope="col">User</th>
-                  <th scope="col">Round</th>
-                  <th scope="col">Window</th>
+                  <th scope="col">{{ 'ui.time' | translate }}</th>
+                  <th scope="col">{{ 'ui.user' | translate }}</th>
+                  <th scope="col">{{ 'ui.round' | translate }}</th>
+                  <th scope="col">{{ 'ui.window' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
                 @for (delivery of notificationJob.recentDeliveries; track delivery.userId + ':' + delivery.predictionRound + ':' + delivery.reminderHours) {
                   <tr>
-                    <td>{{ delivery.deliveredAt | date: 'medium' : adminTimeZone }}</td>
+                    <td>{{ delivery.deliveredAt | localizedDate: 'medium' : adminTimeZone }}</td>
                     <td>{{ delivery.username }}</td>
-                    <td>{{ delivery.predictionRound }}</td>
-                    <td>{{ delivery.reminderHours }}h before lock</td>
+                    <td>{{ (delivery.predictionRound) }}</td>
+                    <td>{{ 'ui.p0_h_before_lock' | translate: { p0: (delivery.reminderHours) } }}</td>
                   </tr>
                 }
               </tbody>
             </table>
           </div>
         } @else {
-          <p class="empty-message">No reminder deliveries have been recorded yet.</p>
+          <p class="empty-message">{{ 'ui.no_reminder_deliveries_have_been_recorded_yet' | translate }}</p>
         }
       </section>
 
       <section class="details-section" aria-labelledby="recent-attempts-title">
-        <h3 id="recent-attempts-title">Recent push attempts</h3>
+        <h3 id="recent-attempts-title">{{ 'ui.recent_push_attempts' | translate }}</h3>
 
         @if (notificationJob.recentAttempts.length > 0) {
           <div class="deliveries-table-shell">
             <table class="deliveries-table">
               <thead>
                 <tr>
-                  <th scope="col">Time</th>
-                  <th scope="col">User</th>
-                  <th scope="col">Round</th>
-                  <th scope="col">Window</th>
-                  <th scope="col">Browser</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Code</th>
-                  <th scope="col">Error</th>
+                  <th scope="col">{{ 'ui.time' | translate }}</th>
+                  <th scope="col">{{ 'ui.user' | translate }}</th>
+                  <th scope="col">{{ 'ui.round' | translate }}</th>
+                  <th scope="col">{{ 'ui.window' | translate }}</th>
+                  <th scope="col">{{ 'ui.browser' | translate }}</th>
+                  <th scope="col">{{ 'ui.status' | translate }}</th>
+                  <th scope="col">{{ 'ui.code' | translate }}</th>
+                  <th scope="col">{{ 'ui.error' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
                 @for (attempt of notificationJob.recentAttempts; track attempt.attemptedAt + ':' + attempt.userId + ':' + attempt.subscriptionId) {
                   <tr>
-                    <td>{{ attempt.attemptedAt | date: 'medium' : adminTimeZone }}</td>
+                    <td>{{ attempt.attemptedAt | localizedDate: 'medium' : adminTimeZone }}</td>
                     <td>{{ attempt.username }}</td>
-                    <td>{{ attempt.predictionRound }}</td>
-                    <td>{{ attempt.reminderHours }}h before lock</td>
-                    <td>{{ attempt.browser }}</td>
-                    <td>{{ attempt.status }}</td>
-                    <td>{{ attempt.statusCode ?? '-' }}</td>
-                    <td>{{ attempt.errorMessage ?? '-' }}</td>
+                    <td>{{ (attempt.predictionRound) }}</td>
+                    <td>{{ 'ui.p0_h_before_lock' | translate: { p0: (attempt.reminderHours) } }}</td>
+                    <td>{{ (attempt.browser) }}</td>
+                    <td>{{ (attempt.status) }}</td>
+                    <td>{{ (attempt.statusCode ?? '-') }}</td>
+                    <td>{{ (attempt.errorMessage ?? '-') }}</td>
                   </tr>
                 }
               </tbody>
             </table>
           </div>
         } @else {
-          <p class="empty-message">No push attempts have been recorded yet.</p>
+          <p class="empty-message">{{ 'ui.no_push_attempts_have_been_recorded_yet' | translate }}</p>
         }
       </section>
     </section>
@@ -312,63 +312,63 @@
       <section class="job-panel" aria-labelledby="live-score-sync-title">
         <div class="job-heading">
           <div>
-            <p class="job-kicker">Current job</p>
+            <p class="job-kicker">{{ 'ui.current_job' | translate }}</p>
             <h2 id="live-score-sync-title">{{ liveJob.name }}</h2>
             <p>{{ liveJob.description }}</p>
           </div>
 
           <div class="job-actions">
             <span class="status-pill" [class.status-pill-on]="liveJob.enabled">
-              {{ liveJob.enabled ? 'Enabled' : 'Disabled' }}
+              {{ liveJob.enabled ? ('ui.enabled' | translate) : ('ui.disabled' | translate) }}
             </span>
             <button class="secondary-button" type="button" [disabled]="runningJobId()" (click)="toggleJobEnabled(liveJob.id, !liveJob.enabled)">
-              {{ liveJob.enabled ? 'Disable' : 'Enable' }}
+              {{ liveJob.enabled ? ('ui.disable' | translate) : ('ui.enable' | translate) }}
             </button>
             <button class="primary-button" type="button" [disabled]="runningJobId()" (click)="runNow(liveJob.id)">
-              {{ runningJobId() === liveJob.id ? 'Running...' : 'Run now' }}
+              {{ runningJobId() === liveJob.id ? ('ui.running' | translate) : ('ui.run_now' | translate) }}
             </button>
           </div>
         </div>
 
-        <div class="metrics-grid" aria-label="Live score job summary">
+        <div class="metrics-grid" [attr.aria-label]="'ui.live_score_job_summary' | translate">
           <div class="metric">
-            <span class="metric-label">Poll interval</span>
-            <strong>{{ liveScoreIntervalMinutes() | number: '1.0-0' }} min</strong>
+            <span class="metric-label">{{ 'ui.poll_interval' | translate }}</span>
+            <strong>{{ 'ui.p0_min' | translate: { p0: (liveScoreIntervalMinutes() | number: '1.0-0') ?? '' } }}</strong>
           </div>
           <div class="metric">
-            <span class="metric-label">Status</span>
-            <strong>{{ liveJob.status }}</strong>
+            <span class="metric-label">{{ 'ui.status' | translate }}</span>
+            <strong>{{ (liveJob.status) }}</strong>
           </div>
           <div class="metric">
-            <span class="metric-label">Next check</span>
-            <strong>{{ liveJob.nextRunAt ? (liveJob.nextRunAt | date: 'medium' : adminTimeZone) : 'None' }}</strong>
+            <span class="metric-label">{{ 'ui.next_check' | translate }}</span>
+            <strong>{{ liveJob.nextRunAt ? (liveJob.nextRunAt | localizedDate: 'medium' : adminTimeZone) : ('ui.none' | translate) }}</strong>
           </div>
           <div class="metric">
-            <span class="metric-label">Active matches</span>
-            <strong>{{ liveJob.activeMatches.length }}</strong>
+            <span class="metric-label">{{ 'ui.active_matches' | translate }}</span>
+            <strong>{{ (liveJob.activeMatches.length) }}</strong>
           </div>
         </div>
 
         <section class="details-section" aria-labelledby="active-live-matches-title">
-          <h3 id="active-live-matches-title">Active matches</h3>
+          <h3 id="active-live-matches-title">{{ 'ui.active_matches' | translate }}</h3>
 
           @if (liveJob.activeMatches.length > 0) {
             <div class="deliveries-table-shell">
               <table class="deliveries-table">
                 <thead>
                   <tr>
-                    <th scope="col">Match</th>
-                    <th scope="col">Kickoff</th>
-                    <th scope="col">Score</th>
-                    <th scope="col">Provider status</th>
-                    <th scope="col">Synced</th>
+                    <th scope="col">{{ 'ui.match' | translate }}</th>
+                    <th scope="col">{{ 'ui.kickoff' | translate }}</th>
+                    <th scope="col">{{ 'ui.score' | translate }}</th>
+                    <th scope="col">{{ 'ui.provider_status' | translate }}</th>
+                    <th scope="col">{{ 'ui.synced' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (match of liveJob.activeMatches; track match.matchId) {
                     <tr>
-                      <td>#{{ match.matchNumber }} {{ match.homeTeamName }} - {{ match.awayTeamName }}</td>
-                      <td>{{ match.kickoffAt | date: 'medium' : adminTimeZone }}</td>
+                      <td>#{{ match.matchNumber }} {{ (match.homeTeamName) }} - {{ (match.awayTeamName) }}</td>
+                      <td>{{ match.kickoffAt | localizedDate: 'medium' : adminTimeZone }}</td>
                       <td>
                         @if (match.currentScore) {
                           {{ match.currentScore.home }}-{{ match.currentScore.away }}
@@ -376,76 +376,76 @@
                           -
                         }
                       </td>
-                      <td>{{ match.providerStatus || '-' }}</td>
-                      <td>{{ match.syncedAt ? (match.syncedAt | date: 'medium' : adminTimeZone) : '-' }}</td>
+                      <td>{{ (match.providerStatus || '-') }}</td>
+                      <td>{{ (match.syncedAt ? (match.syncedAt | localizedDate: 'medium' : adminTimeZone) : '-') }}</td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
           } @else {
-            <p class="empty-message">No matches are inside the live score polling window.</p>
+            <p class="empty-message">{{ 'ui.no_matches_are_inside_the_live_score_polling_window' | translate }}</p>
           }
         </section>
 
         <section class="details-section" aria-labelledby="live-score-runs-title">
-          <h3 id="live-score-runs-title">Recent live score runs</h3>
+          <h3 id="live-score-runs-title">{{ 'ui.recent_live_score_runs' | translate }}</h3>
 
           @if (liveJob.recentRuns.length > 0) {
             <div class="deliveries-table-shell">
               <table class="deliveries-table">
                 <thead>
                   <tr>
-                    <th scope="col">Started</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Checked</th>
-                    <th scope="col">Updated</th>
-                    <th scope="col">Live</th>
-                    <th scope="col">Finished</th>
-                    <th scope="col">Planned next</th>
+                    <th scope="col">{{ 'ui.started' | translate }}</th>
+                    <th scope="col">{{ 'ui.status' | translate }}</th>
+                    <th scope="col">{{ 'ui.checked' | translate }}</th>
+                    <th scope="col">{{ 'ui.updated' | translate }}</th>
+                    <th scope="col">{{ 'ui.live' | translate }}</th>
+                    <th scope="col">{{ 'ui.finished' | translate }}</th>
+                    <th scope="col">{{ 'ui.planned_next' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (run of liveJob.recentRuns; track run.startedAt) {
                     <tr class="live-score-history-row" [class.live-score-linked-row]="run.rowColor !== null" [style.--run-color]="run.rowColor">
-                      <td>{{ run.startedAt | date: 'medium' : adminTimeZone }}</td>
-                      <td>{{ run.status }}</td>
-                      <td>{{ run.checkedMatches }}</td>
-                      <td>{{ run.updatedMatches }}</td>
-                      <td>{{ run.liveMatches }}</td>
-                      <td>{{ run.finishedMatches }}</td>
-                      <td>{{ run.nextRunAt ? (run.nextRunAt | date: 'medium' : adminTimeZone) : '-' }}</td>
+                      <td>{{ run.startedAt | localizedDate: 'medium' : adminTimeZone }}</td>
+                      <td>{{ (run.status) }}</td>
+                      <td>{{ (run.checkedMatches) }}</td>
+                      <td>{{ (run.updatedMatches) }}</td>
+                      <td>{{ (run.liveMatches) }}</td>
+                      <td>{{ (run.finishedMatches) }}</td>
+                      <td>{{ (run.nextRunAt ? (run.nextRunAt | localizedDate: 'medium' : adminTimeZone) : '-') }}</td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
           } @else {
-            <p class="empty-message">No live score runs have been recorded yet.</p>
+            <p class="empty-message">{{ 'ui.no_live_score_runs_have_been_recorded_yet' | translate }}</p>
           }
         </section>
 
         <section class="details-section" aria-labelledby="live-score-updates-title">
-          <h3 id="live-score-updates-title">Recent score updates</h3>
+          <h3 id="live-score-updates-title">{{ 'ui.recent_score_updates' | translate }}</h3>
 
           @if (liveJob.recentUpdates.length > 0) {
             <div class="deliveries-table-shell">
               <table class="deliveries-table">
                 <thead>
                   <tr>
-                    <th scope="col">Time</th>
-                    <th scope="col">Match</th>
-                    <th scope="col">Previous</th>
-                    <th scope="col">New</th>
-                    <th scope="col">Provider status</th>
-                    <th scope="col">Applied</th>
+                    <th scope="col">{{ 'ui.time' | translate }}</th>
+                    <th scope="col">{{ 'ui.match' | translate }}</th>
+                    <th scope="col">{{ 'ui.previous' | translate }}</th>
+                    <th scope="col">{{ 'ui.new' | translate }}</th>
+                    <th scope="col">{{ 'ui.provider_status' | translate }}</th>
+                    <th scope="col">{{ 'ui.applied' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (update of liveJob.recentUpdates; track update.createdAt + ':' + update.matchId) {
                     <tr class="live-score-history-row" [class.live-score-linked-row]="update.rowColor !== null" [style.--run-color]="update.rowColor">
-                      <td>{{ update.createdAt | date: 'medium' : adminTimeZone }}</td>
-                      <td>#{{ update.matchNumber }} {{ update.homeTeamName }} - {{ update.awayTeamName }}</td>
+                      <td>{{ update.createdAt | localizedDate: 'medium' : adminTimeZone }}</td>
+                      <td>#{{ update.matchNumber }} {{ (update.homeTeamName) }} - {{ (update.awayTeamName) }}</td>
                       <td>
                         @if (update.previousScore) {
                           {{ update.previousScore.home }}-{{ update.previousScore.away }}
@@ -454,15 +454,15 @@
                         }
                       </td>
                       <td>{{ update.newScore.home }}-{{ update.newScore.away }}</td>
-                      <td>{{ update.providerStatus }}</td>
-                      <td>{{ update.appliedToFinalScore ? 'Yes' : 'No' }}</td>
+                      <td>{{ (update.providerStatus) }}</td>
+                      <td>{{ update.appliedToFinalScore ? ('ui.yes' | translate) : ('ui.no' | translate) }}</td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
           } @else {
-            <p class="empty-message">No score updates have been recorded yet.</p>
+            <p class="empty-message">{{ 'ui.no_score_updates_have_been_recorded_yet' | translate }}</p>
           }
         </section>
       </section>
@@ -479,10 +479,10 @@
       (closeModal)="cancelRunNow()"
     >
       <app-secret-code-modal
-        title="Run scheduled job"
-        label="What is the secret code?"
-        confirmLabel="Run job"
-        [errorMessage]="secretCodeErrorMessage()"
+        [title]="'ui.run_scheduled_job' | translate"
+        [label]="'ui.what_is_the_secret_code' | translate"
+        [confirmLabel]="'ui.run_job' | translate"
+        [errorMessage]="(secretCodeErrorMessage())"
         [isSubmitting]="runningJobId() !== null"
         (confirmSecretCode)="confirmRunNow($event)"
         (cancelModal)="cancelRunNow()"
@@ -500,10 +500,10 @@
       (closeModal)="cancelRunNow()"
     >
       <app-secret-code-modal
-        [title]="toggle.enabled ? 'Enable scheduled job' : 'Disable scheduled job'"
-        label="What is the secret code?"
-        [confirmLabel]="toggle.enabled ? 'Enable job' : 'Disable job'"
-        [errorMessage]="secretCodeErrorMessage()"
+        [title]="toggle.enabled ? ('ui.enable_scheduled_job' | translate) : ('ui.disable_scheduled_job' | translate)"
+        [label]="'ui.what_is_the_secret_code' | translate"
+        [confirmLabel]="toggle.enabled ? ('ui.enable_job' | translate) : ('ui.disable_job' | translate)"
+        [errorMessage]="(secretCodeErrorMessage())"
         [isSubmitting]="runningJobId() !== null"
         (confirmSecretCode)="confirmToggle($event)"
         (cancelModal)="cancelRunNow()"
@@ -521,10 +521,10 @@
       (closeModal)="cancelRunNow()"
     >
       <app-secret-code-modal
-        title="Save match import schedule"
-        label="What is the secret code?"
-        confirmLabel="Save schedule"
-        [errorMessage]="secretCodeErrorMessage()"
+        [title]="'ui.save_match_import_schedule' | translate"
+        [label]="'ui.what_is_the_secret_code' | translate"
+        [confirmLabel]="'ui.save_schedule' | translate"
+        [errorMessage]="(secretCodeErrorMessage())"
         [isSubmitting]="runningJobId() !== null"
         (confirmSecretCode)="confirmAutoImportSettings($event)"
         (cancelModal)="cancelRunNow()"

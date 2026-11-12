@@ -1,7 +1,7 @@
+import { TranslationService } from '@services/translation.service';
 import { inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { NotificationPreferencesResponse } from '@models/notification.models';
-import { notificationSetupMessages } from '@core/constants/notification-setup-messages';
 import { AppStateService } from '@core/state/app-state.service';
 import { NotificationBrowserAccountService } from './notification-browser-account.service';
 import { NotificationsApiProvider } from './providers/notifications-api.provider';
@@ -14,12 +14,13 @@ export type NotificationReminderEnableResult = {
 
 @Injectable({ providedIn: 'root' })
 export class NotificationRemindersService {
+  private readonly translations = inject(TranslationService);
   private readonly notificationsApi = inject(NotificationsApiProvider);
   private readonly appState = inject(AppStateService);
   private readonly browserAccount = inject(NotificationBrowserAccountService);
   private readonly fingerprintSignal = signal<string | null>(null);
   readonly fingerprint = this.fingerprintSignal.asReadonly();
-  private readonly browserStateSignal = signal('Checking this browser...');
+  private readonly browserStateSignal = signal(this.translations.translate("ui.checking_this_browser"));
   readonly browserState = this.browserStateSignal.asReadonly();
   readonly supported = typeof window !== 'undefined' && 'Notification' in window &&
     'serviceWorker' in navigator && 'PushManager' in window && window.isSecureContext;
@@ -27,13 +28,13 @@ export class NotificationRemindersService {
   async refreshBrowserState(): Promise<void> {
     this.fingerprintSignal.set(null);
     if (!this.supported) {
-      this.browserStateSignal.set('Push notifications are not supported in this browser.');
+      this.browserStateSignal.set(this.translations.translate("ui.push_notifications_are_not_supported_in_this_browser"));
       return;
     }
     if (Notification.permission !== 'granted') {
       this.browserStateSignal.set(Notification.permission === 'denied'
-        ? notificationSetupMessages.blocked
-        : 'Enable this browser to receive your selected reminders here.');
+        ? this.translations.translate('notifications.setup.blocked')
+        : this.translations.translate("ui.enable_this_browser_to_receive_your_selected_reminders_here"));
       return;
     }
     try {
@@ -41,10 +42,10 @@ export class NotificationRemindersService {
       const subscription = await registration?.pushManager.getSubscription();
       if (subscription) this.fingerprintSignal.set(await fingerprint(subscription.endpoint));
       this.browserStateSignal.set(subscription
-        ? 'Browser permission is allowed. Use the Enable this browser button to register it for your signed-in account.'
-        : 'Browser permission is allowed. Enable this browser to finish setup.');
+        ? this.translations.translate("ui.browser_permission_is_allowed_use_the_enable_this_browser_button_to_register_it_for_your_s")
+        : this.translations.translate("ui.browser_permission_is_allowed_enable_this_browser_to_finish_setup"));
     } catch {
-      this.browserStateSignal.set('Browser notification status could not be checked.');
+      this.browserStateSignal.set(this.translations.translate("ui.browser_notification_status_could_not_be_checked"));
     }
   }
 
@@ -62,7 +63,7 @@ export class NotificationRemindersService {
         if (Notification.permission === 'denied') permission = 'denied';
         const status = permission === 'default' ? 'dismissed' : 'blocked';
         await this.refreshBrowserState();
-        this.browserStateSignal.set(notificationSetupMessages[status]);
+        this.browserStateSignal.set(this.translations.translate(`notifications.setup.${status}`));
         return { status, permission };
       }
       const config = await firstValueFrom(this.notificationsApi.getConfig(competitionId));
@@ -88,14 +89,14 @@ export class NotificationRemindersService {
       if (!registered || !this.isCurrentBrowserSession(token)) return { status: 'failed', permission };
       const { settings } = registered;
       this.fingerprintSignal.set(await fingerprint(subscription.endpoint));
-      this.browserStateSignal.set('This browser is ready to receive your selected reminders.');
+      this.browserStateSignal.set(this.translations.translate("ui.this_browser_is_ready_to_receive_your_selected_reminders"));
       return { status: 'subscribed', permission, settings };
     } catch {
       if (Notification.permission === 'denied') {
-        this.browserStateSignal.set(notificationSetupMessages.blocked);
+        this.browserStateSignal.set(this.translations.translate('notifications.setup.blocked'));
         return { status: 'blocked', permission: 'denied' };
       }
-      this.browserStateSignal.set('This browser could not be enabled. Please try again.');
+      this.browserStateSignal.set(this.translations.translate("ui.this_browser_could_not_be_enabled_please_try_again"));
       return { status: 'failed', permission };
     }
   }

@@ -1,19 +1,19 @@
 <section class="admin-page" aria-labelledby="admin-title">
   <header class="page-header">
-    <p class="section-label">Admin</p>
-    <h1 id="admin-title">Admin tools</h1>
+    <p class="section-label">{{ 'ui.admin' | translate }}</p>
+    <h1 id="admin-title">{{ 'ui.admin_tools' | translate }}</h1>
   </header>
 
   @if (isSuperAdmin()) {
-    <nav class="admin-tool-grid" aria-label="Admin tools">
+    <nav class="admin-tool-grid" [attr.aria-label]="'ui.admin_tools' | translate">
       <a class="tool-card" routerLink="/admin/settings">
         <span class="tool-icon tool-icon-calendar" aria-hidden="true">
           <span></span>
           <span></span>
         </span>
         <span class="tool-content">
-          <span class="tool-title">Settings</span>
-          <span class="tool-description">Manage global app settings.</span>
+          <span class="tool-title">{{ 'ui.settings' | translate }}</span>
+          <span class="tool-description">{{ 'ui.manage_global_app_settings' | translate }}</span>
         </span>
       </a>
     </nav>
@@ -22,14 +22,14 @@
   <section class="competition-picker" aria-labelledby="admin-competition-picker-title">
     <div class="picker-heading">
       <div>
-        <h2 id="admin-competition-picker-title">Competitions</h2>
-        <p>Choose a competition to manage its users, matches, payments, jobs, notifications, and source settings.</p>
+        <h2 id="admin-competition-picker-title">{{ 'ui.competitions' | translate }}</h2>
+        <p>{{ 'ui.choose_a_competition_to_manage_its_users_matches_payments_jobs_notifications_and_source_se' | translate }}</p>
       </div>
       @if (isSuperAdmin()) {
         <button
           class="add-competition-button"
           type="button"
-          aria-label="Create competition"
+          [attr.aria-label]="'ui.create_competition' | translate" [title]="'ui.create_competition' | translate"
           [disabled]="loadingRuleTemplates()"
           (click)="openCreateCompetitionModal()"
         >
@@ -39,17 +39,17 @@
     </div>
 
     @if (createSuccessMessage(); as message) {
-      <p class="picker-message picker-success">{{ message }}</p>
+      <p class="picker-message picker-success">{{ (message) }}</p>
     }
 
     @if (loadingRuleTemplates()) {
-      <p class="picker-message">Loading rule templates...</p>
+      <p class="picker-message">{{ 'ui.loading_rule_templates' | translate }}</p>
     }
 
     @if (loadingCompetitions()) {
-      <p class="picker-message">Loading competitions...</p>
+      <p class="picker-message">{{ 'ui.loading_competitions' | translate }}</p>
     } @else if (competitionErrorMessage(); as message) {
-      <p class="picker-message picker-error">{{ message }}</p>
+      <p class="picker-message picker-error">{{ (message) }}</p>
     } @else {
       <div class="competition-list">
         @for (competition of competitions(); track competition.id) {
@@ -76,10 +76,10 @@
     >
       @if (createSecretPromptOpen()) {
         <app-secret-code-modal
-          title="Confirm competition"
-          label="What is the secret code?"
-          confirmLabel="Create competition"
-          [errorMessage]="createSecretCodeErrorMessage()"
+          [title]="'ui.confirm_competition' | translate"
+          [label]="'ui.what_is_the_secret_code' | translate"
+          [confirmLabel]="'ui.create_competition' | translate"
+          [errorMessage]="(createSecretCodeErrorMessage())"
           [isSubmitting]="creatingCompetition()"
           (confirmSecretCode)="confirmCreateSecretCode($event)"
           (cancelModal)="cancelCreateSecretCode()"
@@ -88,21 +88,21 @@
         <div class="create-competition-modal">
           <header class="modal-create-header">
             <div>
-              <h2 id="admin-create-competition-title">Create competition</h2>
-              <p>Add a competition globally. The slug is generated from the title and kept unique for URLs.</p>
+              <h2 id="admin-create-competition-title">{{ 'ui.create_competition' | translate }}</h2>
+              <p>{{ 'ui.add_a_competition_globally_the_slug_is_generated_from_the_title_and_kept_unique_for_urls' | translate }}</p>
             </div>
-            <button class="modal-close-button" type="button" aria-label="Close create competition" (click)="cancelCreateCompetitionModal()">×</button>
+            <button class="modal-close-button" type="button" [attr.aria-label]="'ui.close_create_competition' | translate" [title]="'ui.close_create_competition' | translate" (click)="cancelCreateCompetitionModal()">×</button>
           </header>
 
           <form class="competition-form" [formGroup]="createForm" (ngSubmit)="openCreateSecretCode()">
             <div class="form-grid">
               <label>
-                <span>Title</span>
+                <span>{{ 'ui.title' | translate }}</span>
                 <input type="text" formControlName="name" autocomplete="off" />
               </label>
 
               <label>
-                <span>Entry passcode</span>
+                <span>{{ 'ui.entry_passcode' | translate }}</span>
                 <input type="text" formControlName="passcode" autocomplete="off" />
               </label>
             </div>
@@ -115,49 +115,49 @@
               }
               <div class="logo-actions">
                 <label class="file-button">
-                  <span>Import logo</span>
+                  <span>{{ 'ui.import_logo' | translate }}</span>
                   <input type="file" accept="image/*" (change)="importCreateLogo($event)" />
                 </label>
                 @if (createLogoPreview()) {
-                  <button class="secondary-button" type="button" (click)="removeCreateLogo()">Remove</button>
+                  <button class="secondary-button" type="button" (click)="removeCreateLogo()">{{ 'ui.remove' | translate }}</button>
                 }
               </div>
             </div>
 
             <label class="toggle-row">
               <input type="checkbox" formControlName="isFinished" />
-              <span>Competition has ended</span>
+              <span>{{ 'ui.competition_has_ended' | translate }}</span>
             </label>
 
             <label class="toggle-row">
               <input type="checkbox" formControlName="playoffsEnabled" />
-              <span>Competition has playoffs</span>
+              <span>{{ 'ui.competition_has_playoffs' | translate }}</span>
             </label>
 
             <label class="toggle-row">
               <input type="checkbox" formControlName="importMatchesWithOddsEnabled" />
-              <span>Import fixtures and odds together</span>
+              <span>{{ 'ui.import_fixtures_and_odds_together' | translate }}</span>
             </label>
 
             <label>
-              <span>OddsPortal source URL</span>
+              <span>{{ 'ui.oddsportal_source_url' | translate }}</span>
               <input type="url" formControlName="oddsSourceUrl" autocomplete="off" />
             </label>
 
             <fieldset formArrayName="rules">
-              <legend>Rules</legend>
+              <legend>{{ 'ui.rules' | translate }}</legend>
 
               <div class="rules-grid">
                 @for (template of ruleTemplates(); track template.key; let index = $index) {
                   <div class="rule-row" [formGroupName]="index">
                     <label class="toggle-row">
                       <input type="checkbox" formControlName="isEnabled" />
-                      <span>{{ template.textTemplate }}</span>
+                      <span>{{ (template.textTemplate) }}</span>
                     </label>
 
                     @if (template.valueLabel) {
                       <label>
-                        <span>{{ template.valueLabel }}</span>
+                        <span>{{ (template.valueLabel) }}</span>
                         <input type="text" formControlName="value" autocomplete="off" />
                       </label>
                     }
@@ -167,8 +167,7 @@
             </fieldset>
 
             <button class="primary-button" type="submit" [disabled]="creatingCompetition() || createForm.invalid">
-              Continue
-            </button>
+              {{ 'ui.continue' | translate }}</button>
           </form>
         </div>
       }

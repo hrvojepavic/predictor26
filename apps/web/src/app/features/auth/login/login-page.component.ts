@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -10,11 +12,12 @@ import { FormFieldStateDirective } from '@shared/directives/form-field-state.dir
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, FormFieldStateDirective],
+  imports: [TranslatePipe, ReactiveFormsModule, FormFieldStateDirective],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss'
 })
 export class LoginPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly authApi = inject(AuthApiProvider);
   private readonly appState = inject(AppStateService);
   private readonly formBuilder = inject(FormBuilder);
@@ -45,7 +48,7 @@ export class LoginPageComponent {
 
     if (this.loginForm.invalid || this.isSubmitting()) {
       this.loginForm.markAllAsTouched();
-      this.errorMessage.set('Invalid username or password.');
+      this.errorMessage.set(this.translations.translate("ui.invalid_username_or_password"));
       return;
     }
 
@@ -60,8 +63,8 @@ export class LoginPageComponent {
       error: (error: unknown) => {
         this.errorMessage.set(
           error instanceof HttpErrorResponse && error.status === 401
-            ? 'Invalid username or password.'
-            : 'Login failed. Please try again.'
+            ? this.translations.translate("ui.invalid_username_or_password")
+            : this.translations.translate("ui.login_failed_please_try_again")
         );
         this.isSubmitting.set(false);
       }

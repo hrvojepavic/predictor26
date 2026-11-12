@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -12,11 +14,12 @@ import { SecretCodeModalComponent } from '@shared/components/secret-code-modal/s
 
 @Component({
   selector: 'app-admin-competition-setup-page',
-  imports: [ModalShellComponent, ReactiveFormsModule, RouterLink, SecretCodeModalComponent],
+  imports: [TranslatePipe, ModalShellComponent, ReactiveFormsModule, RouterLink, SecretCodeModalComponent],
   templateUrl: './admin-competition-setup-page.component.html',
   styleUrl: './admin-competition-setup-page.component.scss'
 })
 export class AdminCompetitionSetupPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly appState = inject(AppStateService);
   private readonly competitionsApi = inject(CompetitionsApiProvider);
   private readonly formBuilder = inject(FormBuilder);
@@ -55,7 +58,7 @@ export class AdminCompetitionSetupPageComponent {
     }
 
     if (this.sourceForm.invalid) {
-      this.errorMessage.set('Please enter a valid source URL.');
+      this.errorMessage.set(this.translations.translate("ui.please_enter_a_valid_source_url"));
       return;
     }
 
@@ -117,7 +120,7 @@ export class AdminCompetitionSetupPageComponent {
           rules: this.sourceForm.controls.rules.getRawValue()
         });
         this.applyRules(settings.rules);
-        this.successMessage.set('Competition source settings saved.');
+        this.successMessage.set(this.translations.translate("ui.competition_source_settings_saved"));
         this.sourceSettingsSecretPromptOpen.set(false);
         this.savingSourceSettings.set(false);
       },
@@ -125,7 +128,7 @@ export class AdminCompetitionSetupPageComponent {
         const message =
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Competition source settings could not be saved.';
+            : this.translations.translate("ui.competition_source_settings_could_not_be_saved");
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.sourceSecretCodeErrorMessage.set(message);
@@ -170,7 +173,7 @@ export class AdminCompetitionSetupPageComponent {
         this.loadingSourceSettings.set(false);
       },
       error: () => {
-        this.errorMessage.set('Competition settings could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.competition_settings_could_not_be_loaded"));
         this.loadingSourceSettings.set(false);
       }
     });
@@ -185,7 +188,7 @@ export class AdminCompetitionSetupPageComponent {
     }
 
     if (!file.type.startsWith('image/') || file.size > 150000) {
-      this.errorMessage.set('Logo must be an image smaller than 150 KB.');
+      this.errorMessage.set(this.translations.translate("ui.logo_must_be_an_image_smaller_than_150_kb"));
       input.value = '';
       return;
     }

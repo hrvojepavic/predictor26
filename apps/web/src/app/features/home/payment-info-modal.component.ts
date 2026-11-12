@@ -1,13 +1,17 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
+import { inject, Component, computed, input, output, signal } from '@angular/core';
 
 import { PaymentInfoMethod } from '@models/payment-info.models';
 
 @Component({
+  imports: [TranslatePipe],
   selector: 'app-payment-info-modal',
   templateUrl: './payment-info-modal.component.html',
   styleUrl: './payment-info-modal.component.scss'
 })
 export class PaymentInfoModalComponent {
+  private readonly translations = inject(TranslationService);
   readonly methods = input.required<PaymentInfoMethod[]>();
   readonly closeModal = output<void>();
 
@@ -15,11 +19,11 @@ export class PaymentInfoModalComponent {
   protected readonly visibleMethods = computed(() => this.methods());
 
   protected payButtonLabel(method: PaymentInfoMethod): string {
-    return method.type === 'revolut' ? 'Pay on Revolut' : 'Pay on KEKS';
+    return method.type === 'revolut' ? this.translations.translate("ui.pay_on_revolut") : this.translations.translate("ui.pay_on_keks");
   }
 
   protected directPayButtonLabel(method: PaymentInfoMethod): string {
-    return method.type === 'revolut' ? 'Pay directly on Revolut' : 'Pay directly on KEKS';
+    return method.type === 'revolut' ? this.translations.translate("ui.pay_directly_on_revolut") : this.translations.translate("ui.pay_directly_on_keks");
   }
 
   protected copyValue(method: PaymentInfoMethod): void {

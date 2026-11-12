@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 
@@ -7,11 +9,12 @@ import { OddsFormatPipe } from '@shared/pipes/odds-format.pipe';
 
 @Component({
   selector: 'app-stats-page',
-  imports: [DecimalPipe, OddsFormatPipe],
+  imports: [TranslatePipe, DecimalPipe, OddsFormatPipe],
   templateUrl: './stats-page.component.html',
   styleUrl: './stats-page.component.scss'
 })
 export class StatsPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly appState = inject(AppStateService);
   private readonly leaderboardService = inject(LeaderboardService);
 
@@ -67,7 +70,7 @@ export class StatsPageComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Stats could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.stats_could_not_be_loaded"));
         this.loading.set(false);
       }
     });

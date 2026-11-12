@@ -1,20 +1,20 @@
 <section class="admin-teams-page" aria-labelledby="admin-teams-title">
   <header class="page-header">
     <div>
-      <p class="section-label">Admin</p>
-      <h1 id="admin-teams-title">Teams</h1>
-      <a class="back-link" routerLink="../">Back to admin competition</a>
+      <p class="section-label">{{ 'ui.admin' | translate }}</p>
+      <h1 id="admin-teams-title">{{ 'ui.teams' | translate }}</h1>
+      <a class="back-link" routerLink="../">{{ 'ui.back_to_admin_competition' | translate }}</a>
     </div>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (loading()) {
-    <p class="status-message">Loading teams...</p>
+    <p class="status-message">{{ 'ui.loading_teams' | translate }}</p>
   } @else {
-    <div class="teams-list" role="list" aria-label="Competition teams">
+    <div class="teams-list" role="list" [attr.aria-label]="'ui.competition_teams' | translate">
       @for (team of teamRows(); track team.normalizedName) {
         <article class="team-row" role="listitem">
           <div class="team-logo-wrap">
@@ -25,7 +25,7 @@
                 <span>{{ team.initials }}</span>
               }
             </div>
-            <button class="logo-edit-button" type="button" aria-label="Edit team icon" [disabled]="team.isUpdating" (click)="editLogo(team)">
+            <button class="logo-edit-button" type="button" [attr.aria-label]="'ui.edit_team_icon' | translate" [title]="'ui.edit_team_icon' | translate" [disabled]="team.isUpdating" (click)="editLogo(team)">
               <span aria-hidden="true">&#9998;</span>
             </button>
           </div>
@@ -35,7 +35,7 @@
           </div>
 
           <label class="display-name-field">
-            <span>Display name</span>
+            <span>{{ 'ui.display_name' | translate }}</span>
             <input
               type="text"
               maxlength="140"
@@ -52,11 +52,11 @@
             [disabled]="team.isUpdating || !team.isDisplayNameDirty || team.isDisplayNameInvalid"
             (click)="requestDisplayNameSave(team)"
           >
-            {{ team.isUpdating ? 'Saving...' : 'Save' }}
+            {{ team.isUpdating ? ('ui.saving' | translate) : ('ui.save' | translate) }}
           </button>
         </article>
       } @empty {
-        <p class="status-message">No teams have been imported yet.</p>
+        <p class="status-message">{{ 'ui.no_teams_have_been_imported_yet' | translate }}</p>
       }
     </div>
   }
@@ -71,10 +71,10 @@
       (closeModal)="cancelDisplayNameChange()"
     >
       <app-secret-code-modal
-        title="Save display name"
-        label="Secret code"
-        confirmLabel="Save"
-        [errorMessage]="displayNameErrorMessage()"
+        [title]="'ui.save_display_name' | translate"
+        [label]="'ui.secret_code' | translate"
+        [confirmLabel]="'ui.save' | translate"
+        [errorMessage]="(displayNameErrorMessage())"
         [isSubmitting]="pendingChange.team.normalizedName === updatingTeamName()"
         (confirmSecretCode)="confirmDisplayNameChange($event)"
         (cancelModal)="cancelDisplayNameChange()"
@@ -94,7 +94,7 @@
       <app-admin-team-logo-modal
         [teamName]="team.name"
         [currentLogoUrl]="team.logoUrl"
-        [errorMessage]="logoErrorMessage()"
+        [errorMessage]="(logoErrorMessage())"
         [isSubmitting]="team.normalizedName === updatingTeamName()"
         (confirmLogoChange)="confirmLogoChange($event)"
         (cancelModal)="cancelLogoChange()"

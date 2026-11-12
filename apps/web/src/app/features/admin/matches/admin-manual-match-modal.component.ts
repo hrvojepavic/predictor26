@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -8,11 +10,12 @@ export type ManualMatchConfirmation = CreateManualMatchRequest;
 
 @Component({
   selector: 'app-admin-manual-match-modal',
-  imports: [ReactiveFormsModule, FormFieldStateDirective],
+  imports: [TranslatePipe, ReactiveFormsModule, FormFieldStateDirective],
   templateUrl: './admin-manual-match-modal.component.html',
   styleUrl: './admin-manual-match-modal.component.scss'
 })
 export class AdminManualMatchModalComponent {
+  private readonly translations = inject(TranslationService);
   private readonly formBuilder = inject(FormBuilder);
 
   readonly existingTeamNames = input<readonly string[]>([]);
@@ -132,7 +135,7 @@ export class AdminManualMatchModalComponent {
 
     if (!allowedLogoTypes.has(file.type) || file.size > maxLogoSizeBytes) {
       input.value = '';
-      this.logoErrorMessage.set('Use PNG, JPG, or WebP up to 300 KB.');
+      this.logoErrorMessage.set(this.translations.translate("ui.use_png_jpg_or_webp_up_to_300_kb"));
       return;
     }
 
@@ -141,7 +144,7 @@ export class AdminManualMatchModalComponent {
       fileNameSignal.set(file.name);
     } catch {
       input.value = '';
-      this.logoErrorMessage.set('Logo could not be read.');
+      this.logoErrorMessage.set(this.translations.translate("ui.logo_could_not_be_read"));
     }
   }
 }

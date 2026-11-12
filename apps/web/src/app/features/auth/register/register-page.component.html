@@ -1,10 +1,10 @@
 <section class="register-page" aria-labelledby="register-title">
   <div class="register-panel">
-    <h1 id="register-title">Register</h1>
+    <h1 id="register-title">{{ 'ui.register' | translate }}</h1>
 
     <form class="register-form" [formGroup]="registerForm" (ngSubmit)="register()">
       <label class="field">
-        <span>Username</span>
+        <span>{{ 'ui.username' | translate }}</span>
         <input
           appFormFieldState="invalid"
           type="text"
@@ -19,37 +19,36 @@
       </label>
 
       <label class="field">
-        <span>First name</span>
+        <span>{{ 'ui.first_name' | translate }}</span>
         <input appFormFieldState="invalid" type="text" formControlName="name" autocomplete="given-name" maxlength="80" />
       </label>
 
       <label class="field">
-        <span>Last name</span>
+        <span>{{ 'ui.last_name' | translate }}</span>
         <input appFormFieldState="invalid" type="text" formControlName="lastname" autocomplete="family-name" maxlength="80" />
       </label>
 
       <label class="field">
-        <span>Password</span>
+        <span>{{ 'ui.password' | translate }}</span>
         <input appFormFieldState="invalid" type="password" formControlName="password" autocomplete="new-password" maxlength="128" />
-        <small class="field-hint">* Password must be at least 8 characters.</small>
+        <small class="field-hint">{{ 'ui.password_must_be_at_least_8_characters' | translate }}</small>
       </label>
 
       <label class="field">
-        <span>Confirm password</span>
+        <span>{{ 'ui.confirm_password' | translate }}</span>
         <input appFormFieldState="invalid" type="password" formControlName="confirmPassword" autocomplete="new-password" maxlength="128" />
       </label>
 
       <div class="rules-field">
         <input id="acceptedRules" appFormFieldState="invalid" type="checkbox" formControlName="acceptedRules" />
         <label for="acceptedRules">
-          I accept the site's terms and privacy policy.
-        </label>
+          {{ 'ui.i_accept_the_site_s_terms_and_privacy_policy' | translate }}</label>
       </div>
 
-      <p class="form-error" [class.form-error-visible]="formMessage()">{{ formMessage() || '&nbsp;' }}</p>
+      <p class="form-error" [class.form-error-visible]="formMessage()">{{ (formMessage() || ' ') }}</p>
 
       <button class="submit-button" type="submit" [disabled]="isSubmitting() || registrationsDisabled()">
-        {{ isSubmitting() ? 'Registering...' : 'Register' }}
+        {{ isSubmitting() ? ('ui.registering' | translate) : ('ui.register' | translate) }}
       </button>
     </form>
   </div>

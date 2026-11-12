@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -13,11 +15,12 @@ import { FormFieldStateDirective } from '@shared/directives/form-field-state.dir
 
 @Component({
   selector: 'app-competitions-page',
-  imports: [FormFieldStateDirective, ModalShellComponent, ReactiveFormsModule],
+  imports: [TranslatePipe, FormFieldStateDirective, ModalShellComponent, ReactiveFormsModule],
   templateUrl: './competitions-page.component.html',
   styleUrl: './competitions-page.component.scss'
 })
 export class CompetitionsPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly appState = inject(AppStateService);
   private readonly competitionsApi = inject(CompetitionsApiProvider);
   private readonly competitionsService = inject(CompetitionsService);
@@ -44,7 +47,7 @@ export class CompetitionsPageComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         error: () => {
-          this.errorMessage.set('Competitions could not be loaded.');
+          this.errorMessage.set(this.translations.translate("ui.competitions_could_not_be_loaded"));
         }
       });
   }
@@ -104,7 +107,7 @@ export class CompetitionsPageComponent {
         this.joinErrorMessage.set(
           error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
             ? error.error.message
-            : 'Competition could not be joined.'
+            : this.translations.translate("ui.competition_could_not_be_joined")
         );
         this.joiningCompetition.set(false);
       }

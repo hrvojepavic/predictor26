@@ -1,3 +1,4 @@
+import { testTranslationsProvider, initializeTestTranslations } from '../../../../testing/translations';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
@@ -18,7 +19,7 @@ describe('Browser notification setup', () => {
   const registration = { pushManager: { getSubscription: existing, subscribe } };
   const originalServiceWorker = Object.getOwnPropertyDescriptor(navigator, 'serviceWorker');
 
-  beforeEach(() => {
+  beforeEach(async () => {
     token.set('account-one');
     localStorage.setItem('predictor26.session', JSON.stringify({token:'account-one'}));
     addBrowser.mockReset();
@@ -35,11 +36,12 @@ describe('Browser notification setup', () => {
     existing.mockResolvedValue(null);
     subscribe.mockResolvedValue({ endpoint: 'https://push.test/browser', toJSON: () => ({ endpoint: 'test' }) });
     saveSubscription.mockReturnValue(of({ subscribed: true }));
-    TestBed.configureTestingModule({ providers: [
+    TestBed.configureTestingModule({ providers: [testTranslationsProvider,
       { provide: AppStateService, useValue: { token, currentUser: () => ({id:1}), activeCompetition: () => ({ id: 7 }) } },
       { provide: NotificationBrowserAccountService, useValue: { withCurrentAccount: async (_id: number, _token: string, action: () => Promise<unknown>) => action() } },
       { provide: NotificationsApiProvider, useValue: { getConfig, saveSubscription, addBrowser } }
     ] });
+    await initializeTestTranslations();
   });
 
   afterEach(() => {

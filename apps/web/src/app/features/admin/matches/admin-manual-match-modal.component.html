@@ -1,54 +1,54 @@
 <form class="manual-match-form" [formGroup]="matchForm" (ngSubmit)="confirm()">
   <header class="modal-header">
-    <h2 id="manual-match-modal-title">Add match</h2>
-    <button class="icon-button" type="button" aria-label="Close" [disabled]="isSubmitting()" (click)="cancel()">×</button>
+    <h2 id="manual-match-modal-title">{{ 'ui.add_match' | translate }}</h2>
+    <button class="icon-button" type="button" [attr.aria-label]="'ui.close' | translate" [title]="'ui.close' | translate" [disabled]="isSubmitting()" (click)="cancel()">×</button>
   </header>
 
   <div class="modal-content">
     <div class="form-grid">
       <label class="field">
-        <span>Match date and time</span>
+        <span>{{ 'ui.match_date_and_time' | translate }}</span>
         <input type="datetime-local" appFormFieldState="invalid" formControlName="kickoffAt" [readonly]="isSubmitting()" />
       </label>
 
       <label class="field">
-        <span>City</span>
+        <span>{{ 'ui.city' | translate }}</span>
         <input type="text" maxlength="80" appFormFieldState="invalid" formControlName="city" [readonly]="isSubmitting()" />
       </label>
 
       <label class="field">
-        <span>Venue</span>
+        <span>{{ 'ui.venue' | translate }}</span>
         <input type="text" maxlength="120" appFormFieldState="invalid" formControlName="venue" [readonly]="isSubmitting()" />
       </label>
     </div>
 
     <div class="team-grid">
       <fieldset>
-        <legend>Home team</legend>
+        <legend>{{ 'ui.home_team' | translate }}</legend>
         <label class="toggle-row">
           <input type="checkbox" formControlName="homeUseNewTeam" />
-          <span>Add new team</span>
+          <span>{{ 'ui.add_new_team' | translate }}</span>
         </label>
 
         @if (matchForm.controls.homeUseNewTeam.value) {
           <label class="field">
-            <span>Team name</span>
+            <span>{{ 'ui.team_name' | translate }}</span>
             <input type="text" maxlength="80" appFormFieldState="invalid" formControlName="homeNewTeam" [readonly]="isSubmitting()" />
           </label>
           <label class="field">
-            <span>Logo</span>
+            <span>{{ 'ui.logo' | translate }}</span>
             <input type="file" accept="image/png,image/jpeg,image/webp" [disabled]="isSubmitting()" (change)="onLogoSelected('home', $event)" />
           </label>
           @if (homeLogoFileName()) {
-            <p class="file-name">{{ homeLogoFileName() }}</p>
+            <p class="file-name">{{ (homeLogoFileName()) }}</p>
           }
         } @else {
           <label class="field">
-            <span>Team</span>
+            <span>{{ 'ui.team' | translate }}</span>
             <select appFormFieldState="invalid" formControlName="homeExistingTeam" [disabled]="isSubmitting()">
-              <option value="">Choose team</option>
+              <option value="">{{ 'ui.choose_team' | translate }}</option>
               @for (teamName of sortedTeamNames(); track teamName) {
-                <option [value]="teamName">{{ teamName }}</option>
+                <option [value]="teamName">{{ (teamName) }}</option>
               }
             </select>
           </label>
@@ -56,31 +56,31 @@
       </fieldset>
 
       <fieldset>
-        <legend>Away team</legend>
+        <legend>{{ 'ui.away_team' | translate }}</legend>
         <label class="toggle-row">
           <input type="checkbox" formControlName="awayUseNewTeam" />
-          <span>Add new team</span>
+          <span>{{ 'ui.add_new_team' | translate }}</span>
         </label>
 
         @if (matchForm.controls.awayUseNewTeam.value) {
           <label class="field">
-            <span>Team name</span>
+            <span>{{ 'ui.team_name' | translate }}</span>
             <input type="text" maxlength="80" appFormFieldState="invalid" formControlName="awayNewTeam" [readonly]="isSubmitting()" />
           </label>
           <label class="field">
-            <span>Logo</span>
+            <span>{{ 'ui.logo' | translate }}</span>
             <input type="file" accept="image/png,image/jpeg,image/webp" [disabled]="isSubmitting()" (change)="onLogoSelected('away', $event)" />
           </label>
           @if (awayLogoFileName()) {
-            <p class="file-name">{{ awayLogoFileName() }}</p>
+            <p class="file-name">{{ (awayLogoFileName()) }}</p>
           }
         } @else {
           <label class="field">
-            <span>Team</span>
+            <span>{{ 'ui.team' | translate }}</span>
             <select appFormFieldState="invalid" formControlName="awayExistingTeam" [disabled]="isSubmitting()">
-              <option value="">Choose team</option>
+              <option value="">{{ 'ui.choose_team' | translate }}</option>
               @for (teamName of sortedTeamNames(); track teamName) {
-                <option [value]="teamName">{{ teamName }}</option>
+                <option [value]="teamName">{{ (teamName) }}</option>
               }
             </select>
           </label>
@@ -89,7 +89,7 @@
     </div>
 
     <fieldset>
-      <legend>Odds</legend>
+      <legend>{{ 'ui.odds' | translate }}</legend>
       <div class="odds-grid">
         <label class="field">
           <span>1</span>
@@ -107,7 +107,7 @@
     </fieldset>
 
     <label class="field">
-      <span>What is the secret code?</span>
+      <span>{{ 'ui.what_is_the_secret_code' | translate }}</span>
       <input
         type="password"
         autocomplete="current-password"
@@ -119,14 +119,14 @@
     </label>
 
     <p class="form-error" [class.form-error-visible]="logoErrorMessage() || errorMessage()">
-      {{ logoErrorMessage() || errorMessage() || '&nbsp;' }}
+      {{ (logoErrorMessage() || errorMessage() || ' ') }}
     </p>
   </div>
 
   <footer class="modal-footer">
-    <button class="secondary-button" type="button" [disabled]="isSubmitting()" (click)="cancel()">Cancel</button>
+    <button class="secondary-button" type="button" [disabled]="isSubmitting()" (click)="cancel()">{{ 'ui.cancel' | translate }}</button>
     <button class="confirm-button" type="submit" [disabled]="isSubmitting() || matchForm.invalid">
-      {{ isSubmitting() ? 'Saving...' : 'Add match' }}
+      {{ isSubmitting() ? ('ui.saving' | translate) : ('ui.add_match' | translate) }}
     </button>
   </footer>
 </form>

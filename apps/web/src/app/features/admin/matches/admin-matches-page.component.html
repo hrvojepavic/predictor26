@@ -1,42 +1,42 @@
 <section class="admin-matches-page" aria-labelledby="admin-matches-title">
   <header class="page-header">
     <div>
-      <p class="section-label">Admin</p>
-      <h1 id="admin-matches-title">Matches</h1>
-      <a class="back-link" routerLink="../">Back to admin competition</a>
+      <p class="section-label">{{ 'ui.admin' | translate }}</p>
+      <h1 id="admin-matches-title">{{ 'ui.matches' | translate }}</h1>
+      <a class="back-link" routerLink="../">{{ 'ui.back_to_admin_competition' | translate }}</a>
     </div>
 
     <div class="header-actions">
       <button class="import-button" type="button" [disabled]="addingMatch()" (click)="openAddMatchModal()">
-        {{ addingMatch() ? 'Adding...' : 'Add match' }}
+        {{ addingMatch() ? ('ui.adding' | translate) : ('ui.add_match' | translate) }}
       </button>
       @if (importMatchesWithOddsEnabled()) {
         <button class="import-button" type="button" [disabled]="importingWithOdds()" (click)="requestImportMatchesWithOdds()">
-          {{ combinedImportActionLabel() }}
+          {{ (combinedImportActionLabel()) }}
         </button>
       } @else {
         <button class="import-button" type="button" [disabled]="importing()" (click)="requestImportMatches()">
-          {{ scheduleActionLabel() }}
+          {{ (scheduleActionLabel()) }}
         </button>
         <button class="import-button" type="button" [disabled]="syncingOdds() || matches().length === 0" (click)="requestSyncOdds()">
-          {{ oddsActionLabel() }}
+          {{ (oddsActionLabel()) }}
         </button>
       }
     </div>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (importMessage(); as message) {
-    <p class="status-message">{{ message }}</p>
+    <p class="status-message">{{ (message) }}</p>
   }
 
   @if (loading()) {
-    <p class="status-message">Loading matches...</p>
+    <p class="status-message">{{ 'ui.loading_matches' | translate }}</p>
   } @else {
-    <div class="filters" aria-label="Match filters">
+    <div class="filters" [attr.aria-label]="'ui.match_filters' | translate">
       <label class="filter-option">
         <input
           type="radio"
@@ -44,7 +44,7 @@
           [checked]="selectedFilter() === 'active'"
           (change)="setFilter('active')"
         />
-        <span>Show all active</span>
+        <span>{{ 'ui.show_all_active' | translate }}</span>
       </label>
 
       <label class="filter-option">
@@ -54,7 +54,7 @@
           [checked]="selectedFilter() === 'required'"
           (change)="setFilter('required')"
         />
-        <span>Requires action ({{ requiredActionCount() }})</span>
+        <span>{{ 'ui.requires_action_p0' | translate: { p0: (requiredActionCount()) } }}</span>
       </label>
 
       <label class="filter-option">
@@ -64,7 +64,7 @@
           [checked]="selectedFilter() === 'inactive'"
           (change)="setFilter('inactive')"
         />
-        <span>Show inactive</span>
+        <span>{{ 'ui.show_inactive' | translate }}</span>
       </label>
     </div>
 
@@ -72,9 +72,9 @@
       @for (group of groupedMatches(); track group.label) {
         <section class="match-group" [attr.aria-labelledby]="'admin-group-' + group.label">
           <div class="match-group-heading">
-            <h2 [id]="'admin-group-' + group.label">{{ group.label }}</h2>
+            <h2 [id]="'admin-group-' + group.label">{{ (group.label)  }}</h2>
             @if (!group.releasedForPredictions) {
-              <button class="import-button" type="button" (click)="requestReleaseRound(group.label)">Release week</button>
+              <button class="import-button" type="button" (click)="requestReleaseRound(group.label)">{{ 'ui.release_week' | translate }}</button>
             }
           </div>
 
@@ -83,24 +83,23 @@
               <article class="match-row" [class.match-row-required]="isRequiredAction(match)" [class.match-row-postponed]="match.isPostponed">
                 <div class="match-meta">
                   <span>
-                    Match {{ match.matchNumber }}
-                    @if (match.isPostponed) {
-                      <span class="postponed-badge">Postponed</span>
+                    {{ 'ui.match_p0' | translate: { p0: (match.matchNumber) } }} @if (match.isPostponed) {
+                      <span class="postponed-badge">{{ 'ui.postponed' | translate }}</span>
                     }
                     @if (!match.releasedForPredictions) {
-                      <span class="required-badge" aria-label="Not released for predictions">!</span>
+                      <span class="required-badge" [attr.aria-label]="'ui.not_released_for_predictions' | translate">!</span>
                     }
                     @if (isRequiredAction(match)) {
-                      <span class="required-badge" aria-label="Requires action">!</span>
+                      <span class="required-badge" [attr.aria-label]="'ui.requires_action' | translate">!</span>
                     }
                   </span>
                   <span>
-                    <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'EEE, MMM d, HH:mm' }}</time>
+                    <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | localizedDate: 'EEE, MMM d, HH:mm' }}</time>
                     <button
                       class="kickoff-edit-button"
                       type="button"
                       [disabled]="savingIds().has(match.id)"
-                      [attr.aria-label]="'Edit details for match ' + match.matchNumber"
+                      [attr.aria-label]="'ui.edit_match' | translate: { number: match.matchNumber }" [title]="'ui.edit_match' | translate: { number: match.matchNumber }"
                       (click)="editKickoff(match)"
                     >
                       <span aria-hidden="true">&#9998;</span>
@@ -109,10 +108,10 @@
                       class="postponed-toggle-button"
                       type="button"
                       [disabled]="savingIds().has(match.id)"
-                      [attr.aria-label]="(match.isPostponed ? 'Restore match ' : 'Mark postponed match ') + match.matchNumber"
+                      [attr.aria-label]="(match.isPostponed ? 'a11y.restore_match' : 'ui.postpone_match') | translate: { number: match.matchNumber }" [title]="(match.isPostponed ? 'a11y.restore_match' : 'ui.postpone_match') | translate: { number: match.matchNumber }"
                       (click)="requestPostponedToggle(match)"
                     >
-                      {{ match.isPostponed ? 'Restore' : 'Postpone' }}
+                      {{ match.isPostponed ? ('ui.restore' | translate) : ('ui.postpone' | translate) }}
                     </button>
                   </span>
                   <span>{{ match.city }} · {{ match.venue }}</span>
@@ -120,27 +119,27 @@
 
                 <div class="teams">
                   <span class="team-name"><app-team-name [name]="match.homeTeam.name" [flag]="match.homeTeam.flag" /></span>
-                  <span class="versus">vs</span>
+                  <span class="versus">{{ 'ui.vs' | translate }}</span>
                   <span class="team-name"><app-team-name [name]="match.awayTeam.name" [flag]="match.awayTeam.flag" /></span>
                 </div>
 
-                <div class="odds" aria-label="Match odds">
+                <div class="odds" [attr.aria-label]="'ui.match_odds' | translate">
                   @if (match.odds) {
                     <span>{{ match.odds.homeWin | oddsFormat }}</span>
                     <span>{{ match.odds.draw | oddsFormat }}</span>
                     <span>{{ match.odds.awayWin | oddsFormat }}</span>
                   } @else {
-                    <span class="odds-empty">No odds</span>
+                    <span class="odds-empty">{{ 'ui.no_odds' | translate }}</span>
                   }
                 </div>
 
-                <div class="score-form" aria-label="Final score">
+                <div class="score-form" [attr.aria-label]="'ui.final_score' | translate">
                   <input
                     type="text"
                     maxlength="2"
                     pattern="[0-9]*"
                     inputmode="numeric"
-                    aria-label="Home final score"
+                    [attr.aria-label]="'ui.home_final_score' | translate"
                     [disabled]="match.isPostponed"
                     [value]="drafts()[match.id]?.home ?? ''"
                     (input)="updateDraft(match.id, 'home', $any($event.target).value)"
@@ -151,19 +150,19 @@
                     maxlength="2"
                     pattern="[0-9]*"
                     inputmode="numeric"
-                    aria-label="Away final score"
+                    [attr.aria-label]="'ui.away_final_score' | translate"
                     [disabled]="match.isPostponed"
                     [value]="drafts()[match.id]?.away ?? ''"
                     (input)="updateDraft(match.id, 'away', $any($event.target).value)"
                   />
-                  <span class="save-state">{{ savingIds().has(match.id) ? 'Saving' : match.isPostponed ? 'Void' : match.finalScore ? 'Saved' : '' }}</span>
+                  <span class="save-state">{{ savingIds().has(match.id) ? ('ui.saving_2' | translate) : match.isPostponed ? ('ui.void' | translate) : match.finalScore ? ('ui.saved' | translate) : '' }}</span>
                 </div>
               </article>
             }
           </div>
         </section>
       } @empty {
-        <p class="status-message">No matches for this filter.</p>
+        <p class="status-message">{{ 'ui.no_matches_for_this_filter' | translate }}</p>
       }
     </div>
   }
@@ -178,10 +177,10 @@
       (closeModal)="cancelSecretAction()"
     >
       <app-secret-code-modal
-        [title]="secretActionTitle()"
-        label="What is the secret code?"
-        [confirmLabel]="secretActionConfirmLabel()"
-        [errorMessage]="secretCodeErrorMessage()"
+        [title]="(secretActionTitle())"
+        [label]="'ui.what_is_the_secret_code' | translate"
+        [confirmLabel]="(secretActionConfirmLabel())"
+        [errorMessage]="(secretCodeErrorMessage())"
         [isSubmitting]="isPendingSecretActionSubmitting()"
         (confirmSecretCode)="confirmSecretAction($event)"
         (cancelModal)="cancelSecretAction()"
@@ -200,7 +199,7 @@
     >
       <app-admin-manual-match-modal
         [existingTeamNames]="existingTeamNames()"
-        [errorMessage]="addMatchErrorMessage()"
+        [errorMessage]="(addMatchErrorMessage())"
         [isSubmitting]="addingMatch()"
         (confirmManualMatch)="confirmAddMatch($event)"
         (cancelModal)="cancelAddMatch()"
@@ -219,7 +218,7 @@
     >
       <app-admin-match-kickoff-modal
         [match]="match"
-        [errorMessage]="kickoffErrorMessage()"
+        [errorMessage]="(kickoffErrorMessage())"
         [isSubmitting]="isKickoffChangeSubmitting()"
         (confirmKickoffChange)="confirmKickoffChange($event)"
         (cancelModal)="cancelKickoffChange()"

@@ -1,5 +1,7 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { inject, Component, computed, input } from '@angular/core';
 
 import { MatchPrediction, MatchScore } from '@models/match.models';
 import { formatFixedNumber } from '@shared/utils/number-format.utils';
@@ -7,11 +9,12 @@ import { calculatePredictionPoints, getPredictionPointsStateColor } from '@share
 
 @Component({
   selector: 'app-prediction-points',
-  imports: [DecimalPipe],
+  imports: [TranslatePipe, DecimalPipe],
   templateUrl: './prediction-points.component.html',
   styleUrl: './prediction-points.component.scss'
 })
 export class PredictionPointsComponent {
+  private readonly translations = inject(TranslationService);
   readonly prediction = input.required<MatchPrediction>();
   readonly finalScore = input<MatchScore | null>(null);
   readonly isPostponed = input(false);
@@ -22,9 +25,9 @@ export class PredictionPointsComponent {
     const points = this.points();
 
     if (points.state === 'void') {
-      return 'Postponed match. Prediction is void.';
+      return this.translations.translate("ui.postponed_match_prediction_is_void");
     }
 
-    return `Correct outcome ${formatFixedNumber(points.outcomePoints)} + Correct score ${formatFixedNumber(points.exactScorePoints)} = ${formatFixedNumber(points.available ?? 0)}`;
+    return this.translations.translate('ui.correct_outcome_p0_correct_score_p1_p2', { p0: formatFixedNumber(points.outcomePoints), p1: formatFixedNumber(points.exactScorePoints), p2: formatFixedNumber(points.available ?? 0) });
   });
 }

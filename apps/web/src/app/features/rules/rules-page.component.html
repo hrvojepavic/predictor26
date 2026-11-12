@@ -1,22 +1,22 @@
 <section class="rules-page" aria-labelledby="rules-title">
   <div class="rules-panel">
-    <p class="section-label">Predictor26</p>
-    <h1 id="rules-title">{{ activeCompetition()?.name || 'Competition' }} rules</h1>
+    <p class="section-label">{{ 'ui.predictor26' | translate }}</p>
+    <h1 id="rules-title">{{ 'ui.p0_rules' | translate: { p0: (activeCompetition()?.name || 'ui.competition' | translate) } }}</h1>
 
     @if (loading()) {
-      <p class="status-message">Loading rules...</p>
+      <p class="status-message">{{ 'ui.loading_rules' | translate }}</p>
     } @else if (errorMessage(); as message) {
-      <p class="status-message status-error">{{ message }}</p>
+      <p class="status-message status-error">{{ (message) }}</p>
     } @else {
       <ol class="rules-list">
         @for (rule of rules(); track rule) {
-          <li>{{ rule }}</li>
+          <li>{{ (rule) }}</li>
         }
       </ol>
     }
 
     @if (activeCompetition(); as competition) {
-      <a class="home-link" [routerLink]="['/competition', competition.slug]">Back to competition</a>
+      <a class="home-link" [routerLink]="['/competition', competition.slug]">{{ 'ui.back_to_competition' | translate }}</a>
     }
   </div>
 </section>

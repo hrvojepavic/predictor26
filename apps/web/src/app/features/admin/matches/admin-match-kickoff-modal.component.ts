@@ -1,3 +1,4 @@
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, computed, effect, inject, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -16,7 +17,7 @@ export interface KickoffChangeConfirmation {
 
 @Component({
   selector: 'app-admin-match-kickoff-modal',
-  imports: [ReactiveFormsModule, FormFieldStateDirective],
+  imports: [TranslatePipe, ReactiveFormsModule, FormFieldStateDirective],
   templateUrl: './admin-match-kickoff-modal.component.html',
   styleUrl: './admin-match-kickoff-modal.component.scss'
 })

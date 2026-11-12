@@ -1,16 +1,16 @@
-<section class="competitions-page" aria-label="Choose a competition">
-  <p class="section-label">Choose a competition</p>
+<section class="competitions-page" [attr.aria-label]="'ui.choose_a_competition' | translate">
+  <p class="section-label">{{ 'ui.choose_a_competition' | translate }}</p>
 
   @if (errorMessage(); as error) {
-    <p class="state-message">{{ error }}</p>
+    <p class="state-message">{{ (error) }}</p>
   } @else if (!loaded()) {
-    <div class="competition-list" role="status" aria-label="Loading competitions">
+    <div class="competition-list" role="status" [attr.aria-label]="'ui.loading_competitions_2' | translate">
       @for (item of [0, 1]; track item) {
         <span class="competition-skeleton" aria-hidden="true"></span>
       }
     </div>
   } @else if (competitions().length === 0) {
-    <p class="state-message">You are not part of any competition yet.</p>
+    <p class="state-message">{{ 'ui.you_are_not_part_of_any_competition_yet' | translate }}</p>
   } @else {
     <div class="competition-list">
       @for (competition of competitions(); track competition.id) {
@@ -22,13 +22,13 @@
           }
           <span class="competition-title">{{ competition.name }}</span>
           @if (competition.isFinished) {
-            <span class="competition-status">Finished</span>
+            <span class="competition-status">{{ 'ui.finished' | translate }}</span>
           } @else if (competition.isJoined) {
-            <span class="competition-status competition-status-active">Active</span>
+            <span class="competition-status competition-status-active">{{ 'ui.active' | translate }}</span>
           } @else if (!competition.isJoined) {
-            <span class="competition-status competition-status-join">Open</span>
+            <span class="competition-status competition-status-join">{{ 'ui.open' | translate }}</span>
           }
-          <span class="competition-action">{{ competition.isJoined ? 'See details' : 'Enter passcode' }}</span>
+          <span class="competition-action">{{ competition.isJoined ? ('ui.see_details' | translate) : ('ui.enter_passcode' | translate) }}</span>
         </button>
       }
     </div>
@@ -46,29 +46,29 @@
       <form class="join-form" [formGroup]="joinForm" (ngSubmit)="confirmJoinCompetition()">
         <header class="modal-header">
           <div>
-            <h2 id="join-competition-title">Join {{ competition.name }}</h2>
+            <h2 id="join-competition-title">{{ 'ui.join_p0' | translate: { p0: (competition.name) } }}</h2>
           </div>
-          <button class="icon-button" type="button" aria-label="Close" [disabled]="joiningCompetition()" (click)="cancelJoinCompetition()">×</button>
+          <button class="icon-button" type="button" [attr.aria-label]="'ui.close' | translate" [title]="'ui.close' | translate" [disabled]="joiningCompetition()" (click)="cancelJoinCompetition()">×</button>
         </header>
 
         <div class="modal-content">
-          <section class="rules-panel" aria-label="Competition rules">
-            <p class="rules-title">The Rules</p>
+          <section class="rules-panel" [attr.aria-label]="'ui.competition_rules' | translate">
+            <p class="rules-title">{{ 'ui.the_rules' | translate }}</p>
             @if (loadingJoinRules()) {
-              <p class="rules-state">Loading rules...</p>
+              <p class="rules-state">{{ 'ui.loading_rules' | translate }}</p>
             } @else if (joinRules().length > 0) {
               <ol>
                 @for (rule of joinRules(); track rule) {
-                  <li>{{ rule }}</li>
+                  <li>{{ (rule) }}</li>
                 }
               </ol>
             } @else {
-              <p class="rules-state">Rules are not available for this competition yet.</p>
+              <p class="rules-state">{{ 'ui.rules_are_not_available_for_this_competition_yet' | translate }}</p>
             }
           </section>
 
           <label class="field">
-            <span>Competition passcode</span>
+            <span>{{ 'ui.competition_passcode' | translate }}</span>
             <input
               type="password"
               autocomplete="current-password"
@@ -80,13 +80,13 @@
             />
           </label>
 
-          <p class="form-error" [class.form-error-visible]="joinErrorMessage()">{{ joinErrorMessage() || '&nbsp;' }}</p>
+          <p class="form-error" [class.form-error-visible]="joinErrorMessage()">{{ (joinErrorMessage() || ' ') }}</p>
         </div>
 
         <footer class="modal-footer">
-          <button class="secondary-button" type="button" [disabled]="joiningCompetition()" (click)="cancelJoinCompetition()">Cancel</button>
+          <button class="secondary-button" type="button" [disabled]="joiningCompetition()" (click)="cancelJoinCompetition()">{{ 'ui.cancel' | translate }}</button>
           <button class="confirm-button" type="submit" [disabled]="joiningCompetition() || joinForm.invalid">
-            {{ joiningCompetition() ? 'Joining...' : 'Join competition' }}
+            {{ joiningCompetition() ? ('ui.joining' | translate) : ('ui.join_competition' | translate) }}
           </button>
         </footer>
       </form>

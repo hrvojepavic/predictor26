@@ -1,19 +1,19 @@
 <section class="match-day-page" aria-labelledby="match-carousel-title">
   <header class="page-header">
     <div class="day-controls">
-      <button class="day-button" type="button" aria-label="Previous day" [disabled]="!canGoPrevious()" (click)="previousDay()">‹</button>
-      <span class="day-label">{{ selectedDayLabel() }}</span>
-      <button class="day-button" type="button" aria-label="Next day" [disabled]="!canGoNext()" (click)="nextDay()">›</button>
+      <button class="day-button" type="button" [attr.aria-label]="'ui.previous_day' | translate" [title]="'ui.previous_day' | translate" [disabled]="!canGoPrevious()" (click)="previousDay()">‹</button>
+      <span class="day-label">{{ (selectedDayLabel()) }}</span>
+      <button class="day-button" type="button" [attr.aria-label]="'ui.next_day' | translate" [title]="'ui.next_day' | translate" [disabled]="!canGoNext()" (click)="nextDay()">›</button>
     </div>
-    <p id="match-carousel-title" class="section-label">Match Day</p>
+    <p id="match-carousel-title" class="section-label">{{ 'ui.match_day' | translate }}</p>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (loading()) {
-    <div class="matches-grid loading-grid" role="status" aria-label="Loading matches">
+    <div class="matches-grid loading-grid" role="status" [attr.aria-label]="'ui.loading_matches_2' | translate">
       @for (item of [1, 2, 3]; track item) {
         <span class="skeleton-card" aria-hidden="true">
           <span class="skeleton-meta">
@@ -55,12 +55,12 @@
               [class.status-pill-undecided]="match.status === 'undecided'"
               [class.status-pill-postponed]="match.status === 'postponed'"
             >
-              {{ match.statusLabel }}
+              {{ (match.statusLabel) }}
             </span>
-            <time [attr.datetime]="match.kickoffAt">{{ match.kickoffAt | date: 'HH:mm' }}</time>
+            <time [attr.datetime]="match.kickoffAt">{{ match.kickoffAt | localizedDate: 'HH:mm' }}</time>
           </span>
           @if (match.odds; as odds) {
-            <span class="odds-row" aria-label="Match odds">
+            <span class="odds-row" [attr.aria-label]="'ui.match_odds' | translate">
               <span class="odds-pill" [class.odds-win]="match.winningOutcome === '1'">{{ odds.homeWin | oddsFormat }}</span>
               <span class="odds-pill" [class.odds-win]="match.winningOutcome === 'X'">{{ odds.draw | oddsFormat }}</span>
               <span class="odds-pill" [class.odds-win]="match.winningOutcome === '2'">{{ odds.awayWin | oddsFormat }}</span>
@@ -82,7 +82,7 @@
           }
         </button>
       } @empty {
-        <p class="empty-message">No games on this day.</p>
+        <p class="empty-message">{{ 'ui.no_games_on_this_day' | translate }}</p>
       }
     </div>
   }
@@ -100,7 +100,7 @@
         [details]="selectedMatchDetails()"
         [loading]="modalSkeletonVisible()"
         [skeletonRows]="skeletonUserCount()"
-        [errorMessage]="selectedMatchError()"
+        [errorMessage]="(selectedMatchError())"
         (closeModal)="closeMatch()"
       />
     </app-modal-shell>

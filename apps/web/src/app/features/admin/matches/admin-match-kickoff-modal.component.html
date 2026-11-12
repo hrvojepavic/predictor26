@@ -1,19 +1,19 @@
 <form class="kickoff-form" [formGroup]="kickoffForm" (ngSubmit)="confirm()">
   <header class="modal-header">
-    <h2 id="kickoff-modal-title">Edit match details</h2>
-    <button class="icon-button" type="button" aria-label="Close" [disabled]="isSubmitting()" (click)="cancel()">×</button>
+    <h2 id="kickoff-modal-title">{{ 'ui.edit_match_details' | translate }}</h2>
+    <button class="icon-button" type="button" [attr.aria-label]="'ui.close' | translate" [title]="'ui.close' | translate" [disabled]="isSubmitting()" (click)="cancel()">×</button>
   </header>
 
   <div class="modal-content">
-    <p class="match-label">Match {{ match().matchNumber }}: {{ match().homeTeam.name }} vs {{ match().awayTeam.name }}</p>
+    <p class="match-label">{{ 'ui.match_p0_p1_vs_p2' | translate: { p0: (match().matchNumber), p1: (match().homeTeam.name), p2: (match().awayTeam.name) } }}</p>
 
     <label class="field">
-      <span>Match date and time</span>
+      <span>{{ 'ui.match_date_and_time' | translate }}</span>
       <input type="datetime-local" autofocus appFormFieldState="invalid" formControlName="kickoffAt" [readonly]="isSubmitting()" />
     </label>
 
     <label class="field">
-      <span>Venue</span>
+      <span>{{ 'ui.venue' | translate }}</span>
       <input
         type="text"
         maxlength="160"
@@ -25,10 +25,10 @@
 
     @if (canAddOdds()) {
       <fieldset class="odds-fields">
-        <legend>Add odds</legend>
+        <legend>{{ 'ui.add_odds' | translate }}</legend>
 
         <label class="field">
-          <span>Home win</span>
+          <span>{{ 'ui.home_win' | translate }}</span>
           <input
             type="number"
             min="1.01"
@@ -42,7 +42,7 @@
         </label>
 
         <label class="field">
-          <span>Draw</span>
+          <span>{{ 'ui.draw' | translate }}</span>
           <input
             type="number"
             min="1.01"
@@ -56,7 +56,7 @@
         </label>
 
         <label class="field">
-          <span>Away win</span>
+          <span>{{ 'ui.away_win' | translate }}</span>
           <input
             type="number"
             min="1.01"
@@ -72,7 +72,7 @@
     }
 
     <label class="field">
-      <span>What is the secret code?</span>
+      <span>{{ 'ui.what_is_the_secret_code' | translate }}</span>
       <input
         type="password"
         autocomplete="current-password"
@@ -83,13 +83,13 @@
       />
     </label>
 
-    <p class="form-error" [class.form-error-visible]="errorMessage()">{{ errorMessage() || '&nbsp;' }}</p>
+    <p class="form-error" [class.form-error-visible]="errorMessage()">{{ (errorMessage() || ' ') }}</p>
   </div>
 
   <footer class="modal-footer">
-    <button class="secondary-button" type="button" [disabled]="isSubmitting()" (click)="cancel()">Cancel</button>
+    <button class="secondary-button" type="button" [disabled]="isSubmitting()" (click)="cancel()">{{ 'ui.cancel' | translate }}</button>
     <button class="confirm-button" type="submit" [disabled]="isSubmitting() || kickoffForm.invalid">
-      {{ isSubmitting() ? 'Saving...' : 'Save changes' }}
+      {{ isSubmitting() ? ('ui.saving' | translate) : ('ui.save_changes' | translate) }}
     </button>
   </footer>
 </form>

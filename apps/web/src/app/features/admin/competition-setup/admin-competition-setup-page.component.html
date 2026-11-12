@@ -1,39 +1,39 @@
 <section class="admin-competition-setup-page" aria-labelledby="admin-competition-setup-title">
   <header class="page-header">
     <div>
-      <p class="section-label">Admin competition</p>
-      <h1 id="admin-competition-setup-title">Competition setup</h1>
-      <a class="back-link" routerLink="../">Back to admin competition</a>
+      <p class="section-label">{{ 'ui.admin_competition' | translate }}</p>
+      <h1 id="admin-competition-setup-title">{{ 'ui.competition_setup' | translate }}</h1>
+      <a class="back-link" routerLink="../">{{ 'ui.back_to_admin_competition' | translate }}</a>
     </div>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (successMessage(); as message) {
-    <p class="status-message status-success">{{ message }}</p>
+    <p class="status-message status-success">{{ (message) }}</p>
   }
 
   <section class="settings-panel settings-panel-form" aria-labelledby="competition-sources-title">
     <div class="settings-copy">
-      <h2 id="competition-sources-title">Competition settings</h2>
-      <p>Configure title, status, passcode, rules, and the OddsPortal source URL for this competition.</p>
+      <h2 id="competition-sources-title">{{ 'ui.competition_settings' | translate }}</h2>
+      <p>{{ 'ui.configure_title_status_passcode_rules_and_the_oddsportal_source_url_for_this_competition' | translate }}</p>
     </div>
 
     @if (loadingSourceSettings()) {
-      <p class="status-message">Loading competition settings...</p>
+      <p class="status-message">{{ 'ui.loading_competition_settings' | translate }}</p>
     } @else {
       <form class="source-form" [formGroup]="sourceForm" (ngSubmit)="openSourceSettingsSecretCode()">
         <div class="form-grid">
           <label>
-            <span>Title</span>
+            <span>{{ 'ui.title' | translate }}</span>
             <input type="text" formControlName="name" autocomplete="off" />
           </label>
 
           <label>
-            <span>New entry passcode</span>
-            <input type="text" formControlName="passcode" autocomplete="off" placeholder="Leave empty to keep current passcode" />
+            <span>{{ 'ui.new_entry_passcode' | translate }}</span>
+            <input type="text" formControlName="passcode" autocomplete="off" [placeholder]="'ui.leave_empty_to_keep_current_passcode' | translate" />
           </label>
         </div>
 
@@ -45,49 +45,49 @@
           }
           <div class="logo-actions">
             <label class="file-button">
-              <span>Import logo</span>
+              <span>{{ 'ui.import_logo' | translate }}</span>
               <input type="file" accept="image/*" (change)="importLogo($event)" />
             </label>
             @if (logoPreview()) {
-              <button class="secondary-button" type="button" (click)="removeLogo()">Remove</button>
+              <button class="secondary-button" type="button" (click)="removeLogo()">{{ 'ui.remove' | translate }}</button>
             }
           </div>
         </div>
 
         <label class="toggle-row">
           <input type="checkbox" formControlName="isFinished" />
-          <span>Competition has ended</span>
+          <span>{{ 'ui.competition_has_ended' | translate }}</span>
         </label>
 
         <label class="toggle-row">
           <input type="checkbox" formControlName="playoffsEnabled" />
-          <span>Competition has playoffs</span>
+          <span>{{ 'ui.competition_has_playoffs' | translate }}</span>
         </label>
 
         <label class="toggle-row">
           <input type="checkbox" formControlName="importMatchesWithOddsEnabled" />
-          <span>Import fixtures and odds together</span>
+          <span>{{ 'ui.import_fixtures_and_odds_together' | translate }}</span>
         </label>
 
         <label>
-          <span>OddsPortal source URL</span>
+          <span>{{ 'ui.oddsportal_source_url' | translate }}</span>
           <input type="url" formControlName="oddsSourceUrl" autocomplete="off" />
         </label>
 
         <fieldset formArrayName="rules">
-          <legend>Rules</legend>
+          <legend>{{ 'ui.rules' | translate }}</legend>
 
           <div class="rules-grid">
             @for (template of ruleTemplates(); track template.key; let index = $index) {
               <div class="rule-row" [formGroupName]="index">
                 <label class="toggle-row">
                   <input type="checkbox" formControlName="isEnabled" />
-                  <span>{{ template.textTemplate }}</span>
+                  <span>{{ (template.textTemplate) }}</span>
                 </label>
 
                 @if (template.valueLabel) {
                   <label>
-                    <span>{{ template.valueLabel }}</span>
+                    <span>{{ (template.valueLabel) }}</span>
                     <input type="text" formControlName="value" autocomplete="off" />
                   </label>
                 }
@@ -97,7 +97,7 @@
         </fieldset>
 
         <button class="primary-button" type="submit" [disabled]="savingSourceSettings() || sourceForm.invalid">
-          {{ savingSourceSettings() ? 'Saving...' : 'Save settings' }}
+          {{ savingSourceSettings() ? ('ui.saving' | translate) : ('ui.save_settings' | translate) }}
         </button>
       </form>
     }
@@ -105,7 +105,7 @@
 
   @if (sourceSettingsSecretPromptOpen()) {
     <app-modal-shell
-      labelledBy="source-secret-code-title"
+      labelledBy="secret-code-title"
       panelWidth="420px"
       [closeOnBackdrop]="true"
       animate.enter="modal-enter"
@@ -113,10 +113,10 @@
       (closeModal)="cancelSourceSecretCode()"
     >
       <app-secret-code-modal
-        title="Confirm source settings"
-        label="What is the secret code?"
-        confirmLabel="Save settings"
-        [errorMessage]="sourceSecretCodeErrorMessage()"
+        [title]="'ui.confirm_source_settings' | translate"
+        [label]="'ui.what_is_the_secret_code' | translate"
+        [confirmLabel]="'ui.save_settings' | translate"
+        [errorMessage]="(sourceSecretCodeErrorMessage())"
         [isSubmitting]="savingSourceSettings()"
         (confirmSecretCode)="confirmSourceSecretCode($event)"
         (cancelModal)="cancelSourceSecretCode()"

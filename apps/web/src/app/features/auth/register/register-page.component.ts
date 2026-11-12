@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -11,11 +13,12 @@ import { FormFieldStateDirective } from '@shared/directives/form-field-state.dir
 
 @Component({
   selector: 'app-register-page',
-  imports: [ReactiveFormsModule, FormFieldStateDirective],
+  imports: [TranslatePipe, ReactiveFormsModule, FormFieldStateDirective],
   templateUrl: './register-page.component.html',
   styleUrl: './register-page.component.scss'
 })
 export class RegisterPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly appState = inject(AppStateService);
   private readonly authApi = inject(AuthApiProvider);
   private readonly competitionSettingsApi = inject(CompetitionSettingsApiProvider);
@@ -25,7 +28,7 @@ export class RegisterPageComponent {
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly registrationsDisabled = signal(false);
-  protected readonly registrationClosedMessage = 'Registrations are not possible.';
+  protected readonly registrationClosedMessage = this.translations.translate("ui.registrations_are_not_possible");
   protected readonly formMessage = computed(() =>
     this.registrationsDisabled() ? this.registrationClosedMessage : this.errorMessage()
   );
@@ -75,8 +78,8 @@ export class RegisterPageComponent {
       this.registerForm.markAllAsTouched();
       this.errorMessage.set(
         this.hasOnlyPasswordMinLengthError()
-          ? 'Password must be at least 8 characters.'
-          : 'Please check the highlighted fields.'
+          ? this.translations.translate("ui.password_must_be_at_least_8_characters_2")
+          : this.translations.translate("ui.please_check_the_highlighted_fields")
       );
       return;
     }
@@ -114,10 +117,10 @@ export class RegisterPageComponent {
 
           this.errorMessage.set(
             error instanceof HttpErrorResponse && error.status === 409
-              ? 'Username is already taken.'
+              ? this.translations.translate("ui.username_is_already_taken")
               : error instanceof HttpErrorResponse && error.status === 403
                 ? this.registrationClosedMessage
-                : 'Please check the registration fields.'
+                : this.translations.translate("ui.please_check_the_registration_fields")
           );
           this.isSubmitting.set(false);
         }

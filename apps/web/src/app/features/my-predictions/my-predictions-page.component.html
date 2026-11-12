@@ -1,7 +1,7 @@
 <section class="my-predictions-page" aria-labelledby="my-predictions-title">
   <header class="page-header">
     <div>
-      <p class="section-label">My Predictions</p>
+      <p id="my-predictions-title" class="section-label">{{ 'ui.my_predictions' | translate }}</p>
     </div>
 
     <app-match-sort-menu />
@@ -12,33 +12,33 @@
       <span></span>
       <span></span>
     </span>
-    <span class="action-title">Post Predictions</span>
+    <span class="action-title">{{ 'ui.post_predictions' | translate }}</span>
   </a>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (loading()) {
-    <p class="status-message">Loading your tips...</p>
+    <p class="status-message">{{ 'ui.loading_your_tips' | translate }}</p>
   } @else {
-    <div class="tip-groups" aria-label="Submitted tips">
+    <div class="tip-groups" [attr.aria-label]="'ui.submitted_tips' | translate">
       @for (group of groupedPredictedMatches(); track group.label) {
         <section class="tip-group">
-          <h2>{{ group.label }}</h2>
+          <h2>{{ (group.label)  }}</h2>
 
           <div class="tips-list">
             @for (section of group.sections; track section.label) {
               <div class="tip-section">
-                <div class="section-badge">{{ section.label }}</div>
+                <div class="section-badge">{{ (section.label)  }}</div>
 
                 @for (match of section.matches; track match.id) {
                   @if (match.prediction; as prediction) {
                     <article class="tip-row">
                       <div class="match-meta">
-                        <span>Match {{ match.matchNumber }}</span>
-                        <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'EEE, MMM d, HH:mm' }}</time>
-                        <span>{{ matchStatus(match) }}</span>
+                        <span>{{ 'ui.match_p0' | translate: { p0: (match.matchNumber) } }}</span>
+                        <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | localizedDate: 'EEE, MMM d, HH:mm' }}</time>
+                        <span>{{ (matchStatus(match)) }}</span>
                       </div>
 
                       <div class="teams">
@@ -50,24 +50,23 @@
                       <div class="tip-details">
                         @if (prediction.odds; as odds) {
                           <span [style.color]="predictionStateColor(match)">
-                            Your pick {{ odds.outcome }} &#64; {{ odds.value | oddsFormat }}
-                          </span>
+                            {{ 'ui.your_pick_p0_p1' | translate: { p0: (odds.outcome), p1: (odds.value | oddsFormat) } }}</span>
                         } @else {
-                          <span [style.color]="predictionStateColor(match)">No locked odds</span>
+                          <span [style.color]="predictionStateColor(match)">{{ 'ui.no_locked_odds' | translate }}</span>
                         }
-                        <span [style.color]="predictionStateColor(match)">{{ match.predictionRound }}</span>
+                        <span [style.color]="predictionStateColor(match)">{{ (match.predictionRound) }}</span>
                       </div>
 
                       <div class="result">
                         @if (match.finalScore; as finalScore) {
-                          <span class="result-label">Final</span>
+                          <span class="result-label">{{ 'ui.final' | translate }}</span>
                           <span class="result-score">{{ finalScore.home }}:{{ finalScore.away }}</span>
                         } @else if (match.isPostponed) {
-                          <span class="result-label">Status</span>
-                          <span class="result-score">Postponed</span>
+                          <span class="result-label">{{ 'ui.status' | translate }}</span>
+                          <span class="result-score">{{ 'ui.postponed' | translate }}</span>
                         } @else {
-                          <span class="result-label">Kickoff</span>
-                          <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'MMM d, HH:mm' }}</time>
+                          <span class="result-label">{{ 'ui.kickoff' | translate }}</span>
+                          <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | localizedDate: 'MMM d, HH:mm' }}</time>
                         }
                       </div>
 
@@ -85,7 +84,7 @@
           </div>
         </section>
       } @empty {
-        <p class="status-message">You have not posted any tips yet.</p>
+        <p class="status-message">{{ 'ui.you_have_not_posted_any_tips_yet' | translate }}</p>
       }
     </div>
   }

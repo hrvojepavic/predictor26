@@ -1,20 +1,20 @@
 <section class="admin-users-page" aria-labelledby="admin-users-title">
   <header class="page-header">
     <div>
-      <p class="section-label">Admin</p>
-      <h1 id="admin-users-title">User roles</h1>
-      <a class="back-link" routerLink="../">Back to admin competition</a>
+      <p class="section-label">{{ 'ui.admin' | translate }}</p>
+      <h1 id="admin-users-title">{{ 'ui.user_roles' | translate }}</h1>
+      <a class="back-link" routerLink="../">{{ 'ui.back_to_admin_competition' | translate }}</a>
     </div>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (loading()) {
-    <p class="status-message">Loading users...</p>
+    <p class="status-message">{{ 'ui.loading_users' | translate }}</p>
   } @else {
-    <div class="users-list" role="list" aria-label="Registered users">
+    <div class="users-list" role="list" [attr.aria-label]="'ui.registered_users' | translate">
       @for (user of users(); track user.id) {
         <article class="user-row" role="listitem">
           <div class="user-main">
@@ -26,7 +26,7 @@
                   class="username-edit-button"
                   type="button"
                   [disabled]="updatingUserIds().has(user.id)"
-                  [attr.aria-label]="'Edit username for ' + user.username"
+                  [attr.aria-label]="'ui.edit_user' | translate: { name: user.username }" [title]="'ui.edit_user' | translate: { name: user.username }"
                   (click)="editUsername(user)"
                 >
                   <span aria-hidden="true">&#9998;</span>
@@ -36,7 +36,7 @@
           </div>
 
           <span class="role-badge" [class.role-badge-admin]="user.role !== 'user'">
-            {{ user.role === 'super_admin' ? 'Super admin' : user.role === 'admin' ? 'Admin' : 'User' }}
+            {{ user.role === 'super_admin' ? ('ui.super_admin' | translate) : user.role === 'admin' ? ('ui.admin' | translate) : ('ui.user' | translate) }}
           </span>
 
           <button
@@ -51,7 +51,7 @@
               <span class="switch-thumb"></span>
             </span>
             <span class="switch-label">
-              {{ user.role === 'admin' || user.role === 'super_admin' ? 'Admin enabled' : 'Admin disabled' }}
+              {{ user.role === 'admin' || user.role === 'super_admin' ? ('ui.admin_enabled' | translate) : ('ui.admin_disabled' | translate) }}
             </span>
           </button>
 
@@ -67,12 +67,12 @@
               <span class="switch-thumb"></span>
             </span>
             <span class="switch-label">
-              {{ user.isVerified ? 'Verified' : 'Not verified' }}
+              {{ user.isVerified ? ('ui.verified' | translate) : ('ui.not_verified' | translate) }}
             </span>
           </button>
         </article>
       } @empty {
-        <p class="status-message">No users found.</p>
+        <p class="status-message">{{ 'ui.no_users_found' | translate }}</p>
       }
     </div>
   }
@@ -87,10 +87,10 @@
       (closeModal)="cancelRoleChange()"
     >
       <app-secret-code-modal
-        title="Confirm role change"
-        label="What is the secret code?"
-        confirmLabel="Apply change"
-        [errorMessage]="secretCodeErrorMessage()"
+        [title]="'ui.confirm_role_change' | translate"
+        [label]="'ui.what_is_the_secret_code' | translate"
+        [confirmLabel]="'ui.apply_change' | translate"
+        [errorMessage]="(secretCodeErrorMessage())"
         [isSubmitting]="isPendingRoleChangeSubmitting()"
         (confirmSecretCode)="confirmRoleChange($event)"
         (cancelModal)="cancelRoleChange()"
@@ -108,10 +108,10 @@
       (closeModal)="cancelVerificationChange()"
     >
       <app-secret-code-modal
-        title="Confirm verification change"
-        label="What is the secret code?"
-        confirmLabel="Apply change"
-        [errorMessage]="verificationSecretCodeErrorMessage()"
+        [title]="'ui.confirm_verification_change' | translate"
+        [label]="'ui.what_is_the_secret_code' | translate"
+        [confirmLabel]="'ui.apply_change' | translate"
+        [errorMessage]="(verificationSecretCodeErrorMessage())"
         [isSubmitting]="isPendingVerificationChangeSubmitting()"
         (confirmSecretCode)="confirmVerificationChange($event)"
         (cancelModal)="cancelVerificationChange()"
@@ -130,7 +130,7 @@
     >
       <app-admin-username-modal
         [currentUsername]="user.username"
-        [errorMessage]="usernameErrorMessage()"
+        [errorMessage]="(usernameErrorMessage())"
         [isSubmitting]="isPendingUsernameChangeSubmitting()"
         (confirmUsernameChange)="confirmUsernameChange($event)"
         (cancelModal)="cancelUsernameChange()"

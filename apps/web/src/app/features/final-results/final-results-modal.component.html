@@ -1,39 +1,38 @@
 <section class="final-results-modal" aria-labelledby="final-results-title">
-  <button class="modal-close-button" type="button" aria-label="Close final rankings" (click)="closeModal.emit()"></button>
+  <button class="modal-close-button" type="button" [attr.aria-label]="'ui.close_final_rankings' | translate" [title]="'ui.close_final_rankings' | translate" (click)="closeModal.emit()"></button>
 
   <header class="modal-header">
     <img class="modal-logo" src="icons/predictor26-icon.svg" alt="" width="48" height="53" aria-hidden="true" />
-    <p class="section-label">{{ sectionLabel() }}</p>
-    <h2 id="final-results-title">{{ title() }}</h2>
+    <p class="section-label">{{ (sectionLabel()) }}</p>
+    <h2 id="final-results-title">{{ (title()) }}</h2>
     <p class="summary">
-      {{ results().totalUsers }} players created a {{ poolLabel() }} prize pool.
-    </p>
+      {{ 'ui.p0_players_created_a_p1_prize_pool' | translate: { p0: (results().totalUsers), p1: (poolLabel()) } }}</p>
   </header>
 
-  <div class="podium" aria-label="Top three players">
+  <div class="podium" [attr.aria-label]="'ui.top_three_players' | translate">
     @for (winner of podiumWinners(); track winner.place) {
       <article class="podium-place podium-place-{{ winner.place }}">
         <div class="winner-card">
-          <span class="place-badge">{{ placeLabel(winner.place) }}</span>
+          <span class="place-badge">{{ (placeLabel(winner.place)) }}</span>
           <h3>{{ winner.user.username }}</h3>
-          <p>{{ winner.user.totalPoints | number: '1.0-2' }} pts</p>
+          <p>{{ 'ui.p0_pts' | translate: { p0: (winner.user.totalPoints | number: '1.0-2') ?? '' } }}</p>
           <strong>{{ formatCurrency(winner.prizeAmount) }}</strong>
         </div>
         <div class="podium-block">
-          <span>{{ winner.place }}</span>
+          <span>{{ (winner.place) }}</span>
         </div>
       </article>
     }
   </div>
 
   @if (results().pelinkovacUser; as pelinkovacUser) {
-    <div class="pelinkovac-award" aria-label="Pelinkovac award">
+    <div class="pelinkovac-award" [attr.aria-label]="'ui.pelinkovac_award' | translate">
       <img src="icons/pelin.jpg" alt="" width="34" height="34" aria-hidden="true" />
       <span>{{ pelinkovacUser.username }}</span>
     </div>
   }
 
   <footer class="modal-actions">
-    <button class="close-button" type="button" (click)="closeModal.emit()">Close</button>
+    <button class="close-button" type="button" (click)="closeModal.emit()">{{ 'ui.close' | translate }}</button>
   </footer>
 </section>

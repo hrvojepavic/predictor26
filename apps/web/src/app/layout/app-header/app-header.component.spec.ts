@@ -1,4 +1,6 @@
+import { testTranslationsProvider, initializeTestTranslations } from '../../../../testing/translations';
 import { signal } from '@angular/core';
+import { LANGUAGE_STORAGE_KEY } from '@core/i18n/language.config';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { AppStateService } from '@core/state/app-state.service';
@@ -21,7 +23,7 @@ describe('Header navigation drawer', () => {
   const matches = signal<MatchWithPrediction[]>([]);
   const ensureMatches = vi.fn(() => null);
 
-  beforeEach(() => {
+  beforeEach(async () => {
     user.set(null);
     competition.set(null);
     loggedIn.set(false);
@@ -35,12 +37,14 @@ describe('Header navigation drawer', () => {
       imports: [AppHeaderComponent],
       providers: [
         provideRouter([]),
+        testTranslationsProvider,
         { provide: AppStateService, useValue: { currentUser: user, activeCompetition: competition, isLoggedIn: loggedIn, clearSession } },
         { provide: CompetitionsService, useValue: { clearCompetitions } },
         { provide: MatchesService, useValue: { matches, ensureMatches } },
         { provide: FinalResultsService, useValue: { available, openFinalResults } }
       ]
     });
+    await initializeTestTranslations();
   });
 
   async function render() {
@@ -50,6 +54,29 @@ describe('Header navigation drawer', () => {
     const toggle = root.querySelector<HTMLButtonElement>('.menu-toggle');
     return { fixture, root, toggle };
   }
+
+  it('switches drawer text, tooltips, and accessible labels without changing user identity', async () => {
+    signIn();
+    const router = TestBed.inject(Router);
+    router.resetConfig([{ path: '**', children: [] }]);
+    await router.navigateByUrl('/competition/league');
+    const { fixture, root, toggle } = await render();
+    toggle!.click();
+    await fixture.whenStable();
+    const flags = root.querySelectorAll<HTMLButtonElement>('app-language-switcher button');
+    flags[1].click();
+    await fixture.whenStable();
+    expect(root.querySelector('a[href="/competition/league/predictions"]')?.textContent).toContain('PROGNOZIRAJ');
+    expect(root.querySelector('#menu-user-title')?.textContent).toContain('Player');
+    expect(toggle!.getAttribute('aria-label')).toBe('Zatvori navigaciju');
+    expect(toggle!.title).toBe('Zatvori navigaciju');
+    expect(flags[1].getAttribute('aria-pressed')).toBe('true');
+    flags[0].click();
+    await fixture.whenStable();
+    expect(root.querySelector('a[href="/competition/league/predictions"]')?.textContent).toContain('PREDICT');
+    expect(toggle!.getAttribute('aria-label')).toBe('Close navigation');
+    localStorage.removeItem(LANGUAGE_STORAGE_KEY);
+  });
 
   it('keeps the backdrop blocking, traps focus, and closes with Escape', async () => {
     const { fixture, root, toggle } = await render();
@@ -64,7 +91,7 @@ describe('Header navigation drawer', () => {
     await fixture.whenStable();
     expect(toggle!.getAttribute('aria-expanded')).toBe('true');
     const links = root.querySelectorAll<HTMLAnchorElement>('.menu-link');
-    expect(Array.from(links).map(link => link.textContent?.trim())).toEqual(['Login›', 'Register›']);
+    expect(Array.from(links).map(link => link.textContent?.trim())).toEqual(['LOGIN', 'REGISTER']);
     links[links.length - 1].focus();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', cancelable: true }));
     expect(document.activeElement).toBe(toggle);
@@ -108,11 +135,11 @@ describe('Header navigation drawer', () => {
     await fixture.whenStable();
     const nav = root.querySelector('nav')!;
     expect(nav.textContent).toContain('Player');
-    expect(nav.textContent).not.toContain('Settings');
-    expect(nav.textContent).toContain('Admin');
-    expect(nav.textContent).not.toContain('Stats');
-    expect(nav.textContent).not.toContain('Final rankings');
-    expect(nav.textContent).not.toContain('My predictions');
+    expect(nav.textContent).not.toContain('SETTINGS');
+    expect(nav.textContent).toContain('ADMIN');
+    expect(nav.textContent).not.toContain('STATS');
+    expect(nav.textContent).not.toContain('FINAL RANKINGS');
+    expect(nav.textContent).not.toContain('MY PREDICTIONS');
   });
 
   it('preserves competition destinations and closes when a link is selected', async () => {

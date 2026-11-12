@@ -1,55 +1,51 @@
 <section class="admin-notifications-page" aria-labelledby="admin-notifications-title">
   <header class="page-header">
     <div>
-      <p class="section-label">Admin</p>
-      <h1 id="admin-notifications-title">Notification settings</h1>
-      <a class="back-link" routerLink="../">Back to admin competition</a>
+      <p class="section-label">{{ 'ui.admin' | translate }}</p>
+      <h1 id="admin-notifications-title">{{ 'ui.notification_settings' | translate }}</h1>
+      <a class="back-link" routerLink="../">{{ 'ui.back_to_admin_competition' | translate }}</a>
     </div>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (successMessage(); as message) {
-    <p class="status-message status-success">{{ message }}</p>
+    <p class="status-message status-success">{{ (message) }}</p>
   }
 
   @if (loading()) {
-    <p class="status-message">Loading notification settings...</p>
+    <p class="status-message">{{ 'ui.loading_notification_settings' | translate }}</p>
   } @else {
     @if (competitionClosed()) {
-      <p class="status-message">Notifications are disabled because this competition is closed.</p>
+      <p class="status-message">{{ 'ui.notifications_are_disabled_because_this_competition_is_closed' | translate }}</p>
     }
     <section class="settings-panel" aria-labelledby="reminders-title">
       <div class="settings-copy">
-        <h2 id="reminders-title">Prediction reminders</h2>
+        <h2 id="reminders-title">{{ 'ui.prediction_reminders' | translate }}</h2>
         <p>
-          Allow notifications for this competition. Verified members choose round-opening, 9h and/or 1h notifications in Settings;
-          everyone starts opted out. Disabling this pauses delivery without changing their preferences.
-        </p>
+          {{ 'ui.allow_notifications_for_this_competition_verified_members_choose_round_opening_9h_and_or_1' | translate }}</p>
       </div>
 
       <button class="toggle-button" type="button" [class.toggle-button-on]="remindersEnabled()" [disabled]="saving() || competitionClosed()" (click)="toggleReminders()">
-        {{ saving() ? 'Saving...' : remindersEnabled() ? 'Enabled' : 'Disabled' }}
+        {{ saving() ? ('ui.saving' | translate) : remindersEnabled() ? ('ui.enabled' | translate) : ('ui.disabled' | translate) }}
       </button>
     </section>
 
     <section class="settings-panel" aria-labelledby="test-title">
       <div class="settings-copy">
-        <h2 id="test-title">Admin test notification</h2>
+        <h2 id="test-title">{{ 'ui.admin_test_notification' | translate }}</h2>
         <p>
-          First register this browser for your admin user, then send a real push notification only to your own active
-          subscriptions. This manual test bypasses reminder preferences and does not opt you in.
-        </p>
+          {{ 'ui.first_register_this_browser_for_your_admin_user_then_send_a_real_push_notification_only_to' | translate }}</p>
       </div>
 
       <div class="test-actions">
         <button class="secondary-button" type="button" [disabled]="enablingBrowser() || competitionClosed()" (click)="enableThisBrowser()">
-          {{ enablingBrowser() ? 'Enabling...' : 'Enable this browser' }}
+          {{ enablingBrowser() ? ('ui.enabling' | translate) : ('ui.enable_this_browser' | translate) }}
         </button>
         <button class="test-button" type="button" [disabled]="testing() || competitionClosed()" (click)="sendTestNotification()">
-          {{ testing() ? 'Sending...' : 'Send test' }}
+          {{ testing() ? ('ui.sending' | translate) : ('ui.send_test' | translate) }}
         </button>
       </div>
     </section>
@@ -57,21 +53,21 @@
 
   @if (membersLoaded()) {
     <section class="members-panel" aria-labelledby="members-title">
-      <h2 id="members-title">User notification preferences</h2>
+      <h2 id="members-title">{{ 'ui.user_notification_preferences' | translate }}</h2>
       <div class="members-table-scroll" role="region" aria-labelledby="members-title" tabindex="0">
       <table>
-        <thead><tr><th scope="col">User</th><th scope="col">1h</th><th scope="col">9h</th><th scope="col">Round opens</th><th scope="col" class="browsers-cell">Browsers</th></tr></thead>
+        <thead><tr><th scope="col">{{ 'ui.user' | translate }}</th><th scope="col">{{ 'ui.1h' | translate }}</th><th scope="col">{{ 'ui.9h' | translate }}</th><th scope="col">{{ 'ui.round_opens' | translate }}</th><th scope="col" class="browsers-cell">{{ 'ui.browsers' | translate }}</th></tr></thead>
         <tbody>
           @for (member of members(); track member.userId) {
             <tr>
               <th scope="row">{{ member.username }}</th>
-              <td><span class="preference-mark" [class.enabled]="member.reminder1h" [attr.aria-label]="member.reminder1h ? 'Enabled' : 'Disabled'" role="img">{{ member.reminder1h ? '✓' : '✕' }}</span></td>
-              <td><span class="preference-mark" [class.enabled]="member.reminder9h" [attr.aria-label]="member.reminder9h ? 'Enabled' : 'Disabled'" role="img">{{ member.reminder9h ? '✓' : '✕' }}</span></td>
-              <td><span class="preference-mark" [class.enabled]="member.roundOpened" [attr.aria-label]="member.roundOpened ? 'Enabled' : 'Disabled'" role="img">{{ member.roundOpened ? '✓' : '✕' }}</span></td>
-              <td class="browsers-cell">{{ member.browsersLabel }}</td>
+              <td><span class="preference-mark" [class.enabled]="member.reminder1h" [attr.aria-label]="member.reminder1h ? ('ui.enabled' | translate) : ('ui.disabled' | translate)" role="img">{{ (member.reminder1h ? '✓' : '✕') }}</span></td>
+              <td><span class="preference-mark" [class.enabled]="member.reminder9h" [attr.aria-label]="member.reminder9h ? ('ui.enabled' | translate) : ('ui.disabled' | translate)" role="img">{{ (member.reminder9h ? '✓' : '✕') }}</span></td>
+              <td><span class="preference-mark" [class.enabled]="member.roundOpened" [attr.aria-label]="member.roundOpened ? ('ui.enabled' | translate) : ('ui.disabled' | translate)" role="img">{{ (member.roundOpened ? '✓' : '✕') }}</span></td>
+              <td class="browsers-cell">{{ (member.browsersLabel) }}</td>
             </tr>
           } @empty {
-            <tr><td colspan="5">No users in this competition.</td></tr>
+            <tr><td colspan="5">{{ 'ui.no_users_in_this_competition' | translate }}</td></tr>
           }
         </tbody>
       </table>
@@ -89,10 +85,10 @@
       (closeModal)="cancelSecretCode()"
     >
       <app-secret-code-modal
-        title="Confirm notification settings"
-        label="What is the secret code?"
-        [confirmLabel]="pendingRemindersEnabled() ? 'Enable reminders' : 'Disable reminders'"
-        [errorMessage]="secretCodeErrorMessage()"
+        [title]="'ui.confirm_notification_settings' | translate"
+        [label]="'ui.what_is_the_secret_code' | translate"
+        [confirmLabel]="pendingRemindersEnabled() ? ('ui.enable_reminders' | translate) : ('ui.disable_reminders' | translate)"
+        [errorMessage]="(secretCodeErrorMessage())"
         [isSubmitting]="saving()"
         (confirmSecretCode)="confirmSecretCode($event)"
         (cancelModal)="cancelSecretCode()"

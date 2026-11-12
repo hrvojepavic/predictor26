@@ -1,11 +1,11 @@
 <section class="predictions-page" aria-labelledby="predictions-title">
   <header class="page-header">
-    <p class="section-label">Post Predictions</p>
+    <p id="predictions-title" class="section-label">{{ 'ui.post_predictions' | translate }}</p>
     <app-match-sort-menu />
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (activeProgress(); as progress) {
@@ -13,59 +13,56 @@
       <div>
         <span class="progress-title">
           @if (progress.complete) {
-            All predictions for {{ progress.label }} entered.
-          } @else {
-            {{ progress.savedCount }}/{{ progress.totalCount }} entered for {{ progress.label }}.
-          }
+            {{ 'ui.all_predictions_for_p0_entered' | translate: { p0: (progress.label) } }}} @else {
+            {{ 'ui.p0_p1_entered_for_p2' | translate: { p0: (progress.savedCount), p1: (progress.totalCount), p2: (progress.label) } }}}
         </span>
-        <span class="progress-detail">{{ lastSavedMessage() || 'Enter scores to save predictions automatically.' }}</span>
+        <span class="progress-detail">{{ lastSavedMessage() || ('ui.enter_scores_to_save_predictions_automatically' | translate) }}</span>
       </div>
     </aside>
   }
 
   @if (loading()) {
-    <p class="status-message">Loading matches...</p>
+    <p class="status-message">{{ 'ui.loading_matches' | translate }}</p>
   } @else {
     <div class="match-groups">
       @for (group of groupedMatches(); track group.label) {
         <section class="match-group" [attr.aria-labelledby]="'group-' + group.label">
           <div class="group-header">
             <div>
-              <h2 [id]="'group-' + group.label">{{ group.label }}</h2>
+              <h2 [id]="'group-' + group.label">{{ (group.label)  }}</h2>
               @if (group.deadlineAt) {
                 <p>
-                  Predictions close at
-                  <time [dateTime]="group.deadlineAt">{{ group.deadlineAt | date: 'EEE, MMM d, HH:mm' }}</time>
+                  {{ 'ui.predictions_close_at' | translate }} <time [dateTime]="group.deadlineAt">{{ group.deadlineAt | localizedDate: 'EEE, MMM d, HH:mm' }}</time>
                   @if (hasTimeRemaining(group.deadlineAt)) {
                     <span class="deadline-separator">·</span>
-                    <span class="deadline-remaining">Time remaining: {{ timeRemaining(group.deadlineAt) }}</span>
+                    <span class="deadline-remaining">{{ 'ui.time_remaining_p0' | translate: { p0: (timeRemaining(group.deadlineAt)) } }}</span>
                   }
                 </p>
               } @else {
-                <p>{{ group.savedCount }}/{{ group.totalCount }} predictions entered.</p>
+                <p>{{ 'ui.p0_p1_predictions_entered' | translate: { p0: (group.savedCount), p1: (group.totalCount) } }}</p>
               }
             </div>
 
             @if (group.locked) {
-              <span class="lock-badge">Closed</span>
+              <span class="lock-badge">{{ 'ui.closed' | translate }}</span>
             }
           </div>
 
           <div class="match-list">
             @if (canPostPredictions() && isFirstPredictionRound(group)) {
               <label class="tiebreaker-field">
-                <span>Competition winner</span>
+                <span>{{ 'ui.competition_winner' | translate }}</span>
                 <select
                   [value]="selectedTiebreakerName()"
                   [disabled]="group.locked === true || savingTiebreaker() || tiebreakerOptions().length === 0"
                   (change)="updateTiebreaker($any($event.target).value)"
                 >
-                  <option value="" disabled [selected]="selectedTiebreakerName() === ''">Choose team</option>
+                  <option value="" disabled [selected]="selectedTiebreakerName() === ''">{{ 'ui.choose_team' | translate }}</option>
                   @for (team of tiebreakerOptions(); track team) {
-                    <option [value]="team" [selected]="team === selectedTiebreakerName()">{{ team }}</option>
+                    <option [value]="team" [selected]="team === selectedTiebreakerName()">{{ (team) }}</option>
                   }
                 </select>
-                <small>{{ savingTiebreaker() ? 'Saving tiebreaker...' : 'Tiebreaker in case of a tie' }}</small>
+                <small>{{ savingTiebreaker() ? ('ui.saving_tiebreaker' | translate) : ('ui.tiebreaker_in_case_of_a_tie' | translate) }}</small>
               </label>
             }
 
@@ -73,7 +70,7 @@
               <div class="match-section">
                 @if (section.label !== group.label) {
                   <div class="section-heading">
-                    <div class="section-badge">{{ section.label }}</div>
+                    <div class="section-badge">{{ (section.label)  }}</div>
                   </div>
                 }
 
@@ -84,30 +81,29 @@
                   >
                     <div class="match-meta">
                       <span>
-                        Match {{ match.matchNumber }}
-                        @if (match.isPostponed) {
-                          <span class="postponed-badge">Postponed</span>
+                        {{ 'ui.match_p0' | translate: { p0: (match.matchNumber) } }} @if (match.isPostponed) {
+                          <span class="postponed-badge">{{ 'ui.postponed' | translate }}</span>
                         }
                       </span>
-                      <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | date: 'EEE, MMM d, HH:mm' }}</time>
+                      <time [dateTime]="match.kickoffAt">{{ match.kickoffAt | localizedDate: 'EEE, MMM d, HH:mm' }}</time>
                       <span>{{ match.city }} · {{ match.venue }}</span>
                     </div>
 
                     <div class="teams">
                       <span class="team-name"><app-team-name [name]="match.homeTeam.displayName ?? match.homeTeam.name" [flag]="match.homeTeam.flag" /></span>
-                      <span class="versus">vs</span>
+                      <span class="versus">{{ 'ui.vs' | translate }}</span>
                       <span class="team-name"><app-team-name [name]="match.awayTeam.displayName ?? match.awayTeam.name" [flag]="match.awayTeam.flag" /></span>
                     </div>
 
-                    <div class="odds" aria-label="Match odds">
+                    <div class="odds" [attr.aria-label]="'ui.match_odds' | translate">
                       <div class="odds-values">
                         @if (match.odds) {
                           <span
                             [class.odds-selected]="match.prediction?.odds?.outcome === '1'"
                             [style.border-color]="selectedPredictionStateColor(match, '1')"
                             [style.color]="selectedPredictionStateColor(match, '1')"
-                            [attr.title]="match.prediction?.odds?.outcome === '1' ? 'Your selection' : null"
-                            [attr.aria-label]="match.prediction?.odds?.outcome === '1' ? 'Your selection' : null"
+                            [attr.title]="match.prediction?.odds?.outcome === '1' ? ('ui.your_selection' | translate) : null"
+                            [attr.aria-label]="match.prediction?.odds?.outcome === '1' ? ('ui.your_selection' | translate) : null"
                           >
                             {{ match.odds.homeWin | oddsFormat }}
                           </span>
@@ -115,8 +111,8 @@
                             [class.odds-selected]="match.prediction?.odds?.outcome === 'X'"
                             [style.border-color]="selectedPredictionStateColor(match, 'X')"
                             [style.color]="selectedPredictionStateColor(match, 'X')"
-                            [attr.title]="match.prediction?.odds?.outcome === 'X' ? 'Your selection' : null"
-                            [attr.aria-label]="match.prediction?.odds?.outcome === 'X' ? 'Your selection' : null"
+                            [attr.title]="match.prediction?.odds?.outcome === 'X' ? ('ui.your_selection' | translate) : null"
+                            [attr.aria-label]="match.prediction?.odds?.outcome === 'X' ? ('ui.your_selection' | translate) : null"
                           >
                             {{ match.odds.draw | oddsFormat }}
                           </span>
@@ -124,20 +120,20 @@
                             [class.odds-selected]="match.prediction?.odds?.outcome === '2'"
                             [style.border-color]="selectedPredictionStateColor(match, '2')"
                             [style.color]="selectedPredictionStateColor(match, '2')"
-                            [attr.title]="match.prediction?.odds?.outcome === '2' ? 'Your selection' : null"
-                            [attr.aria-label]="match.prediction?.odds?.outcome === '2' ? 'Your selection' : null"
+                            [attr.title]="match.prediction?.odds?.outcome === '2' ? ('ui.your_selection' | translate) : null"
+                            [attr.aria-label]="match.prediction?.odds?.outcome === '2' ? ('ui.your_selection' | translate) : null"
                           >
                             {{ match.odds.awayWin | oddsFormat }}
                           </span>
                         } @else {
-                          <span class="odds-empty">No odds</span>
+                          <span class="odds-empty">{{ 'ui.no_odds' | translate }}</span>
                         }
                       </div>
                     </div>
 
                     <div
                       class="score-form"
-                      aria-label="Prediction score"
+                      [attr.aria-label]="'ui.prediction_score' | translate"
                       (click)="showPostponedNotice(match)"
                       (focusin)="showPostponedNotice(match)"
                     >
@@ -147,7 +143,7 @@
                           maxlength="2"
                           pattern="[0-9]*"
                           inputmode="numeric"
-                          aria-label="Home team score"
+                          [attr.aria-label]="'ui.home_team_score' | translate"
                           [attr.aria-disabled]="match.isPostponed ? 'true' : null"
                           [readonly]="match.isPostponed"
                           [disabled]="!canPostPredictions() || (match.predictionLocked && !match.isPostponed)"
@@ -162,7 +158,7 @@
                           maxlength="2"
                           pattern="[0-9]*"
                           inputmode="numeric"
-                          aria-label="Away team score"
+                          [attr.aria-label]="'ui.away_team_score' | translate"
                           [attr.aria-disabled]="match.isPostponed ? 'true' : null"
                           [readonly]="match.isPostponed"
                           [disabled]="!canPostPredictions() || (match.predictionLocked && !match.isPostponed)"
@@ -171,11 +167,10 @@
                           [style.color]="predictionStateColor(match)"
                           (input)="updateDraft(match.id, 'away', $any($event.target).value)"
                         />
-                        <span class="save-state">{{ savingIds().has(match.id) ? 'Saving' : match.prediction ? 'Saved' : '' }}</span>
+                        <span class="save-state">{{ savingIds().has(match.id) ? ('ui.saving_2' | translate) : match.prediction ? ('ui.saved' | translate) : '' }}</span>
                       </div>
                       <p class="score-form-notice" [class.score-form-notice-visible]="postponedNoticeMatchId() === match.id">
-                        This match is postponed. Post your other tips.
-                      </p>
+                        {{ 'ui.this_match_is_postponed_post_your_other_tips' | translate }}</p>
                     </div>
 
                     <div class="points-column">
@@ -194,22 +189,22 @@
         </section>
       } @empty {
         <p class="status-message">
-          {{ closedRoundSummaries().length > 0 ? 'No open prediction rounds right now.' : 'No matches imported yet.' }}
+          {{ closedRoundSummaries().length > 0 ? ('ui.no_open_prediction_rounds_right_now' | translate) : ('ui.no_matches_imported_yet' | translate) }}
         </p>
       }
     </div>
 
     @if (closedRoundSummaries().length > 0) {
-      <div class="closed-round-list" aria-label="Closed prediction rounds">
+      <div class="closed-round-list" [attr.aria-label]="'ui.closed_prediction_rounds' | translate">
         @for (group of closedRoundSummaries(); track group.label) {
           <section class="closed-round-card" [attr.aria-labelledby]="'closed-group-' + group.label">
             <div class="group-header">
               <div>
-                <h2 [id]="'closed-group-' + group.label">{{ group.label }}</h2>
-                <p>{{ group.savedCount }}/{{ group.totalCount }} predictions entered</p>
+                <h2 [id]="'closed-group-' + group.label">{{ (group.label)  }}</h2>
+                <p>{{ 'ui.p0_p1_predictions_entered_2' | translate: { p0: (group.savedCount), p1: (group.totalCount) } }}</p>
               </div>
 
-              <span class="lock-badge">Closed</span>
+              <span class="lock-badge">{{ 'ui.closed' | translate }}</span>
             </div>
           </section>
         }

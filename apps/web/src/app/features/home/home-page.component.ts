@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -20,11 +22,12 @@ interface NextPredictionDeadline {
 
 @Component({
   selector: 'app-home-page',
-  imports: [HomeLeaderboardComponent, ModalShellComponent, PaymentInfoModalComponent, RouterLink, PredictionActionIconComponent, PredictionCountBadgeComponent],
+  imports: [TranslatePipe, HomeLeaderboardComponent, ModalShellComponent, PaymentInfoModalComponent, RouterLink, PredictionActionIconComponent, PredictionCountBadgeComponent],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.scss'
 })
 export class HomePageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly appState = inject(AppStateService);
   private readonly matchesService = inject(MatchesService);
   private readonly predictionSummary = inject(PredictionSummaryService);
@@ -57,8 +60,8 @@ export class HomePageComponent {
     }
 
     return {
-      label: getPredictionRoundLabel(nextGroup.label),
-      remaining: getTimeRemaining(nextGroup.deadlineAt, now)
+      label: nextGroup.label,
+      remaining: getTimeRemaining(nextGroup.deadlineAt, now, this.translations)
     };
   });
   protected readonly remainingPredictionsCount = this.predictionSummary.remainingCount;
@@ -102,21 +105,11 @@ export class HomePageComponent {
   }
 }
 
-function getPredictionRoundLabel(label: string): string {
-  const labels = new Map<string, string>([
-    ['Group stage - Round 1', 'Round 1'],
-    ['Group stage - Round 2', 'Round 2'],
-    ['Group stage - Round 3', 'Round 3']
-  ]);
-
-  return labels.get(label) ?? label;
-}
-
-function getTimeRemaining(deadlineAt: string, now: number): string {
+function getTimeRemaining(deadlineAt: string, now: number, translations: TranslationService): string {
   const remainingMs = Date.parse(deadlineAt) - now;
 
   if (remainingMs <= 0) {
-    return 'closed';
+    return translations.translate('ui.closed');
   }
 
   const totalMinutes = Math.floor(remainingMs / 60_000);
@@ -125,12 +118,12 @@ function getTimeRemaining(deadlineAt: string, now: number): string {
   const minutes = totalMinutes % 60;
 
   if (days > 0) {
-    return `${days}d ${hours}h ${minutes}m`;
+    return translations.translate('time.days_hours_minutes', { days, hours, minutes });
   }
 
   if (hours > 0) {
-    return `${hours}h ${minutes}m`;
+    return translations.translate('time.hours_minutes', { hours, minutes });
   }
 
-  return `${minutes}m`;
+  return translations.translate('time.minutes', { minutes });
 }

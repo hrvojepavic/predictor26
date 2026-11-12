@@ -1,3 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { testTranslationsProvider, initializeTestTranslations } from '../../testing/translations';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
@@ -7,8 +10,9 @@ describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter([])]
+      providers: [testTranslationsProvider, provideHttpClient(), provideHttpClientTesting(), provideRouter([])]
     }).compileComponents();
+    await initializeTestTranslations();
   });
 
   it('should create the app', () => {

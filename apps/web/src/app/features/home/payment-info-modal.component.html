@@ -1,8 +1,8 @@
 <section class="payment-modal" aria-labelledby="payment-info-title">
-  <button class="modal-close-button" type="button" aria-label="Close payment info" (click)="closeModal.emit()"></button>
+  <button class="modal-close-button" type="button" [attr.aria-label]="'ui.close_payment_info' | translate" [title]="'ui.close_payment_info' | translate" (click)="closeModal.emit()"></button>
 
   <header class="payment-modal-header">
-    <p class="section-label">Payment</p>
+    <p id="payment-info-title" class="section-label">{{ 'ui.payment' | translate }}</p>
   </header>
 
   <div class="payment-methods">
@@ -14,10 +14,10 @@
               method.type === 'iban'
                 ? 'IBAN'
                 : method.type === 'revolut'
-                  ? 'Revolut ID'
+                  ? ('ui.revolut_id' | translate)
                   : method.type === 'keks'
                     ? 'KEKS ID'
-                    : 'Cash'
+                    : ('ui.cash' | translate)
             }}
           </h3>
         </div>
@@ -25,47 +25,45 @@
         @if (method.type === 'cash') {
           <p class="cash-status">
             <span class="cash-status-icon" aria-hidden="true">!!</span>
-            <span>{{ method.value }}</span>
+            <span>{{ (method.value) }}</span>
           </p>
         } @else if (method.value) {
           @if (method.type === 'iban' && method.ibanHolderName) {
             <p class="iban-holder-name">
-              <span>Name and last name</span>
-              <strong>{{ method.ibanHolderName }}</strong>
+              <span>{{ 'ui.name_and_last_name' | translate }}</span>
+              <strong>{{ (method.ibanHolderName) }}</strong>
             </p>
           }
 
           <div class="method-actions">
             @if (method.copyable) {
               <button class="copy-value" type="button" (click)="copyValue(method)">
-                <span class="copy-text">{{ method.value }}</span>
+                <span class="copy-text">{{ (method.value) }}</span>
                 <span class="copy-icon" aria-hidden="true"></span>
-                <span class="copy-label">{{ copiedMethod() === method.type ? 'Copied' : 'Copy' }}</span>
+                <span class="copy-label">{{ copiedMethod() === method.type ? ('ui.copied' | translate) : ('ui.copy' | translate) }}</span>
               </button>
             }
 
             @if (method.fastPayUrl) {
-              <span class="mobile-direct-pay-copy">or you can</span>
+              <span class="mobile-direct-pay-copy">{{ 'ui.or_you_can' | translate }}</span>
               <a class="fast-pay-link" [href]="method.fastPayUrl" target="_blank" rel="noopener noreferrer">
-                <span class="desktop-pay-label">{{ payButtonLabel(method) }}</span>
-                <span class="mobile-pay-label">{{ directPayButtonLabel(method) }}</span>
+                <span class="desktop-pay-label">{{ (payButtonLabel(method)) }}</span>
+                <span class="mobile-pay-label">{{ (directPayButtonLabel(method)) }}</span>
               </a>
             }
           </div>
         }
       </article>
     } @empty {
-      <p class="empty-message">Payment information is not available yet.</p>
+      <p class="empty-message">{{ 'ui.payment_information_is_not_available_yet' | translate }}</p>
     }
   </div>
 
   <p class="verified-payment-note">
-    Once payment is received and verified by admin,
-    <img class="verified-payment-badge" src="icons/verified-badge.svg" alt="Verified badge" width="12" height="15" />
-    will be displayed next to your username.
-  </p>
+    {{ 'ui.once_payment_is_received_and_verified_by_admin' | translate }} <img class="verified-payment-badge" src="icons/verified-badge.svg" [alt]="'ui.verified_badge' | translate" width="12" height="15" />
+    {{ 'ui.will_be_displayed_next_to_your_username' | translate }}</p>
 
   <footer class="modal-actions">
-    <button class="close-button" type="button" (click)="closeModal.emit()">Close</button>
+    <button class="close-button" type="button" (click)="closeModal.emit()">{{ 'ui.close' | translate }}</button>
   </footer>
 </section>

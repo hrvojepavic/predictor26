@@ -1,15 +1,15 @@
 <form class="team-logo-modal" [formGroup]="logoForm" (ngSubmit)="submit()">
   <header>
-    <p class="section-label">Team icon</p>
-    <h2 id="team-logo-modal-title">Edit team icon</h2>
-    <p>{{ teamName() }}</p>
+    <p class="section-label">{{ 'ui.team_icon' | translate }}</p>
+    <h2 id="team-logo-modal-title">{{ 'ui.edit_team_icon' | translate }}</h2>
+    <p>{{ (teamName()) }}</p>
   </header>
 
   <div class="logo-preview" aria-hidden="true">
     @if (previewUrl(); as url) {
       <img [src]="url" alt="">
     } @else {
-      <span>No icon</span>
+      <span>{{ 'ui.no_icon' | translate }}</span>
     }
   </div>
 
@@ -21,33 +21,32 @@
     (dragover)="handleDragOver($event)"
     (drop)="handleDrop($event)"
   >
-    <span>Paste or drop image here</span>
-    <small>PNG, JPG, or WebP up to 300 KB</small>
+    <span>{{ 'ui.paste_or_drop_image_here' | translate }}</span>
+    <small>{{ 'ui.png_jpg_or_webp_up_to_300_kb' | translate }}</small>
     <label class="file-button">
       <input type="file" accept="image/png,image/jpeg,image/webp" [disabled]="isSubmitting()" (change)="handleFileInput($event)">
-      Choose image
-    </label>
+      {{ 'ui.choose_image' | translate }}</label>
   </div>
 
-  <button class="clear-button" type="button" [disabled]="isSubmitting() || !previewUrl()" (click)="removeLogo()">Remove icon</button>
+  <button class="clear-button" type="button" [disabled]="isSubmitting() || !previewUrl()" (click)="removeLogo()">{{ 'ui.remove_icon' | translate }}</button>
 
   <label class="form-field">
-    <span>Secret code</span>
+    <span>{{ 'ui.secret_code' | translate }}</span>
     <input type="password" formControlName="secretCode" maxlength="128" autocomplete="current-password" [readonly]="isSubmitting()">
   </label>
 
   @if (fileErrorMessage(); as message) {
-    <p class="modal-error">{{ message }}</p>
+    <p class="modal-error">{{ (message) }}</p>
   }
 
   @if (errorMessage(); as message) {
-    <p class="modal-error">{{ message }}</p>
+    <p class="modal-error">{{ (message) }}</p>
   }
 
   <div class="modal-actions">
-    <button class="secondary-button" type="button" [disabled]="isSubmitting()" (click)="cancel()">Cancel</button>
+    <button class="secondary-button" type="button" [disabled]="isSubmitting()" (click)="cancel()">{{ 'ui.cancel' | translate }}</button>
     <button class="primary-button" type="submit" [disabled]="isSubmitting() || logoForm.invalid || !hasLogoChange()">
-      {{ isSubmitting() ? 'Saving...' : 'Save icon' }}
+      {{ isSubmitting() ? ('ui.saving' | translate) : ('ui.save_icon' | translate) }}
     </button>
   </div>
 </form>

@@ -1,4 +1,6 @@
-import { DatePipe } from '@angular/common';
+import { TranslationService } from '@services/translation.service';
+import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { interval } from 'rxjs';
@@ -37,11 +39,12 @@ interface MatchSection {
 
 @Component({
   selector: 'app-predictions-page',
-  imports: [DatePipe, MatchSortMenuComponent, OddsFormatPipe, PredictionPointsComponent, TeamNameComponent],
+  imports: [TranslatePipe, LocalizedDatePipe, MatchSortMenuComponent, OddsFormatPipe, PredictionPointsComponent, TeamNameComponent],
   templateUrl: './predictions-page.component.html',
   styleUrl: './predictions-page.component.scss'
 })
 export class PredictionsPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly appState = inject(AppStateService);
   private readonly competitionsService = inject(CompetitionsService);
   private readonly matchesService = inject(MatchesService);
@@ -124,11 +127,11 @@ export class PredictionsPageComponent {
     this.competitionsService.updateTiebreaker(tiebreakerName).subscribe({
       next: () => {
         this.selectedTiebreakerName.set(tiebreakerName);
-        this.lastSavedMessage.set(`Saved winner pick: ${tiebreakerName}.`);
+        this.lastSavedMessage.set(this.translations.translate('ui.saved_winner_pick_p0', { p0: tiebreakerName }));
         this.savingTiebreaker.set(false);
       },
       error: () => {
-        this.errorMessage.set('Winner pick could not be saved.');
+        this.errorMessage.set(this.translations.translate("ui.winner_pick_could_not_be_saved"));
         this.savingTiebreaker.set(false);
       }
     });
@@ -171,7 +174,7 @@ export class PredictionsPageComponent {
     const remainingMs = Date.parse(deadlineAt) - this.now();
 
     if (remainingMs <= 0) {
-      return 'closed';
+      return this.translations.translate('ui.closed');
     }
 
     const totalMinutes = Math.floor(remainingMs / 60_000);
@@ -180,14 +183,14 @@ export class PredictionsPageComponent {
     const minutes = totalMinutes % 60;
 
     if (days > 0) {
-      return `${days}d ${hours}h ${minutes}m`;
+      return this.translations.translate('time.days_hours_minutes', { days, hours, minutes });
     }
 
     if (hours > 0) {
-      return `${hours}h ${minutes}m`;
+      return this.translations.translate('time.hours_minutes', { hours, minutes });
     }
 
-    return `${minutes}m`;
+    return this.translations.translate('time.minutes', { minutes });
   }
 
   protected hasTimeRemaining(deadlineAt: string): boolean {
@@ -232,7 +235,7 @@ export class PredictionsPageComponent {
         this.loading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Matches could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.matches_could_not_be_loaded"));
         this.loading.set(false);
       }
     });
@@ -244,7 +247,7 @@ export class PredictionsPageComponent {
         this.tiebreakerOptions.set(teams);
       },
       error: () => {
-        this.errorMessage.set('Winner options could not be loaded.');
+        this.errorMessage.set(this.translations.translate("ui.winner_options_could_not_be_loaded"));
       }
     });
   }
@@ -313,12 +316,12 @@ export class PredictionsPageComponent {
     this.matchesService.savePrediction(match.id, { homeScore, awayScore }).subscribe({
       next: ({ prediction }) => {
         this.lastSavedMessage.set(
-          `Saved ${match.homeTeam.name} ${homeScore}:${awayScore} ${match.awayTeam.name}.`
+          this.translations.translate('ui.saved_p0_p1_p2_p3', { p0: match.homeTeam.name, p1: homeScore, p2: awayScore, p3: match.awayTeam.name })
         );
         this.setSaving(match.id, false);
       },
       error: () => {
-        this.errorMessage.set('Prediction could not be saved.');
+        this.errorMessage.set(this.translations.translate("ui.prediction_could_not_be_saved"));
         this.setSaving(match.id, false);
       }
     });

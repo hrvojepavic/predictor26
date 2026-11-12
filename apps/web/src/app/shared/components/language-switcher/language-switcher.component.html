@@ -1,0 +1,10 @@
+<div class="language-toggle" role="group" [attr.aria-label]="'language.label' | translate">
+  @for (option of languages; track option.language) {
+    <button type="button" [class.selected]="translations.language() === option.language"
+      [attr.aria-pressed]="translations.language() === option.language"
+      [attr.aria-label]="option.labelKey | translate" [title]="option.labelKey | translate"
+      (click)="translations.setLanguage(option.language)">
+      <img [src]="option.flagUrl" alt="" aria-hidden="true" width="24" height="16" />
+    </button>
+  }
+</div>

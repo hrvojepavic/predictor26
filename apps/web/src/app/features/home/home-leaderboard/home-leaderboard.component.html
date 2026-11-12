@@ -1,17 +1,17 @@
-<section class="leaderboard" aria-label="Community table">
+<section class="leaderboard" [attr.aria-label]="'ui.community_table' | translate">
   <header class="leaderboard-header">
     <div>
-      <p class="section-label">Community Rankings</p>
+      <p class="section-label">{{ 'ui.community_rankings' | translate }}</p>
     </div>
   </header>
 
   @if (errorMessage(); as message) {
-    <p class="status-message status-error">{{ message }}</p>
+    <p class="status-message status-error">{{ (message) }}</p>
   }
 
   @if (loading()) {
-    <div class="table-shell leaderboard-skeleton" role="status" aria-label="Loading community rankings">
-      <span class="visually-hidden">Loading prediction table...</span>
+    <div class="table-shell leaderboard-skeleton" role="status" [attr.aria-label]="'ui.loading_community_rankings' | translate">
+      <span class="visually-hidden">{{ 'ui.loading_prediction_table' | translate }}</span>
     </div>
   } @else if (leaderboard(); as table) {
     <div class="leaderboard-scroll-shell" [class.leaderboard-scroll-shell-scrolled]="isHorizontallyScrolled()" (scroll)="onTableScroll($event)">
@@ -19,36 +19,36 @@
         <table class="leaderboard-table">
           <thead>
             <tr>
-              <th class="users-heading" rowspan="2" scope="col">Users ({{ table.totalUsers }})</th>
+              <th class="users-heading" rowspan="2" scope="col">{{ 'ui.users_p0' | translate: { p0: (table.totalUsers) } }}</th>
               @if (table.liveMatches.length > 0) {
                 <th class="live-heading" [attr.colspan]="table.liveMatches.length" scope="colgroup">
                   <span class="live-heading-content">
                     <span class="live-dot" aria-hidden="true"></span>
-                    <span>Live</span>
+                    <span>{{ 'ui.live' | translate }}</span>
                   </span>
                 </th>
               }
               @if (table.comingUpMatches.length > 0) {
                 <th class="coming-up-heading" [attr.colspan]="table.comingUpMatches.length" scope="colgroup">
-                  <span class="coming-up-heading-content"><span class="coming-up-dot" aria-hidden="true"></span>Coming up</span>
+                  <span class="coming-up-heading-content"><span class="coming-up-dot" aria-hidden="true"></span>{{ 'ui.coming_up' | translate }}</span>
                 </th>
               }
               @for (round of table.rounds; track round.label) {
-                <th class="round-heading" colspan="2" scope="colgroup">{{ round.heading }}</th>
+                <th class="round-heading" colspan="2" scope="colgroup">{{ (round.heading)  }}</th>
                 @if ($first && table.showInterimTotalColumn) {
-                  <th class="total-heading interim-total-heading" rowspan="2" scope="col">Total</th>
+                  <th class="total-heading interim-total-heading" rowspan="2" scope="col">{{ 'ui.total' | translate }}</th>
                 }
               }
               @if (table.showWinnerColumn) {
-                <th class="winner-heading" rowspan="2" scope="col">Winner</th>
+                <th class="winner-heading" rowspan="2" scope="col">{{ 'ui.winner' | translate }}</th>
               }
-              <th class="total-heading" rowspan="2" scope="col">Total</th>
+              <th class="total-heading" rowspan="2" scope="col">{{ 'ui.total' | translate }}</th>
             </tr>
             <tr>
               @for (match of table.liveMatches; track match.matchId) {
                 <th class="live-match-heading" scope="col">
                   <span class="live-match-heading-content">
-                    <span class="match-heading-teams" [attr.aria-label]="match.homeTeamDisplay.name + ' vs ' + match.awayTeamDisplay.name">
+                    <span class="match-heading-teams" [attr.aria-label]="'ui.versus_teams' | translate: { home: match.homeTeamDisplay.name, away: match.awayTeamDisplay.name }">
                       <span class="match-heading-team" [title]="match.homeTeamDisplay.name">
                         @if (match.homeTeamDisplay.iconUrl; as iconUrl) {
                           <img class="match-heading-logo" [src]="iconUrl" [alt]="match.homeTeamDisplay.name" width="16" height="16" />
@@ -56,7 +56,7 @@
                           <span class="match-heading-fallback">{{ match.homeTeamDisplay.shortLabel }}</span>
                         }
                       </span>
-                      <span class="match-heading-separator" aria-hidden="true">vs</span>
+                      <span class="match-heading-separator" aria-hidden="true">{{ 'ui.vs' | translate }}</span>
                       <span class="match-heading-team" [title]="match.awayTeamDisplay.name">
                         @if (match.awayTeamDisplay.iconUrl; as iconUrl) {
                           <img class="match-heading-logo" [src]="iconUrl" [alt]="match.awayTeamDisplay.name" width="16" height="16" />
@@ -66,14 +66,14 @@
                       </span>
                     </span>
                     @if (match.liveScoreLabel) {
-                      <span class="live-heading-score">{{ match.liveScoreLabel }}</span>
+                      <span class="live-heading-score">{{ (match.liveScoreLabel) }}</span>
                     }
                   </span>
                 </th>
               }
               @for (match of table.comingUpMatches; track match.matchId) {
                 <th class="coming-up-match-heading" scope="col">
-                  <span class="match-heading-teams" [attr.aria-label]="match.homeTeamDisplay.name + ' vs ' + match.awayTeamDisplay.name">
+                  <span class="match-heading-teams" [attr.aria-label]="'ui.versus_teams' | translate: { home: match.homeTeamDisplay.name, away: match.awayTeamDisplay.name }">
                     <span class="match-heading-team" [title]="match.homeTeamDisplay.name">
                       @if (match.homeTeamDisplay.iconUrl; as iconUrl) {
                         <img class="match-heading-logo" [src]="iconUrl" [alt]="match.homeTeamDisplay.name" width="16" height="16" />
@@ -81,7 +81,7 @@
                         <span class="match-heading-fallback">{{ match.homeTeamDisplay.shortLabel }}</span>
                       }
                     </span>
-                    <span class="match-heading-separator" aria-hidden="true">vs</span>
+                    <span class="match-heading-separator" aria-hidden="true">{{ 'ui.vs' | translate }}</span>
                     <span class="match-heading-team" [title]="match.awayTeamDisplay.name">
                       @if (match.awayTeamDisplay.iconUrl; as iconUrl) {
                         <img class="match-heading-logo" [src]="iconUrl" [alt]="match.awayTeamDisplay.name" width="16" height="16" />
@@ -93,8 +93,8 @@
                 </th>
               }
               @for (round of table.rounds; track round.label) {
-                <th scope="col">Tips</th>
-                <th scope="col">Pts</th>
+                <th scope="col">{{ 'ui.tips' | translate }}</th>
+                <th scope="col">{{ 'ui.pts' | translate }}</th>
               }
             </tr>
           </thead>
@@ -109,10 +109,10 @@
               >
                 <th class="user-cell" scope="row">
                   <span class="user-cell-content">
-                    <span class="user-rank">{{ user.rankLabel }}</span>
+                    <span class="user-rank">{{ (user.rankLabel) }}</span>
                     <span class="user-divider" aria-hidden="true"></span>
                     @if (user.id === currentUserId()) {
-                      <span class="current-user-star" aria-label="Your row">★</span>
+                      <span class="current-user-star" [attr.aria-label]="'ui.your_row' | translate">★</span>
                     }
                     <span class="user-name-text">{{ user.username }}</span>
                   </span>
@@ -121,7 +121,7 @@
                   <td
                     class="live-score-cell"
                     [class.live-score-cell-exact]="livePrediction.matchesLiveScore"
-                    [attr.aria-label]="livePrediction.matchesLiveScore ? 'Prediction matches the current live score' : null"
+                    [attr.aria-label]="livePrediction.matchesLiveScore ? ('ui.prediction_matches_the_current_live_score' | translate) : null"
                   >
                     <span class="live-score-content">
                       @if (user.showLiveMovement && livePrediction.matchId === table.liveMovementMatchId) {
@@ -129,10 +129,10 @@
                           class="live-rank-movement"
                           [class.live-rank-movement-up]="user.liveMovementState === 'up'"
                           [class.live-rank-movement-down]="user.liveMovementState === 'down'"
-                          [attr.aria-label]="'Live rank movement ' + user.liveMovementLabel"
+                          [attr.aria-label]="'ui.live_movement' | translate: { count: user.liveMovementLabel }"
                         >
                           @if (user.liveMovementLabel) {
-                            <span>{{ user.liveMovementLabel }}</span>
+                            <span>{{ (user.liveMovementLabel) }}</span>
                           }
                         </span>
                       }
@@ -160,6 +160,7 @@
                     @if (isLoggedIn() && round.viewable) {
                       <button
                         class="tips-button"
+                        [attr.aria-label]="'ui.view_round_predictions' | translate: { name: user.username, round: (round.label ) }" [title]="'ui.view_round_predictions' | translate: { name: user.username, round: (round.label ) }"
                         type="button"
                         [disabled]="isOpeningRound(user, round)"
                         (click)="openRound(user, round)"
@@ -184,7 +185,7 @@
                       @if (isImageTeamFlag(winnerTeam.flag)) {
                         <img class="winner-logo" [src]="winnerTeam.flag!" [alt]="winnerTeam.name" [title]="winnerTeam.name" width="22" height="22" />
                       } @else {
-                        <span class="winner-team" [title]="winnerTeam.name">{{ winnerTeam.flag || winnerTeam.name }}</span>
+                        <span class="winner-team" [title]="winnerTeam.name">{{ (winnerTeam.flag || winnerTeam.name) }}</span>
                       }
                     } @else {
                       <span class="winner-empty">-</span>
@@ -206,8 +207,7 @@
                     (table.showWinnerColumn ? 1 : 0)
                   "
                 >
-                  No registered users yet.
-                </td>
+                  {{ 'ui.no_registered_users_yet' | translate }}</td>
               </tr>
             }
           </tbody>

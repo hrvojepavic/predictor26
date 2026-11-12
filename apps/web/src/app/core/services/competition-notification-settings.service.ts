@@ -1,14 +1,15 @@
+import { TranslationService } from '@services/translation.service';
 import { inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AppStateService } from '@core/state/app-state.service';
-import { notificationSetupMessages } from '@core/constants/notification-setup-messages';
 import { NotificationPreferences, NotificationPreferencesResponse } from '@models/notification.models';
 import { NotificationsApiProvider } from './providers/notifications-api.provider';
-import { NotificationReminderEnableResult, NotificationRemindersService } from './notification-reminders.service';
+import { NotificationRemindersService } from './notification-reminders.service';
 
 @Injectable({ providedIn: 'root' })
 export class CompetitionNotificationSettingsService {
+  private readonly translations = inject(TranslationService);
   private readonly api = inject(NotificationsApiProvider);
   private readonly appState = inject(AppStateService);
   private readonly browser = inject(NotificationRemindersService);
@@ -33,7 +34,7 @@ export class CompetitionNotificationSettingsService {
       const response = await firstValueFrom(this.api.getPreferences(competitionId));
       if (generation === this.generation && token === this.appState.token()) this.settingsSignal.set(response);
     } catch {
-      if (generation === this.generation) this.errorSignal.set('Could not load notifications. Please try again.');
+      if (generation === this.generation) this.errorSignal.set(this.translations.translate("ui.could_not_load_notifications_please_try_again"));
     } finally {
       if (generation === this.generation) this.loadingSignal.set(false);
     }
@@ -43,7 +44,7 @@ export class CompetitionNotificationSettingsService {
     return this.change(async isCurrent => {
       if (registerBrowser) {
         const setup = await this.browser.enableReminders(competitionId);
-        if (setup.status !== 'subscribed') throw new Error(browserError(setup.status));
+        if (setup.status !== 'subscribed') throw new Error(this.translations.translate(`notifications.setup.${setup.status}`));
         if (!isCurrent()) return null;
         try {
           return await firstValueFrom(this.api.savePreferences(competitionId, preferences));
@@ -60,7 +61,10 @@ export class CompetitionNotificationSettingsService {
   async addBrowser(competitionId: number): Promise<boolean> {
     return this.change(async () => {
       const result = await this.browser.enableReminders(competitionId);
-      if (result.status !== 'subscribed' || !result.settings) throw new Error(browserError(result.status));
+      if (result.status !== 'subscribed' || !result.settings) {
+        const status = result.status === 'subscribed' ? 'failed' : result.status;
+        throw new Error(this.translations.translate(`notifications.setup.${status}`));
+      }
       return result.settings;
     });
   }
@@ -84,15 +88,11 @@ export class CompetitionNotificationSettingsService {
       }
     } catch (error) {
       if (isCurrent()) this.errorSignal.set(error instanceof HttpErrorResponse
-        ? (error.status === 409 ? (typeof error.error?.message === 'string' ? error.error.message : 'Keep at least one browser.') : 'Changes were not saved. Please try again.')
-        : error instanceof Error ? error.message : 'Changes were not saved. Please try again.');
+        ? (error.status === 409 ? (typeof error.error?.message === 'string' ? error.error.message : this.translations.translate("ui.keep_at_least_one_browser")) : this.translations.translate("ui.changes_were_not_saved_please_try_again"))
+        : error instanceof Error ? error.message : this.translations.translate("ui.changes_were_not_saved_please_try_again"));
     } finally {
       if (generation === this.generation) this.savingSignal.set(false);
     }
     return false;
   }
-}
-
-function browserError(status: NotificationReminderEnableResult['status']): string {
-  return notificationSetupMessages[status === 'subscribed' ? 'failed' : status];
 }

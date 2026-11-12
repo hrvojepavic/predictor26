@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -10,11 +12,12 @@ import { SecretCodeModalComponent } from '@shared/components/secret-code-modal/s
 
 @Component({
   selector: 'app-admin-payments-page',
-  imports: [ModalShellComponent, ReactiveFormsModule, RouterLink, SecretCodeModalComponent],
+  imports: [TranslatePipe, ModalShellComponent, ReactiveFormsModule, RouterLink, SecretCodeModalComponent],
   templateUrl: './admin-payments-page.component.html',
   styleUrl: './admin-payments-page.component.scss'
 })
 export class AdminPaymentsPageComponent {
+  private readonly translations = inject(TranslationService);
   private readonly adminPaymentsApi = inject(AdminPaymentsApiProvider);
   private readonly formBuilder = inject(FormBuilder);
 
@@ -75,12 +78,12 @@ export class AdminPaymentsPageComponent {
       next: (updatedSettings) => {
         this.paymentForm.setValue(updatedSettings);
         this.paymentForm.markAsPristine();
-        this.successMessage.set('Payment settings saved.');
+        this.successMessage.set(this.translations.translate("ui.payment_settings_saved"));
         this.pendingSettings.set(null);
         this.saving.set(false);
       },
       error: (error: unknown) => {
-        const message = readErrorMessage(error, 'Payment settings could not be saved.');
+        const message = readErrorMessage(error, this.translations.translate("ui.payment_settings_could_not_be_saved"));
 
         if (error instanceof HttpErrorResponse && error.status === 403) {
           this.secretCodeErrorMessage.set(message);
@@ -106,7 +109,7 @@ export class AdminPaymentsPageComponent {
         this.loading.set(false);
       },
       error: (error: unknown) => {
-        this.errorMessage.set(readErrorMessage(error, 'Payment settings could not be loaded.'));
+        this.errorMessage.set(readErrorMessage(error, this.translations.translate("ui.payment_settings_could_not_be_loaded")));
         this.loading.set(false);
       }
     });

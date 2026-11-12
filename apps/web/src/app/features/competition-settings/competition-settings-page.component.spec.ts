@@ -1,3 +1,4 @@
+import { testTranslationsProvider, initializeTestTranslations } from '../../../../testing/translations';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
@@ -25,7 +26,7 @@ describe('Competition settings navigation', () => {
   const activeCompetition = signal<Competition | null>(null);
   const competition = { id: 1, name: 'League', slug: 'league' } as Competition;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     preferences.set(null);
     fingerprint.set(null);
     addBrowser.mockReset(); removeBrowser.mockReset();
@@ -38,6 +39,7 @@ describe('Competition settings navigation', () => {
     activeCompetition.set(null);
     TestBed.configureTestingModule({
       providers: [
+        testTranslationsProvider,
         { provide: CompetitionNotificationSettingsService, useValue: {
           settings: preferences, loading: signal(false), saving: signal(false), error: signal(null),
           save, addBrowser, removeBrowser,
@@ -59,6 +61,7 @@ describe('Competition settings navigation', () => {
         } }
       ]
     });
+    await initializeTestTranslations();
   });
 
   it('resolves the competition on direct navigation', async () => {

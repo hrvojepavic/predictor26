@@ -1,3 +1,5 @@
+import { TranslationService } from '@services/translation.service';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -8,11 +10,12 @@ export interface TeamLogoChangeConfirmation {
 
 @Component({
   selector: 'app-admin-team-logo-modal',
-  imports: [ReactiveFormsModule],
+  imports: [TranslatePipe, ReactiveFormsModule],
   templateUrl: './admin-team-logo-modal.component.html',
   styleUrl: './admin-team-logo-modal.component.scss'
 })
 export class AdminTeamLogoModalComponent {
+  private readonly translations = inject(TranslationService);
   private readonly formBuilder = inject(FormBuilder);
 
   readonly teamName = input.required<string>();
@@ -109,12 +112,12 @@ export class AdminTeamLogoModalComponent {
 
   private readImageFile(file: File): void {
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      this.fileErrorMessage.set('Choose a PNG, JPG, or WebP image.');
+      this.fileErrorMessage.set(this.translations.translate("ui.choose_a_png_jpg_or_webp_image"));
       return;
     }
 
     if (file.size < 1 || file.size > 300_000) {
-      this.fileErrorMessage.set('Image must be smaller than 300 KB.');
+      this.fileErrorMessage.set(this.translations.translate("ui.image_must_be_smaller_than_300_kb"));
       return;
     }
 
@@ -122,7 +125,7 @@ export class AdminTeamLogoModalComponent {
 
     reader.addEventListener('load', () => {
       if (typeof reader.result !== 'string') {
-        this.fileErrorMessage.set('Image could not be read.');
+        this.fileErrorMessage.set(this.translations.translate("ui.image_could_not_be_read"));
         return;
       }
 
@@ -134,7 +137,7 @@ export class AdminTeamLogoModalComponent {
     });
 
     reader.addEventListener('error', () => {
-      this.fileErrorMessage.set('Image could not be read.');
+      this.fileErrorMessage.set(this.translations.translate("ui.image_could_not_be_read"));
     });
 
     reader.readAsDataURL(file);

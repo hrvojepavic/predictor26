@@ -13,7 +13,6 @@ import { RulesPageComponent } from '@features/rules/rules-page.component';
 export const routes: Routes = [
   {
     path: 'competition/:slug/settings',
-    title: 'Settings | Predictor26',
     canActivate: [authGuard, competitionSlugGuard],
     loadComponent: () =>
       import('./features/competition-settings/competition-settings-page.component').then(

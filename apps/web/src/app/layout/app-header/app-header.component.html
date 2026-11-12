@@ -1,11 +1,11 @@
 <header class="site-header">
-  <a class="brand" [routerLink]="brandRouterLink()" [state]="brandState()" [attr.inert]="menuOpen() ? '' : null" aria-label="Predictor26 home">
+  <a class="brand" [routerLink]="brandRouterLink()" [state]="brandState()" [attr.inert]="menuOpen() ? '' : null" [attr.aria-label]="'ui.predictor26_home' | translate">
     <img class="brand-icon" src="icons/predictor26-icon.svg" alt="" width="34" height="34" />
-    <span class="brand-name">Predictor26</span>
+    <span class="brand-name">{{ 'ui.predictor26' | translate }}</span>
   </a>
 
     <button #menuToggle id="navigation-toggle" class="menu-toggle" [class.is-open]="menuOpen()" type="button"
-      [attr.aria-label]="menuOpen() ? 'Close navigation' : 'Open navigation'"
+      [attr.aria-label]="(menuOpen() ? 'navigation.close' : 'navigation.open') | translate" [title]="(menuOpen() ? 'navigation.close' : 'navigation.open') | translate"
       [attr.aria-expanded]="menuOpen()" [attr.aria-controls]="menuOpen() ? 'header-navigation' : null"
       (click)="toggleMenu()">
       <span></span><span></span><span></span>
@@ -16,10 +16,11 @@
   <app-modal-shell labelledBy="navigation-title" panelWidth="380px" [drawer]="true" ownedControls="navigation-toggle"
     animate.enter="drawer-enter" animate.leave="drawer-leave">
     <div class="menu-top">
-      <span id="navigation-title" class="visually-hidden">Navigation</span>
+      <app-language-switcher />
+      <span id="navigation-title" class="visually-hidden">{{ 'navigation.title' | translate }}</span>
     </div>
     <div class="menu-content">
-      <nav id="header-navigation" class="account-nav" aria-label="Account">
+      <nav id="header-navigation" class="account-nav" [attr.aria-label]="'ui.account' | translate">
         @if (appState.currentUser(); as user) {
           <section class="menu-section" aria-labelledby="menu-user-title">
             <h3 id="menu-user-title" class="section-heading user-heading">
@@ -29,18 +30,18 @@
               </svg>
               <span class="heading-name" [title]="user.username">{{ user.username }}</span>
               @if (routeCompetition() && user.isVerified) {
-                <app-tooltip text="I've paid my dues!" placement="bottom-end">
+                <app-tooltip [text]="'ui.i_ve_paid_my_dues' | translate" placement="bottom-end">
                   <img class="verified-badge" src="icons/verified-badge.svg" alt="" width="18" height="23" aria-hidden="true" />
                 </app-tooltip>
               }
             </h3>
             @if (routeCompetition(); as competition) {
               <a class="menu-link" [routerLink]="['/competition', competition.slug, 'predictions']" (click)="closeMenu()">
-                <span>{{ 'Predict' | uppercase }}</span>
+                <span>{{ ('ui.predict' | translate) | uppercase }}</span>
                 <app-prediction-count-badge [count]="predictionSummary.remainingCount()" />
               </a>
               <a class="menu-link" [routerLink]="['/competition', competition.slug, 'my-predictions']" (click)="closeMenu()">
-                <span>{{ 'My predictions' | uppercase }}</span>
+                <span>{{ ('ui.my_predictions_2' | translate) | uppercase }}</span>
               </a>
             }
           </section>
@@ -55,46 +56,46 @@
                 <span class="heading-name" [title]="competition.name">{{ competition.name }}</span>
               </h3>
               <a class="menu-link" [routerLink]="['/competition', competition.slug]" (click)="closeMenu()">
-                <span>{{ 'Rankings' | uppercase }}</span>
+                <span>{{ ('ui.rankings' | translate) | uppercase }}</span>
               </a>
               <a class="menu-link" [routerLink]="['/competition', competition.slug, 'match-day']" (click)="closeMenu()">
-                <span>{{ 'Match Day' | uppercase }}</span>
+                <span>{{ ('ui.match_day' | translate) | uppercase }}</span>
               </a>
               <a class="menu-link" [routerLink]="['/competition', competition.slug, 'settings']" (click)="closeMenu()">
-                <span>{{ 'Settings' | uppercase }}</span>
+                <span>{{ ('ui.settings' | translate) | uppercase }}</span>
               </a>
               <a class="menu-link" [routerLink]="['/competition', competition.slug, 'stats']" (click)="closeMenu()">
-                <span>{{ 'Stats' | uppercase }}</span>
+                <span>{{ ('ui.stats' | translate) | uppercase }}</span>
               </a>
               <a class="menu-link" [routerLink]="['/competition', competition.slug, 'rules']" (click)="closeMenu()">
-                <span>{{ 'Rules' | uppercase }}</span>
+                <span>{{ ('ui.rules' | translate) | uppercase }}</span>
               </a>
               @if (finalResults.available()) {
                 <button class="menu-link final-rankings-link" type="button" (click)="openFinalResults()">
-                  <span>{{ 'Final rankings' | uppercase }}</span>
+                  <span>{{ ('ui.final_rankings_2' | translate) | uppercase }}</span>
                 </button>
               }
               <a class="menu-link" routerLink="/" [state]="{ showCompetitionList: true }" (click)="closeMenu()">
-                <span>{{ 'All leagues' | uppercase }}</span>
+                <span>{{ ('ui.all_leagues' | translate) | uppercase }}</span>
               </a>
             </section>
           }
           @if (user.role === 'super_admin' || user.role === 'admin') {
-            <section class="menu-section admin-section" aria-label="Administration">
-              <a class="menu-link" routerLink="/admin" (click)="closeMenu()"><span>{{ 'Admin' | uppercase }}</span></a>
+            <section class="menu-section admin-section" [attr.aria-label]="'ui.administration' | translate">
+              <a class="menu-link" routerLink="/admin" (click)="closeMenu()"><span>{{ ('ui.admin' | translate) | uppercase }}</span></a>
             </section>
           }
         } @else if (appState.isLoggedIn()) {
-          <p role="status">Loading your account…</p>
+          <p role="status">{{ 'ui.loading_your_account' | translate }}</p>
         } @else {
-          <a class="menu-link" routerLink="/login" (click)="closeMenu()"><span>{{ 'Login' | uppercase }}</span></a>
-          <a class="menu-link" routerLink="/register" (click)="closeMenu()"><span>{{ 'Register' | uppercase }}</span></a>
+          <a class="menu-link" routerLink="/login" (click)="closeMenu()"><span>{{ ('ui.login' | translate) | uppercase }}</span></a>
+          <a class="menu-link" routerLink="/register" (click)="closeMenu()"><span>{{ ('ui.register' | translate) | uppercase }}</span></a>
         }
       </nav>
       @if (appState.isLoggedIn()) {
         <div class="menu-bottom">
           <button class="menu-link logout-link" type="button" (click)="logout()">
-            <span>{{ 'Logout' | uppercase }}</span>
+            <span>{{ ('ui.logout' | translate) | uppercase }}</span>
           </button>
         </div>
       }
