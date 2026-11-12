@@ -5,7 +5,7 @@
   </a>
 
     <button #menuToggle id="navigation-toggle" class="menu-toggle" [class.is-open]="menuOpen()" type="button"
-      [attr.aria-label]="menuOpen() ? 'Close navigation' : 'Open navigation'"
+      [attr.aria-label]="(menuOpen() ? 'navigation.close' : 'navigation.open') | translate"
       [attr.aria-expanded]="menuOpen()" [attr.aria-controls]="menuOpen() ? 'header-navigation' : null"
       (click)="toggleMenu()">
       <span></span><span></span><span></span>
@@ -16,7 +16,8 @@
   <app-modal-shell labelledBy="navigation-title" panelWidth="380px" [drawer]="true" ownedControls="navigation-toggle"
     animate.enter="drawer-enter" animate.leave="drawer-leave">
     <div class="menu-top">
-      <span id="navigation-title" class="visually-hidden">Navigation</span>
+      <app-language-switcher />
+      <span id="navigation-title" class="visually-hidden">{{ 'navigation.title' | translate }}</span>
     </div>
     <div class="menu-content">
       <nav id="header-navigation" class="account-nav" aria-label="Account">

@@ -12,10 +12,12 @@ import { PredictionSummaryService } from '@services/prediction-summary.service';
 import { PredictionCountBadgeComponent } from '@shared/components/prediction-count-badge/prediction-count-badge.component';
 import { TooltipComponent } from '@shared/components/tooltip/tooltip.component';
 import { ModalShellComponent } from '@shared/components/modal-shell/modal-shell.component';
+import { LanguageSwitcherComponent } from '@shared/components/language-switcher/language-switcher.component';
+import { TranslatePipe } from '@shared/pipes/translate.pipe';
 
 @Component({
   selector: 'app-header',
-  imports: [RouterLink, UpperCasePipe, TooltipComponent, ModalShellComponent, PredictionCountBadgeComponent],
+  imports: [RouterLink, UpperCasePipe, TooltipComponent, ModalShellComponent, PredictionCountBadgeComponent, LanguageSwitcherComponent, TranslatePipe],
   host: { '(document:keydown)': 'onMenuKeydown($event)' },
   templateUrl: './app-header.component.html',
   styleUrl: './app-header.component.scss'
@@ -129,7 +131,7 @@ export class AppHeaderComponent {
       this.closeMenu();
     } else if (event.key === 'Tab') {
       const controls = Array.from(this.element.nativeElement.querySelectorAll<HTMLElement>(
-        '.menu-toggle, .menu-content a[href], .menu-content button, .menu-content [tabindex="0"]'
+        '.menu-toggle, .menu-top button, .menu-content a[href], .menu-content button, .menu-content [tabindex="0"]'
       ));
       const first = controls[0];
       const last = controls[controls.length - 1];

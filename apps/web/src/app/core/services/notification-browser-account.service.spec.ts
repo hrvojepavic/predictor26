@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { AppStateService } from '@core/state/app-state.service';
 import { NotificationsApiProvider } from './providers/notifications-api.provider';
 import { NotificationBrowserAccountService } from './notification-browser-account.service';
@@ -64,5 +64,55 @@ describe('Notification browser account', () => {
     expect(await put.mock.calls[0][1].json()).toEqual({userId:1});
     await service.synchronize(1,'A');
     expect(saveSubscription).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not synchronize on focus or reconnect after a successful login sync', async () => {
+    const service = TestBed.inject(NotificationBrowserAccountService);
+    await service.synchronize(1, 'A');
+    const synchronize = vi.spyOn(service, 'synchronize');
+    window.dispatchEvent(new Event('focus'));
+    window.dispatchEvent(new Event('online'));
+    expect(synchronize).not.toHaveBeenCalled();
+    expect(saveSubscription).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['focus', 'online'])('retries failed synchronization on %s only until it succeeds', async event => {
+    saveSubscription.mockImplementationOnce(() => { throw new Error('Offline'); });
+    const service = TestBed.inject(NotificationBrowserAccountService);
+    await expect(service.synchronize(1, 'A')).rejects.toThrow('Offline');
+    const synchronize = vi.spyOn(service, 'synchronize');
+    window.dispatchEvent(new Event(event));
+    window.dispatchEvent(new Event('focus'));
+    window.dispatchEvent(new Event('online'));
+    expect(synchronize).toHaveBeenCalledTimes(1);
+    await synchronize.mock.results[0].value;
+    window.dispatchEvent(new Event(event));
+    expect(synchronize).toHaveBeenCalledTimes(1);
+    expect(saveSubscription).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not enqueue focus retries while the initial synchronization is pending', async () => {
+    const response = new Subject<{ subscribed: boolean }>();
+    saveSubscription.mockReturnValueOnce(response);
+    const service = TestBed.inject(NotificationBrowserAccountService);
+    const pending = service.synchronize(1, 'A');
+    await vi.waitFor(() => expect(saveSubscription).toHaveBeenCalledTimes(1));
+    const synchronize = vi.spyOn(service, 'synchronize');
+    window.dispatchEvent(new Event('focus'));
+    window.dispatchEvent(new Event('online'));
+    expect(synchronize).not.toHaveBeenCalled();
+    response.next({ subscribed: true });
+    response.complete();
+    await pending;
+  });
+
+  it('does not retry a failed sync after another tab changes accounts', async () => {
+    saveSubscription.mockImplementationOnce(() => { throw new Error('Offline'); });
+    const service = TestBed.inject(NotificationBrowserAccountService);
+    await expect(service.synchronize(1, 'A')).rejects.toThrow('Offline');
+    localStorage.setItem('predictor26.session', JSON.stringify({ token: 'B' }));
+    const synchronize = vi.spyOn(service, 'synchronize');
+    window.dispatchEvent(new Event('focus'));
+    expect(synchronize).not.toHaveBeenCalled();
   });
 });
