@@ -7,14 +7,8 @@
 .leaderboard {
   display: grid;
   gap: 14px;
+  min-width: 0;
   margin-inline: min(0px, max(-320px, calc((1120px - 100vw + 32px) / 2)));
-}
-
-.leaderboard-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
 }
 
 .section-label {
@@ -52,6 +46,7 @@
 }
 
 .leaderboard-table-shell {
+  flex: 0 0 auto;
   width: max-content;
   min-width: 100%;
   @include animations.content-fade-in;
@@ -59,11 +54,8 @@
 
 .leaderboard-scroll-shell {
   display: flex;
+  min-width: 0;
   overflow-x: auto;
-}
-
-.leaderboard-table-shell {
-  flex: 0 0 auto;
 }
 
 .visually-hidden {
@@ -125,12 +117,12 @@ thead tr:first-child th:first-child {
   border-top-left-radius: 7px;
 }
 
-thead tr:first-child th:last-child {
-  border-top-right-radius: 7px;
-}
-
 tbody tr:last-child th:first-child {
   border-bottom-left-radius: 7px;
+}
+
+thead tr:first-child th:last-child {
+  border-top-right-radius: 7px;
 }
 
 tbody tr:last-child td:last-child,
@@ -187,7 +179,6 @@ tbody tr:last-child th:last-child {
 }
 
 .user-cell {
-  position: sticky;
   background: #ffffff;
   color: #111827;
   font-size: 0.92rem;
@@ -552,9 +543,18 @@ td {
     margin-inline: 0;
   }
 
-  .leaderboard-scroll-shell {
-    margin-right: -12px;
+  .leaderboard-scroll-shell,
+  .leaderboard-skeleton {
+    margin-inline: calc(-1 * var(--home-gutter, 16px));
   }
+
+  .table-shell {
+    border-left: 0;
+    border-radius: 0 8px 8px 0;
+  }
+
+  thead tr:first-child th:first-child { border-top-left-radius: 0; }
+  tbody tr:last-child th:first-child { border-bottom-left-radius: 0; }
 
   .leaderboard-skeleton {
     height: 216px;

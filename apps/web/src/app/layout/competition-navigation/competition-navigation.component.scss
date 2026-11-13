@@ -1,0 +1,79 @@
+@use '../../shared/animations' as animations;
+
+:host { display: block; order: 1; }
+.navigation-space { height: calc(76px + env(safe-area-inset-bottom, 0px)); }
+.floating-navigation {
+  position: fixed;
+  z-index: 20;
+  left: max(12px, env(safe-area-inset-left, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  max-width: 520px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .18), 0 3px 8px rgba(15, 23, 42, .08);
+}
+a {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 3px 2px;
+  border-radius: 999px;
+  color: #4b5563;
+  text-decoration: none;
+  transition: color 250ms ease;
+  @include animations.content-fade-in;
+}
+a:hover, a.active { color: #3730a3; }
+.selection-indicator {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: calc((100% - 14px) / 4);
+  border-radius: 999px;
+  background: #e0e7ff;
+  transition: transform 280ms cubic-bezier(.22, 1, .36, 1), opacity 180ms ease;
+}
+.selection-hidden { opacity: 0; }
+.navigation-placeholder {
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  @include animations.skeleton-pulse;
+}
+.navigation-placeholder span { width: 22px; height: 22px; border-radius: 5px; background: #e5e7eb; }
+.navigation-placeholder span:last-child { width: 60%; height: 8px; }
+a:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+.icon-wrap { position: relative; display: block; }
+.navigation-label { font-size: 0.65rem; font-weight: 700; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+@media (min-width: 1024px) {
+  :host { order: 0; }
+  .navigation-space { display: none; }
+  .floating-navigation {
+    position: relative;
+    inset: auto;
+    width: calc(100% - 32px);
+    box-sizing: border-box;
+    margin-top: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a, .selection-indicator, .navigation-placeholder { transition: none; animation: none; }
+}

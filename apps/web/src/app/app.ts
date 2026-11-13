@@ -8,6 +8,7 @@ import { NotificationBrowserAccountService } from '@services/notification-browse
 import { FinalResultsService } from '@services/final-results.service';
 import { AppHeaderComponent } from './layout/app-header/app-header.component';
 import { AppFooterComponent } from './layout/app-footer/app-footer.component';
+import { CompetitionNavigationComponent } from './layout/competition-navigation/competition-navigation.component';
 import { FinalResultsModalComponent } from './features/final-results/final-results-modal.component';
 import { ModalShellComponent } from './shared/components/modal-shell/modal-shell.component';
 
@@ -16,6 +17,7 @@ import { ModalShellComponent } from './shared/components/modal-shell/modal-shell
   imports: [
     AppHeaderComponent,
     AppFooterComponent,
+    CompetitionNavigationComponent,
     FinalResultsModalComponent,
     ModalShellComponent,
     RouterOutlet
