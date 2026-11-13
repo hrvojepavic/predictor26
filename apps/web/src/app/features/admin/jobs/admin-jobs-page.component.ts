@@ -1,3 +1,4 @@
+import { ContentTextPipe } from '@shared/pipes/content-text.pipe';
 import { TranslationService } from '@services/translation.service';
 import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
@@ -22,7 +23,7 @@ const liveScoreRunColors = ['#eff6ff', '#f0fdf4', '#fff7ed', '#fdf2f8', '#f5f3ff
 
 @Component({
   selector: 'app-admin-jobs-page',
-  imports: [TranslatePipe, LocalizedDatePipe, DecimalPipe, ModalShellComponent, ReactiveFormsModule, RouterLink, SecretCodeModalComponent],
+  imports: [ContentTextPipe, TranslatePipe, LocalizedDatePipe, DecimalPipe, ModalShellComponent, ReactiveFormsModule, RouterLink, SecretCodeModalComponent],
   templateUrl: './admin-jobs-page.component.html',
   styleUrl: './admin-jobs-page.component.scss'
 })

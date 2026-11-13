@@ -1,3 +1,5 @@
+import { getContentLocalization } from '../content-localization/content-localization.service.js';
+import type { LocalizedString } from '../content-localization/content-localization.interfaces.js';
 import {
   AdminCompetitionSettingsResponse,
   AdminRuleTemplatesResponse,
@@ -297,7 +299,7 @@ export async function getCompetitionRulesForViewer(
 
   return {
     competition: toCompetitionResponse(competition),
-    rules: findCompetitionRules(resolvedCompetitionId).map(renderRule)
+    rules: renderRules(findCompetitionRules(resolvedCompetitionId))
   };
 }
 
@@ -321,15 +323,15 @@ export async function getCompetitionRulesForVisibleCompetition(
 
   return {
     competition: toCompetitionResponse(competition),
-    rules: findCompetitionRules(competitionId).map(renderRule)
+    rules: renderRules(findCompetitionRules(competitionId))
   };
 }
 
 export async function getDefaultCompetitionRules(): Promise<DefaultCompetitionRulesResponse> {
   const competition = findDefaultCompetition();
   const rules = competition
-    ? findCompetitionRules(competition.id).map(renderRule)
-    : findRuleTemplates().map((template) => renderRule({ text_template: template.text_template, value: template.default_value }));
+    ? renderRules(findCompetitionRules(competition.id))
+    : renderRules(findRuleTemplates().map(template => ({ ...template, value: template.default_value })));
 
   return {
     rules
@@ -698,8 +700,13 @@ function isValidTimeZone(value: string): boolean {
   }
 }
 
-function renderRule(rule: { readonly text_template: string; readonly value: string | null }): string {
-  return rule.text_template.replace('{{value}}', rule.value ?? '');
+function renderRules(rules: readonly { readonly key: string; readonly text_template: string; readonly value: string | null }[]): LocalizedString[][] {
+  const catalog = getContentLocalization();
+  return rules.map(rule => {
+    const translations = catalog.entries.find(entry => entry.kind === 'rule' && entry.id === rule.key)?.translations
+      ?? [{ languageCode: 'en', value: rule.text_template }];
+    return translations.map(translation => ({ ...translation, value: translation.value.replaceAll('{{value}}', () => rule.value ?? '') }));
+  });
 }
 
 function createUniqueSlug(name: string, currentCompetitionId?: number): string {

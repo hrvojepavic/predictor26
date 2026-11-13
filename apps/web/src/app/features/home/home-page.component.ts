@@ -1,3 +1,4 @@
+import { ContentTextPipe } from '@shared/pipes/content-text.pipe';
 import { TranslationService } from '@services/translation.service';
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
@@ -22,7 +23,7 @@ interface NextPredictionDeadline {
 
 @Component({
   selector: 'app-home-page',
-  imports: [TranslatePipe, HomeLeaderboardComponent, ModalShellComponent, PaymentInfoModalComponent, RouterLink, PredictionActionIconComponent, PredictionCountBadgeComponent],
+  imports: [ContentTextPipe, TranslatePipe, HomeLeaderboardComponent, ModalShellComponent, PaymentInfoModalComponent, RouterLink, PredictionActionIconComponent, PredictionCountBadgeComponent],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.scss'
 })

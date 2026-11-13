@@ -1,3 +1,4 @@
+import { ContentTextPipe } from '@shared/pipes/content-text.pipe';
 import { TranslationService } from '@services/translation.service';
 import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
@@ -39,7 +40,7 @@ interface MatchSection {
 
 @Component({
   selector: 'app-predictions-page',
-  imports: [TranslatePipe, LocalizedDatePipe, MatchSortMenuComponent, OddsFormatPipe, PredictionPointsComponent, TeamNameComponent],
+  imports: [ContentTextPipe, TranslatePipe, LocalizedDatePipe, MatchSortMenuComponent, OddsFormatPipe, PredictionPointsComponent, TeamNameComponent],
   templateUrl: './predictions-page.component.html',
   styleUrl: './predictions-page.component.scss'
 })

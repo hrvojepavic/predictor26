@@ -13,6 +13,7 @@ import { authRoutes } from './modules/auth/auth.routes.js';
 import { competitionsRoutes } from './modules/competitions/competitions.routes.js';
 import { competitionSettingsRoutes } from './modules/competition-settings/competition-settings.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { contentLocalizationRoutes } from './modules/content-localization/content-localization.routes.js';
 import { leaderboardRoutes } from './modules/leaderboard/leaderboard.routes.js';
 import { matchesRoutes } from './modules/matches/matches.routes.js';
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js';
@@ -40,6 +41,7 @@ app.use('/api', adminPaymentsRoutes);
 app.use('/api', adminTeamsRoutes);
 app.use('/api', adminUsersRoutes);
 app.use('/api', healthRoutes);
+app.use('/api', contentLocalizationRoutes);
 
 app.listen(config.port, () => {
   console.log(`API listening on http://localhost:${config.port}`);

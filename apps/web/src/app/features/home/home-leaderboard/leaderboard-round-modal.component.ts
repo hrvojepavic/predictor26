@@ -1,4 +1,5 @@
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
+import { ContentTextPipe } from '@shared/pipes/content-text.pipe';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 
@@ -8,7 +9,7 @@ import { getPredictionPointsStateColor } from '@shared/utils/prediction-points.u
 
 @Component({
   selector: 'app-leaderboard-round-modal',
-  imports: [TranslatePipe, DecimalPipe, TeamNameComponent],
+  imports: [ContentTextPipe, TranslatePipe, DecimalPipe, TeamNameComponent],
   templateUrl: './leaderboard-round-modal.component.html',
   styleUrl: './leaderboard-round-modal.component.scss'
 })

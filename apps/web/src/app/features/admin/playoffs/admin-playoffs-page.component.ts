@@ -1,3 +1,4 @@
+import { ContentTextPipe } from '@shared/pipes/content-text.pipe';
 import { TranslationService } from '@services/translation.service';
 import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
@@ -21,7 +22,7 @@ interface TeamSlotContext {
 
 @Component({
   selector: 'app-admin-playoffs-page',
-  imports: [TranslatePipe, LocalizedDatePipe, RouterLink],
+  imports: [ContentTextPipe, TranslatePipe, LocalizedDatePipe, RouterLink],
   templateUrl: './admin-playoffs-page.component.html',
   styleUrl: './admin-playoffs-page.component.scss'
 })

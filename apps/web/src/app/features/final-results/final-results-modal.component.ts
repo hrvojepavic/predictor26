@@ -1,3 +1,4 @@
+import { ContentLocalizationService } from '@services/content-localization.service';
 import { TranslationService } from '@services/translation.service';
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { DecimalPipe } from '@angular/common';
@@ -12,6 +13,7 @@ import { FinalResults, FinalResultsWinner } from '@services/final-results.servic
   styleUrl: './final-results-modal.component.scss'
 })
 export class FinalResultsModalComponent {
+  private readonly content = inject(ContentLocalizationService);
   private readonly translations = inject(TranslationService);
   readonly results = input.required<FinalResults>();
   readonly closeModal = output<void>();
@@ -29,7 +31,7 @@ export class FinalResultsModalComponent {
   protected readonly title = computed(() => {
     const results = this.results();
 
-    return results.isCompetitionFinished ? this.translations.translate("ui.final_rankings") : this.translations.translate('ui.rankings_after_p0', { p0: results.roundLabel ?? this.translations.translate('ui.current_week') });
+    return results.isCompetitionFinished ? this.translations.translate("ui.final_rankings") : this.translations.translate('ui.rankings_after_p0', { p0: this.content.text(results.roundLabel) || this.translations.translate('ui.current_week') });
   });
 
   protected formatCurrency(value: number): string {

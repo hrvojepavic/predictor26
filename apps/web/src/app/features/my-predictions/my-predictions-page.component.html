@@ -25,12 +25,12 @@
     <div class="tip-groups" [attr.aria-label]="'ui.submitted_tips' | translate">
       @for (group of groupedPredictedMatches(); track group.label) {
         <section class="tip-group">
-          <h2>{{ (group.label)  }}</h2>
+          <h2>{{ group.label | contentText }}</h2>
 
           <div class="tips-list">
             @for (section of group.sections; track section.label) {
               <div class="tip-section">
-                <div class="section-badge">{{ (section.label)  }}</div>
+                <div class="section-badge">{{ section.label | contentText }}</div>
 
                 @for (match of section.matches; track match.id) {
                   @if (match.prediction; as prediction) {

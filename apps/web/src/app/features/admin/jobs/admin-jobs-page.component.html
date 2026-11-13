@@ -108,7 +108,7 @@
               </div>
               <div>
                 <dt>{{ 'ui.round' | translate }}</dt>
-                <dd>{{ (lastRun.roundLabel || '-') }}</dd>
+                <dd>{{ (lastRun.roundLabel | contentText) || '-' }}</dd>
               </div>
               <div>
                 <dt>{{ 'ui.released' | translate }}</dt>

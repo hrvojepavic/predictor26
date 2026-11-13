@@ -4,6 +4,8 @@ import Database from 'better-sqlite3';
 
 import { config } from '../config/index.js';
 import { hashPassword } from '../shared/utils/password.js';
+import { migrateContentLocalization } from './migrations/content-localization.js';
+import { migrateCroatianWeekWording } from './migrations/croatian-week-wording.js';
 
 let databaseInitialized = false;
 
@@ -262,6 +264,8 @@ function initializeDatabase(db: Database.Database) {
   ensureSuperAdminPredictionsBlocked(db);
   ensureFinishedCompetitionLiveSnapshotsClosed(db);
   seedRuleTemplates(db);
+  migrateContentLocalization(db);
+  migrateCroatianWeekWording(db);
   seedMissingCompetitionRules(db);
   ensureCompetitionScopedIndexes(db);
 
@@ -473,12 +477,7 @@ function seedRuleTemplates(db: Database.Database) {
     `
       INSERT INTO rule_templates (key, text_template, value_label, default_value, sort_order)
       VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(key) DO UPDATE SET
-        text_template = excluded.text_template,
-        value_label = excluded.value_label,
-        default_value = excluded.default_value,
-        sort_order = excluded.sort_order,
-        updated_at = CURRENT_TIMESTAMP
+      ON CONFLICT(key) DO NOTHING
     `
   );
 
@@ -495,6 +494,7 @@ function seedMissingCompetitionRules(db: Database.Database) {
       FROM competitions
       CROSS JOIN rule_templates
       WHERE competitions.is_archived = 0
+        AND rule_templates.key NOT LIKE 'custom-%'
         AND NOT EXISTS (
           SELECT 1
           FROM competition_rules

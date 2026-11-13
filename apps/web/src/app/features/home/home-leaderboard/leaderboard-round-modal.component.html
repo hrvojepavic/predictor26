@@ -1,7 +1,7 @@
 <header class="modal-header">
   <div>
     <h2 id="leaderboard-round-title">{{ 'ui.p0_predictions' | translate: { p0: (user().username) } }}</h2>
-    <p>{{ (round().label) }} · {{ (round().submittedCount) }}/{{ (round().expectedCount) }}</p>
+    <p>{{ round().label | contentText }} · {{ (round().submittedCount) }}/{{ (round().expectedCount) }}</p>
   </div>
   <button class="icon-button" type="button" [attr.aria-label]="'ui.close_tips' | translate" [title]="'ui.close_tips' | translate" (click)="close()">×</button>
 </header>

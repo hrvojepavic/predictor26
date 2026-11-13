@@ -152,7 +152,7 @@
                   <div class="rule-row" [formGroupName]="index">
                     <label class="toggle-row">
                       <input type="checkbox" formControlName="isEnabled" />
-                      <span>{{ (template.textTemplate) }}</span>
+                      <span>{{ template.key | contentText: 'rule' }}</span>
                     </label>
 
                     @if (template.valueLabel) {

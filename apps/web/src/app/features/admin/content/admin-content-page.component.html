@@ -1,0 +1,67 @@
+<section class="content-page">
+  <header>
+    <h1>{{ 'content.title' | translate }}</h1>
+    <a class="back-link" routerLink="/admin">{{ 'ui.back_to_admin' | translate }}</a>
+    <p>{{ 'content.global_hint' | translate }}</p>
+  </header>
+  @if (error()) { <p role="alert">{{ error() }}</p> }
+  @if (success()) { <p role="status">{{ 'ui.saved' | translate }}</p> }
+  @if (loading()) { <p role="status">{{ 'content.loading' | translate }}</p> } @else {
+  <section class="panel" aria-labelledby="languages-heading">
+    <h2 id="languages-heading">{{ 'content.languages' | translate }}</h2>
+    <p>{{ 'content.language_hint' | translate }}</p>
+    <ul>
+      @for (option of content.languages(); track option.code) {
+        <li>
+          <span>{{ option.name }} ({{ option.code }})</span>
+          <button type="button" [disabled]="saving() || option.code === defaultLanguage"
+            [attr.aria-pressed]="option.enabled" (click)="toggleLanguage(option)">
+            {{ (option.enabled ? 'ui.enabled' : 'ui.disabled') | translate }}
+          </button>
+        </li>
+      }
+    </ul>
+    <form [formGroup]="languageForm" (ngSubmit)="addLanguage()">
+      <label>{{ 'content.language_code' | translate }}<input formControlName="code" maxlength="35" /></label>
+      <label>{{ 'content.language_name' | translate }}<input formControlName="name" maxlength="80" /></label>
+      <button type="submit" [disabled]="saving() || languageForm.invalid">{{ 'content.add_language' | translate }}</button>
+    </form>
+  </section>
+  <section class="panel" aria-labelledby="wording-heading">
+    <h2 id="wording-heading">{{ 'content.wording' | translate }}</h2>
+    <p>{{ 'content.placeholder_hint' | translate }}</p>
+    <div class="tabs" role="group" [attr.aria-label]="'content.wording' | translate">
+      @for (option of kinds; track option) {
+        <button type="button" [class.selected]="kind() === option" [attr.aria-pressed]="kind() === option" (click)="kind.set(option)">
+          {{ ('content.kind.' + option) | translate }}
+        </button>
+      }
+    </div>
+    @for (row of visibleRows(); track row.entry.kind + (row.entry.id || row.entry.sourceText)) {
+      <article>
+        <p class="source">{{ row.entry.sourceText }}</p>
+        <app-localized-text-input [languages]="content.languages()" [label]="'content.translation' | translate"
+          [maxLength]="row.entry.kind === 'rule' ? 500 : 200" [formControl]="row.control" />
+        <button type="button" [disabled]="saving() || !row.control.dirty" (click)="saveRow(row)">{{ 'ui.save' | translate }}</button>
+      </article>
+    }
+    @if (kind() === 'rule') {
+      <form class="new-rule" [formGroup]="ruleForm" (ngSubmit)="addRule()">
+        <h3>{{ 'content.add_rule' | translate }}</h3>
+        <p>{{ 'content.new_rule_hint' | translate }}</p>
+        <app-localized-text-input [languages]="content.languages()" [label]="'content.rule_text' | translate"
+          formControlName="translations" />
+        <p>{{ 'content.rule_value_hint' | translate }}</p>
+        <label>{{ 'content.value_label' | translate }}<input formControlName="valueLabel" maxlength="120" /></label>
+        <label>{{ 'content.default_value' | translate }}<input formControlName="defaultValue" maxlength="120" /></label>
+        <button type="submit" [disabled]="saving() || ruleForm.invalid">{{ 'content.add_rule' | translate }}</button>
+      </form>
+    } @else {
+      <form [formGroup]="wordingForm" (ngSubmit)="addWording()">
+        <label>{{ 'content.source' | translate }}<input formControlName="source" maxlength="140" /></label>
+        <button type="submit" [disabled]="saving() || wordingForm.invalid">{{ 'content.add_wording' | translate }}</button>
+      </form>
+    }
+  </section>
+  }
+</section>

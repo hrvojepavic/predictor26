@@ -1,3 +1,4 @@
+import { ContentTextPipe } from '@shared/pipes/content-text.pipe';
 import { TranslationService } from '@services/translation.service';
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { Component, computed, inject, signal } from '@angular/core';
@@ -71,7 +72,7 @@ interface SelectedLeaderboardRound {
 
 @Component({
   selector: 'app-home-leaderboard',
-  imports: [TranslatePipe, LeaderboardRoundModalComponent, ModalShellComponent],
+  imports: [ContentTextPipe, TranslatePipe, LeaderboardRoundModalComponent, ModalShellComponent],
   templateUrl: './home-leaderboard.component.html',
   styleUrl: './home-leaderboard.component.scss'
 })

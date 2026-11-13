@@ -72,7 +72,7 @@
       @for (group of groupedMatches(); track group.label) {
         <section class="match-group" [attr.aria-labelledby]="'admin-group-' + group.label">
           <div class="match-group-heading">
-            <h2 [id]="'admin-group-' + group.label">{{ (group.label)  }}</h2>
+            <h2 [id]="'admin-group-' + group.label">{{ group.label | contentText }}</h2>
             @if (!group.releasedForPredictions) {
               <button class="import-button" type="button" (click)="requestReleaseRound(group.label)">{{ 'ui.release_week' | translate }}</button>
             }

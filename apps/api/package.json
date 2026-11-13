@@ -8,7 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "test": "npm run build && node --test test/notifications.test.mjs"
+    "test": "npm run build && node --test test/notifications.test.mjs test/content-localization.test.mjs"
   },
   "dependencies": {
     "@types/web-push": "^3.6.4",
