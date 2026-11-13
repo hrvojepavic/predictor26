@@ -1,72 +1,15 @@
-<section class="home-page" [attr.aria-label]="'ui.my_prediction_center' | translate">
-  <p class="section-label">{{ 'ui.my_prediction_center' | translate }}</p>
-
-  <nav class="home-action-grid" [attr.aria-label]="'ui.prediction_actions' | translate">
-    @if (paymentInfo(); as info) {
-      @if (showPaymentNotice()) {
-        <button
-          class="action-card payment-notice"
-          type="button"
-          animate.enter="payment-notice-enter"
-          (click)="openPaymentModal()"
-        >
-          <span class="action-icon payment-notice-icon" aria-hidden="true">
-            <span></span>
-            <span></span>
-          </span>
-          <span class="action-content payment-notice-copy">
-            <span class="action-title">{{ 'ui.payment_info' | translate }}</span>
-            <span class="action-description payment-description-desktop">{{ 'ui.click_to_see_payment_details' | translate }}</span>
-            <span class="action-description payment-description-mobile">{{ 'ui.tap_to_see_payment_details' | translate }}</span>
-          </span>
-        </button>
-      }
-    }
-
-    <a class="action-card" [routerLink]="postPredictionsRouterLink()">
-      <app-prediction-action-icon kind="predict" />
-      <span class="action-content">
-        <span class="action-title">{{ 'ui.predict' | translate }}</span>
-        <span class="action-description">
-          {{ 'ui.enter_or_update_your_match_score_predictions' | translate }} <span class="action-deadline">
-            @if (nextPredictionDeadline(); as deadline) {
-              <span class="action-deadline-text">
-                <strong>{{ deadline.label | contentText }}</strong> {{ 'ui.closes_in' | translate }} <strong>{{ deadline.remaining }}</strong>.
-              </span>
-            }
-          </span>
-        </span>
-      </span>
-      <app-prediction-count-badge [count]="remainingPredictionsCount()" />
-    </a>
-
-    <a class="action-card" [routerLink]="myPredictionsRouterLink()">
-      <app-prediction-action-icon kind="list" />
-      <span class="action-content">
-        <span class="action-title">{{ 'ui.see_my_predictions' | translate }}</span>
-        <span class="action-description">{{ 'ui.review_every_prediction_you_have_submitted' | translate }}</span>
-      </span>
-    </a>
-
-    <a class="action-card" [routerLink]="matchDayRouterLink()">
-      <app-prediction-action-icon kind="match-day" />
-      <span class="action-content">
-        <span class="action-title">{{ 'ui.match_day' | translate }}</span>
-        <span class="action-description">{{ 'ui.browse_games_by_day_and_compare_everyone_s_predictions' | translate }}</span>
-      </span>
-    </a>
-  </nav>
-
+<section class="home-page" [attr.aria-label]="'ui.rankings' | translate">
   <app-home-leaderboard />
 
+  @if (showPaymentNotice()) {
+    <button class="payment-notice" type="button" (click)="openPaymentModal()">
+      {{ 'ui.payment_info' | translate }}
+    </button>
+  }
+
   @if (paymentModalOpen() && showPaymentNotice() && paymentInfo(); as info) {
-    <app-modal-shell
-      labelledBy="payment-info-title"
-      panelWidth="520px"
-      animate.enter="modal-enter"
-      animate.leave="modal-leave"
-      (closeModal)="closePaymentModal()"
-    >
+    <app-modal-shell labelledBy="payment-info-title" panelWidth="520px"
+      animate.enter="modal-enter" animate.leave="modal-leave" (closeModal)="closePaymentModal()">
       <app-payment-info-modal [methods]="info.methods" (closeModal)="closePaymentModal()" />
     </app-modal-shell>
   }

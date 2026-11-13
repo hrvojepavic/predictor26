@@ -1,0 +1,25 @@
+@if (visible()) {
+  <div class="navigation-space" aria-hidden="true"></div>
+  <nav class="floating-navigation" [class.navigation-loading]="loading()" [attr.aria-busy]="loading()" [attr.aria-label]="'ui.prediction_actions' | translate">
+    @if (loading()) {
+      @for (item of items; track item.section) {
+        <div class="navigation-placeholder" aria-hidden="true"><span></span><span></span></div>
+      }
+    } @else if (competition(); as current) {
+    <span class="selection-indicator" aria-hidden="true" [class.selection-hidden]="activeIndex() < 0"
+      [style.transform]="'translateX(calc(' + (activeIndex() < 0 ? 0 : activeIndex()) + ' * (100% + 2px)))'"></span>
+    @for (item of items; track item.section) {
+      <a [routerLink]="item.section ? ['/competition', current.slug, item.section] : ['/competition', current.slug]"
+        routerLinkActive="active" [routerLinkActiveOptions]="activeOptions" ariaCurrentWhenActive="page">
+        <span class="icon-wrap">
+          <app-prediction-action-icon [kind]="item.icon" [compact]="true" />
+          @if (item.section === 'predictions') {
+            <app-prediction-count-badge [count]="summary.remainingCount()" />
+          }
+        </span>
+        <span class="navigation-label">{{ item.key | translate }}</span>
+      </a>
+    }
+    }
+  </nav>
+}

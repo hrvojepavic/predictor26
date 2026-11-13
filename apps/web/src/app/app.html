@@ -1,5 +1,6 @@
 <div class="app-shell">
   <app-header />
+  <app-competition-navigation />
 
   <main class="app-main">
     <router-outlet (activate)="routeActivated.set(true)" />
@@ -8,7 +9,6 @@
   @if (routeActivated()) {
     <app-footer />
   }
-
 
   @if (finalResults.modalOpen() && finalResults.results(); as results) {
     <app-modal-shell
