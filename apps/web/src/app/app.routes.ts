@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { adminCompetitionSlugGuard } from '@guards/admin-competition-slug.guard';
 import { adminGuard } from '@guards/admin.guard';
+import { superAdminGuard } from '@guards/super-admin.guard';
 import { authGuard } from '@guards/auth.guard';
 import { competitionSlugGuard } from '@guards/competition-slug.guard';
 import { guestGuard } from '@guards/guest.guard';
@@ -11,6 +12,11 @@ import { RegisterPageComponent } from '@features/auth/register/register-page.com
 import { RulesPageComponent } from '@features/rules/rules-page.component';
 
 export const routes: Routes = [
+  {
+    path: 'admin/content',
+    canActivate: [adminGuard, superAdminGuard],
+    loadComponent: () => import('./features/admin/content/admin-content-page.component').then(component => component.AdminContentPageComponent)
+  },
   {
     path: 'competition/:slug/settings',
     canActivate: [authGuard, competitionSlugGuard],

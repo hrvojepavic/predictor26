@@ -1,3 +1,4 @@
+import { ContentTextPipe } from '@shared/pipes/content-text.pipe';
 import { TranslationService } from '@services/translation.service';
 import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
@@ -28,7 +29,7 @@ interface TipSection {
 
 @Component({
   selector: 'app-my-predictions-page',
-  imports: [TranslatePipe, LocalizedDatePipe, MatchSortMenuComponent, OddsFormatPipe, PredictionPointsComponent, RouterLink, TeamNameComponent],
+  imports: [ContentTextPipe, TranslatePipe, LocalizedDatePipe, MatchSortMenuComponent, OddsFormatPipe, PredictionPointsComponent, RouterLink, TeamNameComponent],
   templateUrl: './my-predictions-page.component.html',
   styleUrl: './my-predictions-page.component.scss'
 })

@@ -29,7 +29,7 @@
         <section class="match-group" [attr.aria-labelledby]="'group-' + group.label">
           <div class="group-header">
             <div>
-              <h2 [id]="'group-' + group.label">{{ (group.label)  }}</h2>
+              <h2 [id]="'group-' + group.label">{{ group.label | contentText }}</h2>
               @if (group.deadlineAt) {
                 <p>
                   {{ 'ui.predictions_close_at' | translate }} <time [dateTime]="group.deadlineAt">{{ group.deadlineAt | localizedDate: 'EEE, MMM d, HH:mm' }}</time>
@@ -70,7 +70,7 @@
               <div class="match-section">
                 @if (section.label !== group.label) {
                   <div class="section-heading">
-                    <div class="section-badge">{{ (section.label)  }}</div>
+                    <div class="section-badge">{{ section.label | contentText }}</div>
                   </div>
                 }
 
@@ -200,7 +200,7 @@
           <section class="closed-round-card" [attr.aria-labelledby]="'closed-group-' + group.label">
             <div class="group-header">
               <div>
-                <h2 [id]="'closed-group-' + group.label">{{ (group.label)  }}</h2>
+                <h2 [id]="'closed-group-' + group.label">{{ group.label | contentText }}</h2>
                 <p>{{ 'ui.p0_p1_predictions_entered_2' | translate: { p0: (group.savedCount), p1: (group.totalCount) } }}</p>
               </div>
 

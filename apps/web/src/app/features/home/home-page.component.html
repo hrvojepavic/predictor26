@@ -31,7 +31,7 @@
           {{ 'ui.enter_or_update_your_match_score_predictions' | translate }} <span class="action-deadline">
             @if (nextPredictionDeadline(); as deadline) {
               <span class="action-deadline-text">
-                <strong>{{ deadline.label  }}</strong> {{ 'ui.closes_in' | translate }} <strong>{{ deadline.remaining }}</strong>.
+                <strong>{{ deadline.label | contentText }}</strong> {{ 'ui.closes_in' | translate }} <strong>{{ deadline.remaining }}</strong>.
               </span>
             }
           </span>

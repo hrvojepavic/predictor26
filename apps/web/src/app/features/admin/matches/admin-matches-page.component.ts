@@ -1,3 +1,5 @@
+import { ContentTextPipe } from '@shared/pipes/content-text.pipe';
+import { ContentLocalizationService } from '@services/content-localization.service';
 import { TranslationService } from '@services/translation.service';
 import { LocalizedDatePipe } from '@shared/pipes/localized-date.pipe';
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
@@ -26,7 +28,7 @@ type PendingSecretAction = 'schedule' | 'odds' | 'schedule-with-odds' | 'release
 
 @Component({
   selector: 'app-admin-matches-page',
-  imports: [TranslatePipe,
+  imports: [ContentTextPipe, TranslatePipe,
     AdminManualMatchModalComponent,
     AdminMatchKickoffModalComponent,
     LocalizedDatePipe,
@@ -40,6 +42,7 @@ type PendingSecretAction = 'schedule' | 'odds' | 'schedule-with-odds' | 'release
   styleUrl: './admin-matches-page.component.scss'
 })
 export class AdminMatchesPageComponent {
+  private readonly content = inject(ContentLocalizationService);
   private readonly translations = inject(TranslationService);
   private readonly adminMatchesApi = inject(AdminMatchesApiProvider);
 
@@ -370,7 +373,7 @@ export class AdminMatchesPageComponent {
     this.adminMatchesApi.importMatches({ secretCode }).subscribe({
       next: ({ imported, validation, matches }) => {
         this.setMatches(matches);
-        this.importMessage.set([this.translations.translate('ui.p0_matches_imported', { p0: imported }), validation ? validationMessage(validation, this.translations) : null].filter(Boolean).join(' '));
+        this.importMessage.set([this.translations.translate('ui.p0_matches_imported', { p0: imported }), validation ? validationMessage(validation, this.translations, this.content) : null].filter(Boolean).join(' '));
         this.pendingSecretAction.set(null);
         this.importing.set(false);
       },
@@ -435,7 +438,7 @@ export class AdminMatchesPageComponent {
             odds.skippedFinished > 0 ? this.translations.translate('ui.p0_skipped_because_matches_are_finished', { p0: odds.skippedFinished }) : null,
             odds.skippedUnresolved > 0 ? this.translations.translate('ui.p0_skipped_because_teams_are_still_placeholders', { p0: odds.skippedUnresolved }) : null,
             odds.unmatched > 0 ? this.translations.translate('ui.p0_eligible_matches_were_not_found_in_the_odds_source', { p0: odds.unmatched }) : null,
-            validationMessage(validation, this.translations)
+            validationMessage(validation, this.translations, this.content)
           ]
             .filter(message => message !== null).join(' ')
         );
@@ -464,7 +467,7 @@ export class AdminMatchesPageComponent {
     this.adminMatchesApi.releaseRound({ roundLabel, secretCode }).subscribe({
       next: ({ released, validation, matches }) => {
         this.setMatches(matches);
-        this.importMessage.set(this.translations.translate('ui.p0_matches_released_for_predictions_p1', { p0: released, p1: validationMessage(validation, this.translations) }));
+        this.importMessage.set(this.translations.translate('ui.p0_matches_released_for_predictions_p1', { p0: released, p1: validationMessage(validation, this.translations, this.content) }));
         this.pendingSecretAction.set(null);
         this.pendingReleaseRoundLabel.set(null);
         this.releasingRound.set(false);
@@ -482,7 +485,7 @@ export class AdminMatchesPageComponent {
         }
 
         if (error instanceof HttpErrorResponse && error.status === 409 && error.error?.validation) {
-          this.errorMessage.set(`${message} ${validationMessage(error.error.validation as MatchImportValidation, this.translations)}`);
+          this.errorMessage.set(`${message} ${validationMessage(error.error.validation as MatchImportValidation, this.translations, this.content)}`);
         } else {
           this.errorMessage.set(message);
         }
@@ -687,9 +690,9 @@ function groupMatches(matches: readonly Match[]): MatchGroup[] {
   }));
 }
 
-function validationMessage(validation: MatchImportValidation, translations: TranslationService): string {
+function validationMessage(validation: MatchImportValidation, translations: TranslationService, content: ContentLocalizationService): string {
   if (validation.complete && validation.released) {
-    return translations.translate('ui.p0_is_complete_and_released', { p0: validation.roundLabel });
+    return translations.translate('ui.p0_is_complete_and_released', { p0: content.text(validation.roundLabel) });
   }
 
   const issues = [
@@ -699,8 +702,8 @@ function validationMessage(validation: MatchImportValidation, translations: Tran
   ].filter(message => message !== null);
 
   return issues.length > 0
-    ? translations.translate('ui.p0_is_not_released_p1', { p0: validation.roundLabel, p1: issues.join(' ') })
-    : translations.translate('ui.p0_is_ready_to_release', { p0: validation.roundLabel });
+    ? translations.translate('ui.p0_is_not_released_p1', { p0: content.text(validation.roundLabel), p1: issues.join(' ') })
+    : translations.translate('ui.p0_is_ready_to_release', { p0: content.text(validation.roundLabel) });
 }
 
 function getExistingTeamNames(matches: readonly Match[]): string[] {

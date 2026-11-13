@@ -97,6 +97,17 @@ p {
   display: grid;
   gap: 6px;
 }
+.settings-link {
+  margin-bottom: 16px;
+  text-decoration: none;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+.settings-link:hover,
+.settings-link:focus-visible {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+.settings-arrow { color: #374151; font-size: 1.3rem; }
 
 button {
   flex: 0 0 auto;

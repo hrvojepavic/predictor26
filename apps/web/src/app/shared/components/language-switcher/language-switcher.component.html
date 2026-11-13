@@ -1,10 +1,14 @@
 <div class="language-toggle" role="group" [attr.aria-label]="'language.label' | translate">
-  @for (option of languages; track option.language) {
+  @for (option of languages(); track option.language) {
     <button type="button" [class.selected]="translations.language() === option.language"
       [attr.aria-pressed]="translations.language() === option.language"
-      [attr.aria-label]="option.labelKey | translate" [title]="option.labelKey | translate"
+      [attr.aria-label]="option.labelKey ? (option.labelKey | translate) : option.name" [title]="option.labelKey ? (option.labelKey | translate) : option.name"
       (click)="translations.setLanguage(option.language)">
-      <img [src]="option.flagUrl" alt="" aria-hidden="true" width="24" height="16" />
+      @if (option.flagUrl) {
+        <img [src]="option.flagUrl" alt="" aria-hidden="true" width="24" height="16" />
+      } @else {
+        <span>{{ option.name }}</span>
+      }
     </button>
   }
 </div>

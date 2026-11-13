@@ -6,7 +6,7 @@
 <div class="modal-content">
   <ul>
     @for (rule of rules(); track rule) {
-      <li>{{ (rule) }}</li>
+      <li>{{ rule | localizedText }}</li>
     } @empty {
       <li>{{ 'ui.rules_could_not_be_loaded' | translate }}</li>
     }

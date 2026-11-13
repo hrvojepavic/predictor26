@@ -59,7 +59,7 @@
             } @else if (joinRules().length > 0) {
               <ol>
                 @for (rule of joinRules(); track rule) {
-                  <li>{{ (rule) }}</li>
+                  <li>{{ rule | localizedText }}</li>
                 }
               </ol>
             } @else {

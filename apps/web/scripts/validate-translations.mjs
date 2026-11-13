@@ -32,7 +32,7 @@ const sourceRoot = new URL('../src/app/', import.meta.url);
 for (const file of await readdir(sourceRoot, { recursive: true })) {
   if (!/\.(html|ts)$/.test(file) || file.endsWith('.spec.ts')) continue;
   const source = await readFile(new URL(file.replaceAll('\\', '/'), sourceRoot), 'utf8');
-  for (const match of source.matchAll(/['"]((?:ui|a11y|time|round|ordinal|jobs|language|navigation|notifications)\.[\w.-]+)['"]/g)) {
+  for (const match of source.matchAll(/['"]((?:ui|a11y|time|round|ordinal|jobs|language|navigation|notifications|content)\.[\w.-]+)['"]/g)) {
     const key = match[1];
     if (!key.endsWith('.') && !Object.hasOwn(referenceDictionary, key)) {
       throw new Error(`${file}: unknown translation key ${key}`);

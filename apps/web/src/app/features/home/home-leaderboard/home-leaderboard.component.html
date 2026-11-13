@@ -34,7 +34,7 @@
                 </th>
               }
               @for (round of table.rounds; track round.label) {
-                <th class="round-heading" colspan="2" scope="colgroup">{{ (round.heading)  }}</th>
+                <th class="round-heading" colspan="2" scope="colgroup">{{ round.heading | contentText }}</th>
                 @if ($first && table.showInterimTotalColumn) {
                   <th class="total-heading interim-total-heading" rowspan="2" scope="col">{{ 'ui.total' | translate }}</th>
                 }
@@ -160,7 +160,7 @@
                     @if (isLoggedIn() && round.viewable) {
                       <button
                         class="tips-button"
-                        [attr.aria-label]="'ui.view_round_predictions' | translate: { name: user.username, round: (round.label ) }" [title]="'ui.view_round_predictions' | translate: { name: user.username, round: (round.label ) }"
+                        [attr.aria-label]="'ui.view_round_predictions' | translate: { name: user.username, round: (round.label | contentText) }" [title]="'ui.view_round_predictions' | translate: { name: user.username, round: (round.label | contentText) }"
                         type="button"
                         [disabled]="isOpeningRound(user, round)"
                         (click)="openRound(user, round)"

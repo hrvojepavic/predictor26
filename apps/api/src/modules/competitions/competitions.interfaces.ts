@@ -1,3 +1,4 @@
+import type { LocalizedString } from '../content-localization/content-localization.interfaces.js';
 export interface CompetitionResponse {
   readonly id: number;
   readonly name: string;
@@ -107,11 +108,11 @@ export interface AdminCompetitionRuleResponse extends AdminRuleTemplateResponse 
 
 export interface CompetitionRulesResponse {
   readonly competition: CompetitionResponse;
-  readonly rules: string[];
+  readonly rules: LocalizedString[][];
 }
 
 export interface DefaultCompetitionRulesResponse {
-  readonly rules: string[];
+  readonly rules: LocalizedString[][];
 }
 
 export interface CompetitionTeamsResponse {

@@ -6,6 +6,13 @@
       <a class="back-link" routerLink="/admin">{{ 'ui.back_to_admin' | translate }}</a>
     </div>
   </header>
+  <a class="settings-panel settings-link" routerLink="/admin/content">
+    <div class="settings-copy">
+      <h2>{{ 'content.title' | translate }}</h2>
+      <p>{{ 'content.global_hint' | translate }}</p>
+    </div>
+    <span class="settings-arrow" aria-hidden="true">→</span>
+  </a>
 
   @if (errorMessage(); as message) {
     <p class="status-message status-error">{{ (message) }}</p>

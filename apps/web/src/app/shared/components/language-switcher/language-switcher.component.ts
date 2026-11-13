@@ -1,5 +1,5 @@
-import { Component, inject } from '@angular/core';
-import { AVAILABLE_LANGUAGES } from '@core/i18n/language.config';
+import { Component, computed, inject } from '@angular/core';
+import { LANGUAGE_CONFIG, Language } from '@core/i18n/language.config';
 import { TranslationService } from '@services/translation.service';
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
 
@@ -10,6 +10,11 @@ import { TranslatePipe } from '@shared/pipes/translate.pipe';
   styleUrl: './language-switcher.component.scss'
 })
 export class LanguageSwitcherComponent {
-  protected readonly languages = AVAILABLE_LANGUAGES;
   protected readonly translations = inject(TranslationService);
+  protected readonly languages = computed(() => this.translations.languages().map(language => ({
+    language: language.code,
+    name: language.name,
+    labelKey: Object.hasOwn(LANGUAGE_CONFIG, language.code) ? LANGUAGE_CONFIG[language.code as Language].labelKey : null,
+    flagUrl: Object.hasOwn(LANGUAGE_CONFIG, language.code) ? LANGUAGE_CONFIG[language.code as Language].flagUrl : null
+  })));
 }

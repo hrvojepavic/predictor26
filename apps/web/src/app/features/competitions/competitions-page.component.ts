@@ -1,3 +1,5 @@
+import type { LocalizedString } from '@models/content-localization.models';
+import { LocalizedTextPipe } from '@shared/pipes/localized-text.pipe';
 import { TranslationService } from '@services/translation.service';
 import { TranslatePipe } from '@shared/pipes/translate.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -15,7 +17,7 @@ import { FormFieldStateDirective } from '@shared/directives/form-field-state.dir
 
 @Component({
   selector: 'app-competitions-page',
-  imports: [TranslatePipe, FormFieldStateDirective, ModalShellComponent, ReactiveFormsModule],
+  imports: [LocalizedTextPipe, TranslatePipe, FormFieldStateDirective, ModalShellComponent, ReactiveFormsModule],
   templateUrl: './competitions-page.component.html',
   styleUrl: './competitions-page.component.scss'
 })
@@ -33,7 +35,7 @@ export class CompetitionsPageComponent {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly joinCompetitionPrompt = signal<Competition | null>(null);
   protected readonly joinErrorMessage = signal<string | null>(null);
-  protected readonly joinRules = signal<string[]>([]);
+  protected readonly joinRules = signal<LocalizedString[][]>([]);
   protected readonly loadingJoinRules = signal(false);
   protected readonly joiningCompetition = signal(false);
   protected readonly joinForm = this.formBuilder.nonNullable.group({
