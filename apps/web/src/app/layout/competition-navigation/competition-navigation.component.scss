@@ -62,6 +62,53 @@ a:hover, a.active { color: #3730a3; }
 a:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
 .icon-wrap { position: relative; display: block; }
 .navigation-label { font-size: 0.65rem; font-weight: 700; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+@media (max-width: 1023px) {
+  a, .navigation-placeholder {
+    height: 44px;
+    min-height: 36px;
+    transition: height 280ms ease, color 250ms ease;
+  }
+  .navigation-scrolled a, .navigation-scrolled .navigation-placeholder { height: 36px; }
+  .floating-navigation {
+    transition: left 280ms ease, right 280ms ease, max-width 280ms ease;
+  }
+  .floating-navigation.navigation-scrolled {
+    left: calc(max(12px, env(safe-area-inset-left, 0px)) + 16px);
+    right: calc(max(12px, env(safe-area-inset-right, 0px)) + 16px);
+    max-width: 488px;
+  }
+  .navigation-label-wrap {
+    position: absolute;
+    bottom: 3px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: .65rem;
+    line-height: 1.2;
+    opacity: 1;
+    white-space: nowrap;
+    transition: opacity 220ms ease;
+  }
+  .icon-wrap {
+    top: -7px;
+    transition: top 280ms ease;
+  }
+  .navigation-scrolled .navigation-label-wrap { opacity: 0; }
+  .navigation-scrolled .icon-wrap { top: 0; }
+
+  .floating-navigation::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow:
+      0 0 8px 2px rgba(248, 250, 252, .65),
+      0 0 20px 6px rgba(248, 250, 252, .35);
+    pointer-events: none;
+  }
+}
+
 @media (min-width: 1024px) {
   :host { order: 0; }
   .navigation-space { display: none; }
@@ -75,5 +122,6 @@ a:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  a, .selection-indicator, .navigation-placeholder { transition: none; animation: none; }
+  a, .selection-indicator, .navigation-placeholder, .navigation-label-wrap,
+  .icon-wrap, .floating-navigation { transition: none; animation: none; }
 }

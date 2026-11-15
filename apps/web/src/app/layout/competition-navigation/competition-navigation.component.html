@@ -1,6 +1,6 @@
 @if (visible()) {
   <div class="navigation-space" aria-hidden="true"></div>
-  <nav class="floating-navigation" [class.navigation-loading]="loading()" [attr.aria-busy]="loading()" [attr.aria-label]="'ui.prediction_actions' | translate">
+  <nav class="floating-navigation" [class.navigation-scrolled]="scrolled()" [class.navigation-loading]="loading()" [attr.aria-busy]="loading()" [attr.aria-label]="'ui.prediction_actions' | translate">
     @if (loading()) {
       @for (item of items; track item.section) {
         <div class="navigation-placeholder" aria-hidden="true"><span></span><span></span></div>
@@ -10,6 +10,7 @@
       [style.transform]="'translateX(calc(' + (activeIndex() < 0 ? 0 : activeIndex()) + ' * (100% + 2px)))'"></span>
     @for (item of items; track item.section) {
       <a [routerLink]="item.section ? ['/competition', current.slug, item.section] : ['/competition', current.slug]"
+        [attr.aria-label]="item.key | translate" [attr.title]="item.key | translate"
         routerLinkActive="active" [routerLinkActiveOptions]="activeOptions" ariaCurrentWhenActive="page">
         <span class="icon-wrap">
           <app-prediction-action-icon [kind]="item.icon" [compact]="true" />
@@ -17,7 +18,7 @@
             <app-prediction-count-badge [count]="summary.remainingCount()" />
           }
         </span>
-        <span class="navigation-label">{{ item.key | translate }}</span>
+        <span class="navigation-label-wrap"><span class="navigation-label">{{ item.key | translate }}</span></span>
       </a>
     }
     }
