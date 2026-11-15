@@ -1,5 +1,5 @@
-import { Location } from '@angular/common';
-import { Component, computed, DestroyRef, effect, inject, untracked } from '@angular/core';
+import { DOCUMENT, Location } from '@angular/common';
+import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
@@ -21,6 +21,8 @@ export class CompetitionNavigationComponent {
   private readonly router = inject(Router);
   private readonly matches = inject(MatchesService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly browserWindow = inject(DOCUMENT).defaultView;
+  protected readonly scrolled = signal((this.browserWindow?.scrollY ?? 0) > 0);
   protected readonly summary = inject(PredictionSummaryService);
   private readonly initialUrl = this.router.navigated ? this.router.url : inject(Location).path();
   private readonly initiallyNavigated = this.router.navigated;
@@ -51,6 +53,10 @@ export class CompetitionNavigationComponent {
   protected readonly activeOptions = { paths: 'exact', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' } as const;
 
   constructor() {
+    const updateScroll = () => this.scrolled.set((this.browserWindow?.scrollY ?? 0) > 0);
+    this.browserWindow?.addEventListener('scroll', updateScroll, { passive: true });
+    this.destroyRef.onDestroy(() => this.browserWindow?.removeEventListener('scroll', updateScroll));
+
     effect(() => {
       if (this.competition()) {
         untracked(() => this.matches.ensureMatches()?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe());

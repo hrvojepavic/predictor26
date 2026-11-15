@@ -34,6 +34,15 @@ describe('Floating competition navigation', () => {
     expect(root.querySelector('app-prediction-count-badge')?.textContent).toContain('3');
     expect(ensureMatches).toHaveBeenCalledOnce();
     const indicator = root.querySelector('.selection-indicator');
+    for (const position of [120, 40, 0]) {
+      vi.stubGlobal('scrollY', position);
+      window.dispatchEvent(new Event('scroll'));
+      await fixture.whenStable();
+      expect(root.querySelector('nav')?.classList.contains('navigation-scrolled')).toBe(position > 0);
+      expect(root.querySelector('a')?.getAttribute('aria-label')).toBe('Rankings');
+      expect(root.querySelector('app-prediction-count-badge')?.textContent).toContain('3');
+    }
+    vi.unstubAllGlobals();
     await router.navigateByUrl('/competition/test-league/predictions?round=2');
     await fixture.whenStable();
     expect(root.querySelectorAll('[aria-current=page]')).toHaveLength(1);
