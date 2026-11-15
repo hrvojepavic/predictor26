@@ -87,13 +87,16 @@ a:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
     line-height: 1.2;
     opacity: 1;
     white-space: nowrap;
-    transition: opacity 220ms ease;
+    transition: opacity 240ms ease-in-out 140ms;
   }
   .icon-wrap {
     top: -7px;
     transition: top 280ms ease;
   }
-  .navigation-scrolled .navigation-label-wrap { opacity: 0; }
+  .navigation-scrolled .navigation-label-wrap {
+    opacity: 0;
+    transition: opacity 220ms ease;
+  }
   .navigation-scrolled .icon-wrap { top: 0; }
 
   .floating-navigation::before {
@@ -123,5 +126,5 @@ a:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
   a, .selection-indicator, .navigation-placeholder, .navigation-label-wrap,
-  .icon-wrap, .floating-navigation { transition: none; animation: none; }
+  .icon-wrap, .floating-navigation, .navigation-scrolled .navigation-label-wrap { transition: none; animation: none; }
 }
