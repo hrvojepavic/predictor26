@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
 import { authTokenInterceptor } from '@interceptors/auth-token.interceptor';
 import { routes } from './app.routes';
@@ -13,6 +13,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authTokenInterceptor])),
     provideTranslations(),
     provideContentLocalization(),
-    provideRouter(routes)
+    provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'top' }))
   ]
 };

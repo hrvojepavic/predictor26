@@ -88,8 +88,7 @@ a:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
     line-height: 1.2;
     opacity: 1;
     white-space: nowrap;
-    transform: translateY(0);
-    transition: transform var(--scroll-transition), opacity var(--scroll-transition);
+    transition: opacity var(--scroll-transition);
   }
   .icon-wrap {
     top: -7px;
@@ -97,9 +96,6 @@ a:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
   }
   .navigation-scrolled .navigation-label-wrap {
     opacity: 0;
-    transform: translateY(4px);
-    // Keep the downward-scroll fade unchanged; reposition only once hidden.
-    transition: opacity var(--scroll-transition), transform 0s 280ms;
   }
   .navigation-scrolled .icon-wrap { top: 0; }
 
